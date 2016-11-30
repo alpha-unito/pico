@@ -1,25 +1,6 @@
 # This will run on Travis' 'new' container-based infrastructure
 sudo: false
 
-# Enable C++11 build
-language: cpp
-
-compiler:
-  - gcc
-  - clang
-
-install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
-
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - gcc-5
-      - g++-5
-      - clang
-
 # Blacklist
 branches:
   except:
@@ -45,7 +26,7 @@ addons:
 # Build your code e.g. by calling make
 script:
   - cd $TRAVIS_BUILD_DIR/test
-  - make
+#  - make
 
 # Generate and deploy documentation
 after_success:
