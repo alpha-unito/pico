@@ -24,11 +24,12 @@ addons:
       - graphviz
 
 # Build your code e.g. by calling make
-#script:
-#  - make
+script:
+  - cd $TRAVIS_BUILD_DIR/test
+  - make
 
 # Generate and deploy documentation
 after_success:
-  - cd $TRAVIS_BUILD_DIR
-  - chmod +x Doxygen/generateAndDeploy.sh
-  - ./Doxygen/generateAndDeploy.sh
+  - cd $TRAVIS_BUILD_DIR/Doxygen
+  - chmod +x generateAndDeploy.sh
+  - ./generateAndDeploy.sh
