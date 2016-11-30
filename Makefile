@@ -23,10 +23,10 @@ tests: test1 test2
 
 all: $(TARGET) 
 
-pico_wc: pico_wc.cpp
+pico_wc: test/pico_wc.cpp
 	$(CXX) $(INCLUDES) $(CCFLAGS) $(OPTIMIZE_FLAGS) $(LIBS) $< -o $@
 
-pico_merge: pico_merge.cpp
+pico_merge: test/pico_merge.cpp
 	$(CXX) $(INCLUDES) $(CCFLAGS) $(OPTIMIZE_FLAGS) $(LIBS) $< -o $@
 
 test1: pico_wc
