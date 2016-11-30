@@ -24,8 +24,8 @@ addons:
       - graphviz
 
 # Build your code e.g. by calling make
-script:
-  - make
+#script:
+#  - make
 
 # Generate and deploy documentation
 after_success:
