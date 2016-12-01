@@ -24,6 +24,7 @@ In `test` directory two example are present: a word count (`pico_wc.cpp`) and a 
 To compile those tests:
 
 `$ cd test`
+
 `$ make`
 
 This command will also launch the two examples: two OK messages confirm the correctness of the results.
