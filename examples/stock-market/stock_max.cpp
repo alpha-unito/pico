@@ -12,7 +12,7 @@
  along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * stock_min_max.cpp
+ * stock_max.cpp
  *
  *  Created on: Dec 7, 2016
  *      Author: drocco

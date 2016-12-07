@@ -1,7 +1,7 @@
 CXX                  = g++
 LINK_OPT             = 
 VERSION              = 
-OPTIMIZE_FLAGS       = -O0 -g3 -std=c++11
+OPTIMIZE_FLAGS       = -O3 -g0 -std=c++11
 CCFLAGS             = -Wall #-DDEBUG
 CFLAGS               =
 LDFLAGS              = 
@@ -11,7 +11,7 @@ ROOT                 = ../..
 FF                   = $(ROOT)/ff
 
 INCLUDES             = -I$(ROOT) -I$(FF)
-TARGET               = stock_max
+TARGET               = stock_max stock_tweets
 
 .PHONY: all clean cleanall
 .SUFFIXES: .c .cpp .o
@@ -28,6 +28,7 @@ all: $(TARGET)
 
 #dependencies
 stock_max: stock_max.o
+stock_tweets: stock_tweets.o
 
 clean: 
 	rm -rf *.o *~
@@ -35,4 +36,3 @@ clean:
 cleanall: clean
 	rm -fr $(TARGET) *.d
 	rm -rf *.dSYM *.dot *.png
-
