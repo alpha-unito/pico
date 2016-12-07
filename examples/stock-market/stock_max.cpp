@@ -20,11 +20,10 @@
 
 /**
  * This code implements a pipeline for the stock market domain.
- * Given two sources of stock market data, it computes a price for each stock
+ * Given a source file of stock market data, it computes a price for each stock
  * as the result of the Black-Scholes formula.
- * Then it computes both:
- * - the lowest price among all the processed stocks (i.e., global minimum)
- * - the highest price for each stock name (i.e., by-name maximum price)
+ * Then it computes  the highest price for each stock name (i.e., by-name
+ * maximum price).
  *
  * We remark the Black-Scholes pipeline in this examples is a paradigmatic case
  * of polymorphic pipeline that can be reused in different contexts.
@@ -83,7 +82,7 @@ std::string price_to_string(const StockAndPrice stock_and_price)
 int main(int argc, char** argv)
 {
     /* parse command line */
-    if (argc < 2)
+    if (argc < 3)
     {
         std::cerr << "Usage: " << argv[0];
         std::cerr << " <input file> <output file>\n";
