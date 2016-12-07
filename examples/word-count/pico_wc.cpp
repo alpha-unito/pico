@@ -30,13 +30,13 @@
 #include <string>
 #include <sstream>
 
-#include "../Internals/Types/KeyValue.hpp"
-#include "../Operators/FlatMap.hpp"
-#include "../Operators/InOut/ReadFromFile.hpp"
-#include "../Operators/InOut/WriteToDisk.hpp"
-#include "../Operators/PReduce.hpp"
-#include "../Operators/Reduce.hpp"
-#include "../Pipe.hpp"
+#include <Internals/Types/KeyValue.hpp>
+#include <Operators/FlatMap.hpp>
+#include <Operators/InOut/ReadFromFile.hpp>
+#include <Operators/InOut/WriteToDisk.hpp>
+#include <Operators/PReduce.hpp>
+#include <Operators/Reduce.hpp>
+#include <Pipe.hpp>
 
 typedef KeyValue<std::string, int> KV;
 
@@ -75,12 +75,7 @@ int main(int argc, char** argv) {
 
 	/* define i/o operators from/to file */
 	ReadFromFile<std::string> reader(filename, [](std::string s) {return s;});
-	WriteToDisk<KV> writer(outputfilename, [&](KV in) {
-		std::string value= "<";
-			value.append(in.Key()).append(", ").append(std::to_string(in.Value()));
-			value.append(">");
-			return value;
-	});
+	WriteToDisk<KV> writer(outputfilename, [](KV in) {return in;});
 
 	/* compose the pipeline */
 	Pipe p2;
@@ -92,8 +87,7 @@ int main(int argc, char** argv) {
 	/* execute the pipeline */
 	p2.run();
 
-	/* print the semantic DAG and generate dot file */
-	p2.print_DAG();
+	/* generate dot file with the semantic DAG */
 	p2.to_dotfile("wordcount.dot");
 
 	return 0;
