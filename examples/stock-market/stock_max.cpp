@@ -35,6 +35,8 @@
 #include <sstream>
 
 #include <Pipe.hpp>
+#include <Operators/Map.hpp>
+#include <Operators/PReduce.hpp>
 #include <Operators/InOut/ReadFromFile.hpp>
 #include <Operators/InOut/WriteToDisk.hpp>
 #include <Internals/Types/KeyValue.hpp>
@@ -55,10 +57,16 @@ StockAndOption parse_option(std::string line)
 
     std::stringstream in(line);
     char otype;
+
+    /* read stock name */
     in >> stock_name;
-    in >> opt.s >> opt.strike >> opt.r >> opt.divq >> opt.v >> opt.t >> otype
-            >> opt.divs >> opt.DGrefval;
+
+    /* read stock option data */
+    in >> opt.s >> opt.strike >> opt.r >> opt.divq;
+    in >> opt.v >> opt.t >> otype >> opt.divs >> opt.DGrefval;
     opt.OptionType = (otype == 'P');
+
+    /* compose and return the key-value record */
     return StockAndOption(stock_name, opt);
 }
 
@@ -75,49 +83,54 @@ std::string price_to_string(const StockAndPrice stock_and_price)
 int main(int argc, char** argv)
 {
     /* parse command line */
-    if (argc < 3)
+    if (argc < 2)
     {
         std::cerr << "Usage: " << argv[0];
-        std::cerr << " <input file1> <input file2> <output file>\n";
+        std::cerr << " <input file> <output file>\n";
         return -1;
     }
-    std::string filename1 = argv[1], filename2 = argv[2];
-    std::string outputfilename = argv[3];
+    std::string in_fname = argv[1];
+    std::string out_fname = argv[2];
 
     /* define a generic Black-Scholes pipeline */
-    Pipe blackScholes(Map<StockAndOption, StockAndPrice>([](StockAndOption opt)
-    {
-        /* just invoke legacy code for Black-Scholes formula */
-        return StockAndPrice(opt.Key(), black_scholes(opt.Value()));
-        }));
+    Pipe blackScholes(Map<StockAndOption, StockAndPrice>([] //
+            (StockAndOption opt)
+            {
+                /* just invoke legacy code for Black-Scholes formula */
+                return StockAndPrice(opt.Key(), black_scholes(opt.Value()));
+            }));
 
-    // Black-Scholes can now be used to build batch *and* streaming pipelines.
+    // Black-Scholes can now be used to build batch and streaming pipelines.
 
     /* define i/o operators from/to file */
-    ReadFromFile<StockAndOption> readStockOptions1(filename1, parse_option);
-    ReadFromFile<StockAndOption> readStockOptions2(filename2, parse_option);
-    //WriteToDisk<StockAndPrice> writer(outputfilename, price_to_string);
+    ReadFromFile<StockAndOption> readStockOptions(in_fname, parse_option);
+    WriteToDisk<StockAndPrice> writePrices(out_fname, price_to_string);
 
-    /* compose the pipeline */
-    Pipe stock_min_max;
-    stock_min_max //the empty pipeline
-    .add(readStockOptions1) //
+    /* compose the main pipeline */
+    Pipe stock_max;
+    stock_max //the empty pipeline
+    .add(readStockOptions) //this enforces the bounded nature to the pipeline
     .to(blackScholes);
 
-    Pipe stock_prices2;
-    stock_prices2 //the empty pipeline
-    .add(readStockOptions2) //
-    .to(blackScholes);
+    /* an operator that extracts the stock with highest price, for each name */
+    PReduce<StockAndPrice> highest_price([] //
+            (StockAndPrice sp1, StockAndPrice sp2)
+            {
+                return std::max(sp1, sp2);
+            });
 
-    stock_min_max //
-    .merge(stock_prices2); //
-    //.add(writer);
+    /* attach the operator to the main pipeline */
+    stock_max.add(highest_price);
 
-    /* execute the pipeline */
-    stock_min_max.run();
+    /* finally write result to file */
+
+    stock_max.add(writePrices);
 
     /* generate dot file with the semantic DAG */
-    stock_min_max.to_dotfile("stock_min_max.dot");
+    stock_max.to_dotfile("stock_max.dot");
+
+    /* execute the pipeline */
+    stock_max.run();
 
     return 0;
 }
