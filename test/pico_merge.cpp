@@ -48,7 +48,12 @@ int main(int argc, char** argv) {
 
 	auto reader = ReadFromFile<std::string>(filename,
 			[](std::string s) {return s;});
-	auto wtd = WriteToDisk<KV>(outputfilename, [&](KV in) {return in;});
+	auto wtd = WriteToDisk<KV>(outputfilename, [&](KV in) {
+		std::string value= "<";
+		value.append(in.Key()).append(", ").append(std::to_string(in.Value()));
+		value.append(">");
+		return value;
+	});
 
 	/* p1m read from file and process it by map1 */
 	Pipe p1m(reader);
@@ -59,7 +64,7 @@ int main(int argc, char** argv) {
 	p2m.add(map2);
 
 	/* now merge p1m with p2m and write to file */
-	p1m.merge<KV>(p2m);
+	p1m.merge(p2m);
 	p1m.add(wtd);
 
 	/* execute the pipeline */
