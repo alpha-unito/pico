@@ -30,8 +30,8 @@ using namespace ff;
 template <typename Out>
 class ReadFromFileFFNode: public ff_node {
 public:
-	ReadFromFileFFNode(size_t parallelism_, std::function<Out(std::string)> kernel_, std::string filename_):
-		par_deg(parallelism_), kernel(kernel_), filename(filename_){};
+	ReadFromFileFFNode(std::function<Out(std::string)> kernel_, std::string filename_):
+		kernel(kernel_), filename(filename_){};
 
 	void* svc(void* in){
 		std::string line;
@@ -41,7 +41,7 @@ public:
 //#endif
 		if (infile.is_open()) {
 			while (getline(infile, line)) {
-				ff_send_out(reinterpret_cast<void*>(new std::string(line)));
+				ff_send_out(reinterpret_cast<void*>(new Out(kernel(line))));
 			}
 			infile.close();
 		} else {
@@ -55,7 +55,6 @@ public:
 	}
 
 private:
-	size_t par_deg;
     std::function<Out(std::string)> kernel;
     std::string filename;
 };
