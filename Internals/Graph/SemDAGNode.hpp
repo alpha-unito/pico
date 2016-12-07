@@ -41,9 +41,6 @@ public:
 
 	SemDAGNode(DAGNodeRole role_, OperatorClass op_):op(nullptr),role(role_), opclass(op_), farmid(0){}
 	SemDAGNode(DAGNodeRole role_, OperatorClass op_, size_t farmid_):op(nullptr),role(role_), opclass(op_), farmid(farmid_){}
-	~SemDAGNode(){
-		std::cerr << "[[[[[[[[ Deleting SEMDAGNODE ]]]]]]]]\n";
-	}
 
 	void assign(std::shared_ptr<Operator> op_){
 		op = op_;
