@@ -21,7 +21,9 @@ and then add a symbolic link to the FastFlow library into the PiCo directory:
 `$ ln -s /path/to/FastFlow/ff /PiCo/root/dir`
 
 In `test` directory two example are present: a word count (`pico_wc.cpp`) and a merging pipelines (`pico_merge.cpp`).
-To compile those tests, type in the root PiCo directory:
+To compile those tests:
+
+`$ cd test`
 
 `$ make`
 
@@ -29,11 +31,11 @@ This command will also launch the two examples: two OK messages confirm the corr
 
 To run each single example, just type:
 
-`$ ./test/pico_merge <input file> <output file>`
+`$ ./pico_merge <input file> <output file>`
 
 or
 
-`$ ./test/pico_wc <input file> <output file>`
+`$ ./pico_wc <input file> <output file>`
 
 Test input files can be found in `test/testdata/`.
 
