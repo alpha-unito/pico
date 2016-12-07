@@ -29,7 +29,7 @@ using namespace ff;
 template<typename In, typename Out>
 class UnaryMapFFNode: public ff_node{
 public:
-	UnaryMapFFNode(size_t parallelism, std::function<Out(In)>* mapf_): kernel(*mapf_){
+	UnaryMapFFNode(std::function<Out(In)>* mapf_): kernel(*mapf_), in(nullptr), result(nullptr){
 	};
 
 	void* svc(void* task) {

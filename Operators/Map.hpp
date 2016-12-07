@@ -92,7 +92,10 @@ protected:
 
 
 	ff::ff_node* node_operator(size_t parallelism = 1){
-		return new UnaryMapFFNode<In, Out>(parallelism, &mapf);
+		//if(parallelism == 1){
+			return new UnaryMapFFNode<In, Out>(&mapf);
+	//	}
+		//return new UnaryMapFFFarm<In, Out>(parallelism, &mapf);
 	}
 
 private:
