@@ -22,13 +22,13 @@
 #include <string>
 #include <sstream>
 
-#include "Internals/Types/KeyValue.hpp"
-#include "Operators/FlatMap.hpp"
-#include "Operators/InOut/ReadFromFile.hpp"
-#include "Operators/InOut/WriteToDisk.hpp"
-#include "Operators/PReduce.hpp"
-#include "Operators/Reduce.hpp"
-#include "Pipe.hpp"
+#include "../Internals/Types/KeyValue.hpp"
+#include "../Operators/FlatMap.hpp"
+#include "../Operators/InOut/ReadFromFile.hpp"
+#include "../Operators/InOut/WriteToDisk.hpp"
+#include "../Operators/PReduce.hpp"
+#include "../Operators/Reduce.hpp"
+#include "../Pipe.hpp"
 
 typedef KeyValue<std::string, int> KV;
 

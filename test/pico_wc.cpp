@@ -30,13 +30,13 @@
 #include <string>
 #include <sstream>
 
-#include "Internals/Types/KeyValue.hpp"
-#include "Operators/FlatMap.hpp"
-#include "Operators/InOut/ReadFromFile.hpp"
-#include "Operators/InOut/WriteToDisk.hpp"
-#include "Operators/PReduce.hpp"
-#include "Operators/Reduce.hpp"
-#include "Pipe.hpp"
+#include "../Internals/Types/KeyValue.hpp"
+#include "../Operators/FlatMap.hpp"
+#include "../Operators/InOut/ReadFromFile.hpp"
+#include "../Operators/InOut/WriteToDisk.hpp"
+#include "../Operators/PReduce.hpp"
+#include "../Operators/Reduce.hpp"
+#include "../Pipe.hpp"
 
 typedef KeyValue<std::string, int> KV;
 
@@ -72,7 +72,12 @@ int main(int argc, char** argv) {
 
 	/* define i/o operators from/to file */
 	ReadFromFile<std::string> reader(filename, [](std::string s) {return s;});
-	WriteToDisk<KV> writer(outputfilename, [](KV in) {return in;});
+	WriteToDisk<KV> writer(outputfilename, [&](KV in) {
+		std::string value= "<";
+			value.append(in.Key()).append(", ").append(std::to_string(in.Value()));
+			value.append(">");
+			return value;
+	});
 
 	/* compose the pipeline */
 	Pipe p2;
