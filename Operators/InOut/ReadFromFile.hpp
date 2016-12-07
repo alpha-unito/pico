@@ -25,6 +25,7 @@
 #include <fstream>
 
 #include "../../Internals/FFOperators/InOut/ReadFromFileFFNode.hpp"
+#include "../../Internals/FFOperators/InOut/ReadFromFileFFNodeMB.hpp"
 #include "InputOperator.hpp"
 /**
  * Defines an operator that reads data from a text file and produces an Ordered+Buonded collection (i.e. LIST).
@@ -87,7 +88,10 @@ protected:
 	}
 
 	ff::ff_node* node_operator(size_t parallelism = 1) {
-		return new ReadFromFileFFNode<Out>(parallelism, func, filename);
+		if(parallelism==1)
+			return new ReadFromFileFFNode<Out>(func, filename);
+		else
+			return new ReadFromFileFFNodeMB<Out>(func, filename);
 	}
 
 

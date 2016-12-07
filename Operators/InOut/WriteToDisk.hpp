@@ -95,7 +95,7 @@ protected:
 	}
 
 	ff::ff_node* node_operator(size_t parallelism = 1) {
-		return new WriteToDiskFFNode<In>(parallelism, func, filename);
+		return new WriteToDiskFFNode<In>(func, filename);
 	}
 
 
