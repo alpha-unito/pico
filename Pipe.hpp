@@ -326,7 +326,6 @@ public:
 	 *
 	 * @param pipe Pipe to merge
 	 */
-	template <typename in>
 	Pipe& merge(const Pipe& pipe){
 	    std::cerr << this << " Pipe L-ref merge\n";
 		// output: eventually ordered elements from both pipes
