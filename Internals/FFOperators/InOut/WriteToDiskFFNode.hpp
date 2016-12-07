@@ -29,7 +29,7 @@ using namespace ff;
 template <typename In>
 class WriteToDiskFFNode: public ff_node{
 public:
-	WriteToDiskFFNode(size_t parallelism_, std::function<In(In)> kernel_, std::string filename_):
+	WriteToDiskFFNode(size_t parallelism_, std::function<std::string(In)> kernel_, std::string filename_):
 			par_deg(parallelism_), kernel(kernel_), filename(filename_), recv_sync(false){};
 
 	int svc_init(){
@@ -53,7 +53,7 @@ public:
 			in = reinterpret_cast<In*>(task);
 			if (outfile.is_open()) {
 				in = reinterpret_cast<In*>(task);
-				outfile << *in /*kernel(*task)*/<< std::endl;
+				outfile << kernel(*in)<< std::endl;
 				delete in;
 			} else {
 				std::cerr << "Unable to open file";
@@ -68,7 +68,7 @@ public:
 
 private:
 	size_t par_deg;
-	std::function<In(In)> kernel;
+	std::function<std::string(In)> kernel;
     std::string filename;
     std::ofstream outfile;
     In* in;

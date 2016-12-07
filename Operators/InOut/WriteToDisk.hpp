@@ -46,7 +46,7 @@ public:
 	* Constructor. Creates a new WriteToDisk operator by defining its kernel function: In -> void
     * writing to the textfile specified.
 	*/
-	WriteToDisk(std::string filename_, std::function<In(In)> func_)
+	WriteToDisk(std::string filename_, std::function<std::string(In)> func_)
 			: OutputOperator<In>(StructureType::BAG) {
 		filename = filename_;
 		func = func_;
@@ -101,7 +101,7 @@ protected:
 
 private:
 	std::string filename;
-	std::function<In(In)> func;
+	std::function<std::string(In)> func;
 };
 
 
