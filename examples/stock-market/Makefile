@@ -11,7 +11,7 @@ ROOT                 = ../..
 FF                   = $(ROOT)/ff
 
 INCLUDES             = -I$(ROOT) -I$(FF)
-TARGET               = stock_min_max
+TARGET               = stock_max stock_tweets
 
 .PHONY: all clean cleanall
 .SUFFIXES: .c .cpp .o
@@ -27,7 +27,8 @@ all: $(TARGET)
 	$(CXX) $^ -o $@ $(LDFLAGS) $(LIBS)
 
 #dependencies
-stock_min_max: stock_min_max.o
+stock_max: stock_max.o
+stock_tweets: stock_tweets.o
 
 clean: 
 	rm -rf *.o *~
@@ -35,4 +36,3 @@ clean:
 cleanall: clean
 	rm -fr $(TARGET) *.d
 	rm -rf *.dSYM *.dot *.png
-
