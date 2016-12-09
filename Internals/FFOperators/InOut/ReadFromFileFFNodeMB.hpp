@@ -39,20 +39,23 @@ public:
 		if (infile.is_open()) {
 			microbatch = new std::vector<Out*>();
 			while (getline(infile, line)) {
-				if(count++<mb_size){
-					microbatch->push_back(new Out(kernel(line)));
-				} else {
+
+				microbatch->push_back(new Out(kernel(line)));
+				if(++count == mb_size) {
 					ff_send_out(reinterpret_cast<void*>(microbatch));
 					microbatch = new std::vector<Out*>();
 					count=0;
 				}
+			}
+			if(infile.eof() && count < mb_size){
+				ff_send_out(reinterpret_cast<void*>(microbatch));
 			}
 			infile.close();
 		} else {
 			fprintf(stderr, "Unable to open file %s\n", filename.c_str());
 		}
 #ifdef DEBUG
-		fprintf(stderr, "[READ FROM FILE-%p] In SVC: SEND OUT PICO_EOS\n", this);
+		fprintf(stderr, "[READ FROM FILE MB-%p] In SVC: SEND OUT PICO_EOS\n", this);
 #endif
 		ff_send_out(PICO_EOS);
 		return EOS;

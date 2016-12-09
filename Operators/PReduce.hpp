@@ -65,8 +65,8 @@ protected:
 	}
 
 
-	ff::ff_node* node_operator(size_t par_deg = 1) {
-		return new PReduceFFNode<In>(par_deg, &reducef);
+	ff::ff_node* node_operator(size_t par_deg) {
+		return new PReduceFFNode<In>(&reducef);
 	}
 
 private:

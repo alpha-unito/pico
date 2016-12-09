@@ -32,7 +32,7 @@ using namespace ff;
 template<typename In>
 class PReduceFFNode: public ff_node {
 public:
-	PReduceFFNode(size_t parallelism, std::function<In(In, In)>* preducef) :
+	PReduceFFNode(std::function<In(In, In)>* preducef) :
 			kernel(*preducef){
 //#ifdef DEBUG
 //					std::cerr << "[P-REDUCE-FFNODE] Constructor called\n";
@@ -52,9 +52,9 @@ public:
 			}
 			delete kv;
 		} else if (task == PICO_EOS) {
-#ifdef DEBUG
+//#ifdef DEBUG
 		fprintf(stderr, "[P-REDUCE-FFNODE-%p] In SVC RECEIVED PICO_EOS \n", this);
-#endif
+//#endif
 			ff_send_out(PICO_SYNC);
 			typename std::map<typename In::keytype, In>::iterator it;
 			for (it=kvmap.begin(); it!=kvmap.end(); ++it){

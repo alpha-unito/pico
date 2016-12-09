@@ -12,36 +12,36 @@
     along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
 */
 /*
- * Collector.hpp
+ * FarmCollector.hpp
  *
- *  Created on: Oct 18, 2016
+ *  Created on: Dec 9, 2016
  *      Author: misale
  */
 
-#ifndef INTERNALS_FFOPERATORS_COLLECTOR_HPP_
-#define INTERNALS_FFOPERATORS_COLLECTOR_HPP_
+#ifndef INTERNALS_FFOPERATORS_FARMCOLLECTOR_HPP_
+#define INTERNALS_FFOPERATORS_FARMCOLLECTOR_HPP_
 
+#include "Collector.hpp"
 
-#include <ff/node.hpp>
-using namespace ff;
-
-class Collector: public ff_node {
+class FarmCollector : public Collector {
 public:
-	Collector(){
-	}
-	int svc_init(){
-#ifdef DEBUG
-          fprintf(stderr, "[COLLECTOR] Initing Collector ff node\n");
-#endif
-		return 0;
+	FarmCollector(int nworkers_):nworkers(nworkers_), picoEOSrecv(0){
 	}
 	void* svc(void* task) {
-		 return task;
+		if(task==PICO_EOS){
+			if(++picoEOSrecv == nworkers){
+				return task;
+			}
+		} else {
+			return task; //forward regular task
+		}
+		return GO_ON;
     }
+private:
+	int nworkers;
+	int picoEOSrecv;
 };
 
 
 
-
-
-#endif /* INTERNALS_FFOPERATORS_COLLECTOR_HPP_ */
+#endif /* INTERNALS_FFOPERATORS_FARMCOLLECTOR_HPP_ */

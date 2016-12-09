@@ -87,11 +87,11 @@ protected:
 		return OperatorClass::INPUT;
 	}
 
-	ff::ff_node* node_operator(size_t parallelism = 1) {
-		if(parallelism==1)
+	ff::ff_node* node_operator(size_t parallelism) {
+		if(parallelism==1){
 			return new ReadFromFileFFNode<Out>(func, filename);
-		else
-			return new ReadFromFileFFNodeMB<Out>(func, filename);
+		}
+		return new ReadFromFileFFNodeMB<Out>(func, filename);
 	}
 
 

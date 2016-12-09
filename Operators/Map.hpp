@@ -22,6 +22,7 @@
 #define MAPACTORNODE_HPP_
 
 #include "../Internals/FFOperators/UnaryMapFFNode.hpp"
+#include "../Internals/FFOperators/UnaryMapFFNodeMB.hpp"
 #include "UnaryOperator.hpp"
 /**
  * Defines an operator performing a Map function, taking in input one element from
@@ -91,11 +92,11 @@ protected:
 	}
 
 
-	ff::ff_node* node_operator(size_t parallelism = 1){
-		//if(parallelism == 1){
+	ff::ff_node* node_operator(size_t parallelism){
+		if(parallelism == 1){
 			return new UnaryMapFFNode<In, Out>(&mapf);
-	//	}
-		//return new UnaryMapFFFarm<In, Out>(parallelism, &mapf);
+		}
+		return new UnaryMapFFNodeMB<In, Out>(parallelism, &mapf);
 	}
 
 private:

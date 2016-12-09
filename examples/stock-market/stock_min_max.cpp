@@ -96,7 +96,7 @@ int main(int argc, char** argv)
     /* define i/o operators from/to file */
     ReadFromFile<StockAndOption> readStockOptions1(filename1, parse_option);
     ReadFromFile<StockAndOption> readStockOptions2(filename2, parse_option);
-    //WriteToDisk<StockAndPrice> writer(outputfilename, price_to_string);
+    WriteToDisk<StockAndPrice> writer(outputfilename, price_to_string);
 
     /* compose the pipeline */
     Pipe stock_min_max;
@@ -110,8 +110,8 @@ int main(int argc, char** argv)
     .to(blackScholes);
 
     stock_min_max //
-    .merge(stock_prices2); //
-    //.add(writer);
+    .merge(stock_prices2) //
+    .add(writer);
 
     /* execute the pipeline */
     stock_min_max.run();
