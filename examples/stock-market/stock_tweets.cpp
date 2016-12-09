@@ -1,0 +1,107 @@
+/*
+ This file is part of PiCo.
+ PiCo is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ PiCo is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+ You should have received a copy of the GNU Lesser General Public License
+ along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
+ */
+/*
+ * stock_tweets.cpp
+ *
+ *  Created on: Dec 7, 2016
+ *      Author: drocco
+ */
+
+/*
+ * This code implements a pipeline for online processing of tweets.
+ * Given a tweet feed (from standard input), it extracts those tweets that
+ * mention exactly one stock name.
+ * For each of them, the word count is computed to exemplify an arbitrary
+ * processing defined by the user.
+ * The resulting StockName-WordCount pairs are written to the standard output.
+ *
+ * This example shows the processing of a (potentially unbounded) stream.
+ * Moreover, it shows how a FlatMap operator can be exploited to implement a
+ * filtering operator.
+ */
+
+#include <iostream>
+#include <string>
+#include <sstream>
+
+#include <Pipe.hpp>
+#include <Operators/FlatMap.hpp>
+#include <Operators/InOut/ReadFromFile.hpp>
+#include <Operators/InOut/WriteToDisk.hpp>
+#include <Internals/Types/KeyValue.hpp>
+
+/* define some types */
+typedef std::string StockName;
+typedef KeyValue<StockName, std::string> StockAndTweet;
+typedef KeyValue<StockName, unsigned> StockAndCount;
+
+/* write stock name and word count to a single text line */
+std::string count_to_string(const StockAndCount stock_and_count) {
+	std::stringstream out;
+	out << stock_and_count.Key();
+	out << "\t";
+	out << stock_and_count.Value();
+	return out.str();
+}
+
+/* the set of stock names to match tweets against */
+static std::set<std::string> stock_names;
+
+int main(int argc, char** argv) {
+	/* parse command line */
+	if (argc < 2) {
+		std::cerr << "Usage: " << argv[0];
+		std::cerr << " <stock name file>\n";
+		return -1;
+	}
+	std::string stock_fname = argv[1];
+
+	/* bring tags to memory */
+	std::ifstream stocks_file(stock_fname);
+	std::string stock_name;
+	while (stocks_file.good()) {
+		stocks_file >> stock_name;
+		stock_names.insert(stock_name);
+	}
+
+	/* define a generic pipeline that:
+	 * - filters out all those tweets mentioning zero or multiple stock names
+	 * - count the number of words for each remaining tweet
+	 */
+	Pipe filterTweets(FlatMap<std::string, StockAndTweet>([] //
+			(std::string tweet)
+			{
+
+			}));
+
+	// Black-Scholes can now be used to build batch and streaming pipelines.
+
+	/* define i/o operators from/to file */
+	ReadFromStdin<std::string> readTweets([](std::string s){return s;});
+	WriteToStdout<StockAndCount> writeCounts(count_to_string);
+
+	/* compose the main pipeline */
+	Pipe stockTweets(readTweets);
+	stockTweets //the empty pipeline
+	.add(filterTweets)
+	.add(writeCounts);
+
+	/* generate dot file with the semantic DAG */
+	p.to_dotfile("stock_tweets.dot");
+
+	/* execute the pipeline */
+	stock_max.run();
+
+	return 0;
+}
