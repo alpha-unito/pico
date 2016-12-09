@@ -112,12 +112,13 @@ private:
 	}
 
 	void build_ffnode(SemDAGNode** iterator, ff_pipeline& pipe) {
+		size_t par = 2;
 		switch ((*iterator)->opclass) {
 		case UMAP: //same as unary flatmap
 #ifdef DEBUG
 		std::cerr << "[PAR_EXEC_DF] Map/FMap operator found\n";
 #endif
-			pipe.add_stage((*iterator)->node_operator());
+			pipe.add_stage((*iterator)->node_operator(par));
 			*iterator = (DAG->at(*iterator).at(0));
 			build_ffnode(iterator, pipe);
 			break;
@@ -130,7 +131,7 @@ private:
 #ifdef DEBUG
 			std::cerr << "[PAR_EXEC_DF] Combine operator found\n";
 #endif
-			pipe.add_stage((*iterator)->node_operator());
+			pipe.add_stage((*iterator)->node_operator(par));
 			*iterator = (DAG->at(*iterator).at(0));
 			build_ffnode(iterator, pipe);
 			break;
@@ -138,7 +139,7 @@ private:
 #ifdef DEBUG
 			std::cerr << "[PAR_EXEC_DF] Input operator found\n";
 #endif
-			pipe.add_stage((*iterator)->node_operator());
+			pipe.add_stage((*iterator)->node_operator(par));
 			*iterator = (DAG->at(*iterator).at(0));
 			build_ffnode(iterator, pipe);
 			break;
@@ -167,7 +168,7 @@ private:
 			}
 			break;
 		case OUTPUT:
-			pipe.add_stage((*iterator)->node_operator());
+			pipe.add_stage((*iterator)->node_operator(par));
 #ifdef DEBUG
 			std::cerr << "[CREATE_EXEC_DF] OUTPUT operator found\n ";
 #endif

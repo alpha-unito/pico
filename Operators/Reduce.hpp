@@ -69,9 +69,6 @@ protected:
 		return OperatorClass::COMBINE;
 	}
 
-	ff::ff_node* node_operator(size_t parallelism = 1) {
-		return nullptr;
-	}
 
 
 private:

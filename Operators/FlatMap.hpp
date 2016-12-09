@@ -22,6 +22,7 @@
 #define OPERATORS_FLATMAP_HPP_
 
 #include "../Internals/FFOperators/UnaryFlatMapFFNode.hpp"
+#include "../Internals/FFOperators/UnaryFlatMapFFNodeMB.hpp"
 #include "UnaryOperator.hpp"
 /**
  * Defines an operator performing a FlatMap, taking in input one element from
@@ -71,8 +72,11 @@ protected:
 		return OperatorClass::UMAP;
 	}
 
-	ff::ff_node* node_operator(size_t par_deg = 1) {
-		return new UnaryFlatMapFFNode<In, Out>(par_deg, &flatmapf);
+	ff::ff_node* node_operator(size_t parallelism) {
+		if(parallelism==1){
+			return new UnaryFlatMapFFNode<In, Out>(&flatmapf);
+		}
+		return new UnaryFlatMapFFNodeMB<In, Out>(parallelism, &flatmapf);
 	}
 
 

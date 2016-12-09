@@ -51,7 +51,7 @@ public:
 	ff::ff_node* node_operator(size_t par_deg=1){
 		ff::ff_node *res = nullptr;
 		if(op.get())
-			res = op->node_operator();
+			res = op->node_operator(par_deg);
 		return res;
 	}
 

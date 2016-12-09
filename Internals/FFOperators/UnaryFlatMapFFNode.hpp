@@ -29,15 +29,12 @@ template<typename In, typename Out>
 class UnaryFlatMapFFNode: public ff_node {
 public:
 
-	UnaryFlatMapFFNode(size_t parallelism, std::function<std::vector<Out>(In)>* flatmapf) :
+	UnaryFlatMapFFNode(std::function<std::vector<Out>(In)>* flatmapf) :
 			kernel(*flatmapf), in(nullptr) {
 	};
 
 	void* svc(void* task) {
 		if(task != PICO_EOS && task != PICO_SYNC){
-//#ifdef DEBUG
-//		fprintf(stderr, "[UNARYFLATMAP-FFNODE-%p] In SVC \n", this);
-//#endif
 			in = reinterpret_cast<In*>(task);
 			result = kernel(*in);
 			for(Out res: result){

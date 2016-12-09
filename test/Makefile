@@ -2,7 +2,7 @@ CXX                  = g++
 LINK_OPT             = 
 VERSION              = 
 OPTIMIZE_FLAGS       = -O0 -g3 -std=c++11
-CCFLAGS             = -Wall -DDEBUG
+CCFLAGS             = -Wall# -DDEBUG
 CFLAGS               =
 LDFLAGS              = 
 FF                   = ../ff
