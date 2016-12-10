@@ -382,6 +382,12 @@ public:
 #endif
 		DAG.to_dotfile(filename);
 	}
+
+	void pipe_time(){
+		 DAG.pipe_time();
+	}
+
+
 private:
 
 

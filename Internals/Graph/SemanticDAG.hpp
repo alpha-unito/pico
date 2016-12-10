@@ -251,11 +251,18 @@ public:
 		ParExecDF parDAG(&graph, firstdagnode, lastdagnode, firstop.get(),
 				lastop.get());
 		parDAG.run();
+		parDAG.pipe_time();
 	}
 
 	size_t size() {
 		return graph.size();
 	}
+
+
+	void pipe_time(){
+//		parDAG.pipe_time();
+	}
+
 
 private:
 	bool add_node(SemDAGNode *node) {
