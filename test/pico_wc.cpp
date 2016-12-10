@@ -92,9 +92,13 @@ int main(int argc, char** argv) {
 	/* execute the pipeline */
 	p2.run();
 
+	/* print pipeline exec time */
+//	p2.pipe_time();
+
 	/* print the semantic DAG and generate dot file */
 	p2.print_DAG();
 	p2.to_dotfile("wordcount.dot");
+
 
 	return 0;
 }

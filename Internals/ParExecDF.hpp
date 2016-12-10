@@ -54,6 +54,9 @@ public:
 //		picoDAG.run_then_freeze();
 	}
 
+	void pipe_time(){
+		picoDAG.ffTime();
+	}
 private:
 
 	SemDAGNode** create_ffpipe(ff_pipeline*& pipe, SemDAGNode** iterator, const size_t& farmid) {
