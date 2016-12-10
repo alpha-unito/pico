@@ -70,7 +70,7 @@ public:
 #endif
 
 		graph.clear();
-		delete parDAG;
+//		delete parDAG;
 	}
 
 	bool add_operator(std::shared_ptr<Operator> op) {
