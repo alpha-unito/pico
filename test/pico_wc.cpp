@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
 	p2.run();
 
 	/* print pipeline exec time */
-//	p2.pipe_time();
+	std::cout << "PiCo execution time including init and finalize time: " << p2.pipe_time() << " ms\n";
 
 	/* print the semantic DAG and generate dot file */
 	p2.print_DAG();

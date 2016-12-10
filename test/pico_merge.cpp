@@ -70,6 +70,9 @@ int main(int argc, char** argv) {
 	/* execute the pipeline */
 	p1m.run();
 
+	/* print pipeline exec time */
+	std::cout << "PiCo execution time including init and finalize time: " << p1m.pipe_time() << " ms\n";
+
 	/* print the semantic DAG and generate dot file */
 	p1m.print_DAG();
 	p1m.to_dotfile("merge.dot");
