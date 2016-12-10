@@ -49,13 +49,14 @@ public:
 		picoDAG.cleanup_nodes();
 	}
 
+
 	void run() {
 		picoDAG.run_and_wait_end();
 //		picoDAG.run_then_freeze();
 	}
 
-	void pipe_time(){
-		picoDAG.ffTime();
+	double pipe_time(){
+		return picoDAG.ffTime();
 	}
 private:
 

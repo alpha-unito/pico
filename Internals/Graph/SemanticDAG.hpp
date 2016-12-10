@@ -70,6 +70,7 @@ public:
 #endif
 
 		graph.clear();
+		delete parDAG;
 	}
 
 	bool add_operator(std::shared_ptr<Operator> op) {
@@ -248,10 +249,9 @@ public:
 #ifdef DEBUG
 		std::cerr << "[SEMDAG] Executing DAG...\n";
 #endif
-		ParExecDF parDAG(&graph, firstdagnode, lastdagnode, firstop.get(),
+		parDAG = new ParExecDF(&graph, firstdagnode, lastdagnode, firstop.get(),
 				lastop.get());
-		parDAG.run();
-		parDAG.pipe_time();
+		parDAG->run();
 	}
 
 	size_t size() {
@@ -259,8 +259,8 @@ public:
 	}
 
 
-	void pipe_time(){
-//		parDAG.pipe_time();
+	double pipe_time(){
+		return parDAG->pipe_time();
 	}
 
 
@@ -333,6 +333,7 @@ private:
 	adjList graph;
 	std::shared_ptr<Operator> firstop, lastop;
 	SemDAGNode *lastdagnode, *firstdagnode;
+	ParExecDF* parDAG;
 };
 
 #endif /* INTERNALS_GRAPH_SEMANTICDAG_HPP_ */
