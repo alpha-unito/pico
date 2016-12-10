@@ -383,8 +383,8 @@ public:
 		DAG.to_dotfile(filename);
 	}
 
-	void pipe_time(){
-		 DAG.pipe_time();
+	double pipe_time(){
+		 return DAG.pipe_time();
 	}
 
 
