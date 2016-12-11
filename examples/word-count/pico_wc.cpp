@@ -14,7 +14,7 @@
 /*
  * main_wc.cpp
  *
- *  Created on: Aug 2, 2016
+ *  Created on: Dec 7, 2016
  *      Author: misale
  */
 
@@ -75,7 +75,12 @@ int main(int argc, char** argv) {
 
 	/* define i/o operators from/to file */
 	ReadFromFile<std::string> reader(filename, [](std::string s) {return s;});
-	WriteToDisk<KV> writer(outputfilename, [](KV in) {return in;});
+	WriteToDisk<KV> writer(outputfilename, [&](KV in) {
+		std::string value= "<";
+			value.append(in.Key()).append(", ").append(std::to_string(in.Value()));
+			value.append(">");
+			return value;
+	});
 
 	/* compose the pipeline */
 	Pipe p2;
@@ -87,8 +92,12 @@ int main(int argc, char** argv) {
 	/* execute the pipeline */
 	p2.run();
 
-	/* generate dot file with the semantic DAG */
+	/* print the semantic DAG and generate dot file */
+	p2.print_DAG();
 	p2.to_dotfile("wordcount.dot");
+
+	/* print the execution time */
+	std::cout << "done in " << p2.pipe_time() << " ms\n";
 
 	return 0;
 }
