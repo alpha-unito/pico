@@ -30,24 +30,20 @@ template <typename Out>
 class ReadFromFileFFNodeMB: public ff_node {
 public:
 	ReadFromFileFFNodeMB(std::function<Out(std::string)> kernel_, std::string filename_):
-		kernel(kernel_), filename(filename_), mb_size(5), microbatch(nullptr){};
+		kernel(kernel_), filename(filename_), microbatch(new std::vector<Out*>()){};
 
 	void* svc(void* in){
 		std::string line;
 		std::ifstream infile(filename);
-		int count = 0;
 		if (infile.is_open()) {
-			microbatch = new std::vector<Out*>();
 			while (getline(infile, line)) {
-
 				microbatch->push_back(new Out(kernel(line)));
-				if(++count == mb_size) {
+				if(microbatch->size() == MICROBATCH_SIZE) {
 					ff_send_out(reinterpret_cast<void*>(microbatch));
 					microbatch = new std::vector<Out*>();
-					count=0;
 				}
 			}
-			if(infile.eof() && count < mb_size){
+			if(infile.eof() && microbatch->size() < MICROBATCH_SIZE && microbatch->size()>0){
 				ff_send_out(reinterpret_cast<void*>(microbatch));
 			}
 			infile.close();
@@ -64,7 +60,6 @@ public:
 private:
     std::function<Out(std::string)> kernel;
     std::string filename;
-    int mb_size;
     std::vector<Out*>* microbatch;
 
 };

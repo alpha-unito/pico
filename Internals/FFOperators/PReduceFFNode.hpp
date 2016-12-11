@@ -33,16 +33,9 @@ template<typename In>
 class PReduceFFNode: public ff_node {
 public:
 	PReduceFFNode(std::function<In(In, In)>* preducef) :
-			kernel(*preducef){
-//#ifdef DEBUG
-//					std::cerr << "[P-REDUCE-FFNODE] Constructor called\n";
-//#endif
-				};
+			kernel(*preducef){};
 
 	void* svc(void* task) {
-//#ifdef DEBUG
-//		fprintf(stderr, "[P-REDUCE-FFNODE-%p] In SVC \n", this);
-//#endif
 		if(task != PICO_EOS && task != PICO_SYNC){
 			kv = reinterpret_cast<In*>(task);
 			if(kvmap.find(kv->Key()) != kvmap.end()){
@@ -52,15 +45,12 @@ public:
 			}
 			delete kv;
 		} else if (task == PICO_EOS) {
-//#ifdef DEBUG
+#ifdef DEBUG
 		fprintf(stderr, "[P-REDUCE-FFNODE-%p] In SVC RECEIVED PICO_EOS \n", this);
-//#endif
+#endif
 			ff_send_out(PICO_SYNC);
 			typename std::map<typename In::keytype, In>::iterator it;
 			for (it=kvmap.begin(); it!=kvmap.end(); ++it){
-//			#ifdef DEBUG
-			//	fprintf(stderr, "[P-REDUCE-FFNODE-END-%p] <%s, %d>\n", this, (it->first).c_str(), it->second.Value());
-//			#endif
 				ff_send_out(new In(it->second));
 			}
 

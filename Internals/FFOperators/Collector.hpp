@@ -30,9 +30,6 @@ public:
 	Collector(){
 	}
 	int svc_init(){
-#ifdef DEBUG
-          fprintf(stderr, "[COLLECTOR] Initing Collector ff node\n");
-#endif
 		return 0;
 	}
 	void* svc(void* task) {

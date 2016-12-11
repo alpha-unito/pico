@@ -34,6 +34,7 @@
 using namespace ff;
 using adjList = std::map<SemDAGNode*, std::vector<SemDAGNode*>>;
 
+#define PARALLELISM 2
 
 class ParExecDF {
 public:
@@ -56,6 +57,9 @@ public:
 	}
 
 	double pipe_time(){
+#ifdef TRACE_FASTFLOW
+		picoDAG.ffStats(std::cout);
+#endif
 		return picoDAG.ffTime();
 	}
 private:
@@ -74,7 +78,7 @@ private:
 #ifdef DEBUG
 		std::cerr << "[PAR_EXEC_DF] Adding to pipe " << (*iterator)->name() << "\n";
 #endif
-		pipe->add_stage((*iterator)->node_operator());
+		pipe->add_stage((*iterator)->node_operator(PARALLELISM));
 		return create_ffpipe(pipe, &(DAG->at((*iterator)).at(0)), farmid);
 	}
 
@@ -109,20 +113,20 @@ private:
 #ifdef DEBUG
 			std::cerr << "[add_merge_block] Farm size " << farm->getWorkers().size()<<" \n";
 #endif
-		Collector *C = new Collector();
+//		Collector *C = new Collector();
+		FarmCollector *C = new FarmCollector(npipes);
 		farm->add_collector(C);
 		basepipe.add_stage(farm);
 		*startingNode = iterator;
 	}
 
 	void build_ffnode(SemDAGNode** iterator, ff_pipeline& pipe) {
-		size_t par = 2;
 		switch ((*iterator)->opclass) {
 		case UMAP: //same as unary flatmap
 #ifdef DEBUG
 		std::cerr << "[PAR_EXEC_DF] Map/FMap operator found\n";
 #endif
-			pipe.add_stage((*iterator)->node_operator(par));
+			pipe.add_stage((*iterator)->node_operator(PARALLELISM));
 			*iterator = (DAG->at(*iterator).at(0));
 			build_ffnode(iterator, pipe);
 			break;
@@ -135,7 +139,7 @@ private:
 #ifdef DEBUG
 			std::cerr << "[PAR_EXEC_DF] Combine operator found\n";
 #endif
-			pipe.add_stage((*iterator)->node_operator(par));
+			pipe.add_stage((*iterator)->node_operator(PARALLELISM));
 			*iterator = (DAG->at(*iterator).at(0));
 			build_ffnode(iterator, pipe);
 			break;
@@ -143,7 +147,7 @@ private:
 #ifdef DEBUG
 			std::cerr << "[PAR_EXEC_DF] Input operator found\n";
 #endif
-			pipe.add_stage((*iterator)->node_operator(par));
+			pipe.add_stage((*iterator)->node_operator(PARALLELISM));
 			*iterator = (DAG->at(*iterator).at(0));
 			build_ffnode(iterator, pipe);
 			break;
@@ -172,7 +176,7 @@ private:
 			}
 			break;
 		case OUTPUT:
-			pipe.add_stage((*iterator)->node_operator(par));
+			pipe.add_stage((*iterator)->node_operator(PARALLELISM));
 #ifdef DEBUG
 			std::cerr << "[CREATE_EXEC_DF] OUTPUT operator found\n ";
 #endif

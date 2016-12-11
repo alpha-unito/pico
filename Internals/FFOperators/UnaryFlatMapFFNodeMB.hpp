@@ -21,7 +21,6 @@
 #ifndef INTERNALS_FFOPERATORS_UNARYFLATMAPFFNODEMB_HPP_
 #define INTERNALS_FFOPERATORS_UNARYFLATMAPFFNODEMB_HPP_
 
-#include <ff/node.hpp>
 #include <ff/farm.hpp>
 
 #include "../utils.hpp"
@@ -35,7 +34,7 @@ template<typename In, typename Out>
 class UnaryFlatMapFFNodeMB: public ff_farm<> {
 public:
 
-	UnaryFlatMapFFNodeMB(size_t parallelism, std::function<std::vector<Out>(In)>* flatmapf){
+	UnaryFlatMapFFNodeMB(int parallelism, std::function<std::vector<Out>(In)>* flatmapf){
 		add_emitter(new FarmEmitter(parallelism, this->getlb()));
 		add_collector(new FarmCollector(parallelism));
 		std::vector<ff_node *> w;
@@ -50,7 +49,7 @@ private:
 
 	class Worker : public ff_node{
 	public:
-		Worker(std::function<std::vector<Out>(In)> kernel_):kernel(kernel_){}
+		Worker(std::function<std::vector<Out>(In)> kernel_): out_microbatch(new std::vector<Out*>()), kernel(kernel_){}
 
 		void* svc(void* task) {
 			if(task != PICO_EOS && task != PICO_SYNC){
@@ -58,21 +57,27 @@ private:
 				// iterate over microbatch
 				for(In* in : *in_microbatch){
 					result = kernel(*in);
-					out_microbatch = new std::vector<Out*>();
+					//out_microbatch = new std::vector<Out*>();
 					for(Out& res: result){
 						out_microbatch->push_back(new Out(res));
 //						ff_send_out(new Out(res));
+						if (out_microbatch->size() == MICROBATCH_SIZE) {
+							ff_send_out(reinterpret_cast<void*>(out_microbatch));
+							out_microbatch = new std::vector<Out*>();
+						}
 					}
-					ff_send_out(out_microbatch);
-//					fprintf(stderr, "[UNARYFLATMAP-MB-FFNODE-%p] In SVC SENDING MICROBATCH\n", this);
+
+
 				}
-				//
 				result.clear();
 				delete in_microbatch;
 			} else {
 	#ifdef DEBUG
 			fprintf(stderr, "[UNARYFLATMAP-MB-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
 	#endif
+				if(out_microbatch->size() < MICROBATCH_SIZE && out_microbatch->size() > 0){
+					ff_send_out(reinterpret_cast<void*>(out_microbatch));
+				}
 				ff_send_out(task);
 			}
 			return GO_ON;
