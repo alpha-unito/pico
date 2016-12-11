@@ -23,6 +23,8 @@
 
 #include "UnaryOperator.hpp"
 #include "../Internals/FFOperators/PReduceFFNode.hpp"
+#include "../Internals/FFOperators/PReduceFFNodeMB.hpp"
+
 /**
  * Defines a PReduce operator performing a tree reduce function on partitioned input (i.e. reduce by key).
  * The reduce kernel is defined by the user and can be a lambda function, a functor or a function.
@@ -65,8 +67,10 @@ protected:
 	}
 
 
-	ff::ff_node* node_operator(size_t par_deg) {
-		return new PReduceFFNode<In>(&reducef);
+	ff::ff_node* node_operator(int parallelism) {
+		if(parallelism == 1)
+			return new PReduceFFNode<In>(&reducef);
+		return new PReduceFFNodeMB<In>(parallelism, &reducef);
 	}
 
 private:

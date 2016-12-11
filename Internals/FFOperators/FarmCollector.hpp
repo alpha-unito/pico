@@ -32,7 +32,7 @@ public:
 			if(++picoEOSrecv == nworkers){
 				return task;
 			}
-		} else {
+		} else if (task != PICO_SYNC){
 			return task; //forward regular task
 		}
 		return GO_ON;

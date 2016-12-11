@@ -72,7 +72,7 @@ protected:
 		return OperatorClass::UMAP;
 	}
 
-	ff::ff_node* node_operator(size_t parallelism) {
+	ff::ff_node* node_operator(int parallelism) {
 		if(parallelism==1){
 			return new UnaryFlatMapFFNode<In, Out>(&flatmapf);
 		}

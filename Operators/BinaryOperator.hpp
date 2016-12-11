@@ -53,7 +53,7 @@ protected:
 	virtual size_t o_degree()=0;
 	virtual bool* structure_type()=0;
 	virtual const OperatorClass operator_class()=0;
-	virtual ff::ff_node* node_operator(size_t parallelism = 1)=0;
+	virtual ff::ff_node* node_operator(int parallelism = 1)=0;
 };
 
 

@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
 	Pipe countWords;
 	countWords
 	.add(FlatMap<std::string, std::string>(tokenizer)) //
-	.add(Map<std::string, KV>([&](std::string in) {return KV(in,1);})) //
+	.add(Map<std::string, KV>([&](std::string in) {return KV(in,1);}))
 	.add(PReduce<KV>([&](KV v1, KV v2) {return v1+v2;}));
 
 	// countWords can now be used to build batch pipelines.

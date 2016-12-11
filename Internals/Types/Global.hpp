@@ -27,17 +27,6 @@
 
 typedef KeyValue<std::string, int> KV;
 
-// simulating RDDs
-std::list<std::string>* file_lines = nullptr;
-std::list<std::string>* tokens = nullptr;
-std::list<KV>* kv_pairs = nullptr;
-std::list<KV>* kv_res = nullptr;
-
-
-
-void send_out(std::string s) {
-	tokens->push_back(s);
-}
 
 bool key_compare(KV v1, KV v2){
 	std::string first = v1.Key();

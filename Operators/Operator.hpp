@@ -62,7 +62,7 @@ protected:
 	virtual bool checkInputTypeSanity(TypeInfoRef id)=0;
 	virtual bool checkOutputTypeSanity(TypeInfoRef id)=0;
 	virtual const OperatorClass operator_class()=0;
-	virtual ff::ff_node* node_operator(size_t par_deg)=0;
+	virtual ff::ff_node* node_operator(int par_deg)=0;
 
     bool* structure_type() {
         return raw_struct_type;

@@ -95,11 +95,11 @@ protected:
 		return OperatorClass::OUTPUT;
 	}
 
-	ff::ff_node* node_operator(size_t parallelism) {
-//		if(parallelism==1){
+	ff::ff_node* node_operator(int parallelism) {
+		if(parallelism==1){
 			return new WriteToDiskFFNode<In>(func, filename);
-//		}
-//		return new WriteToDiskFFNodeMB<In>(func, filename);
+		}
+		return new WriteToDiskFFNodeMB<In>(func, filename);
 	}
 
 

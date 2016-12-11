@@ -2,7 +2,7 @@ CXX                  = g++
 LINK_OPT             = 
 VERSION              = 
 OPTIMIZE_FLAGS       = -O0 -g3 -std=c++11
-CCFLAGS             = -Wall# -DDEBUG
+CCFLAGS             = -Wall -DDEBUG #-DTRACE_FASTFLOW
 CFLAGS               =
 LDFLAGS              = 
 FF                   = ../ff
@@ -29,7 +29,8 @@ pico_merge: pico_merge.cpp
 
 test1: pico_wc
 	@./pico_wc testdata/nopunct.txt output.txt 2> trace.txt
-	@diff testresult/output1.txt output.txt
+	@sort output.txt > output-sorted.txt
+	@diff testresult/output1-sorted.txt output-sorted.txt
 	@echo "OK"
 
 test2: pico_merge

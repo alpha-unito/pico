@@ -102,7 +102,7 @@ protected:
 		return OperatorClass::BMAP;
 	}
 
-	ff::ff_node* node_operator(size_t parallelism = 1) {
+	ff::ff_node* node_operator(int parallelism = 1) {
 		return nullptr;
 	}
 

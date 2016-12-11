@@ -34,7 +34,7 @@ template<typename In, typename Out>
 class UnaryMapFFNodeMB: public ff_farm<> {
 public:
 
-	UnaryMapFFNodeMB(size_t parallelism, std::function<Out(In)>* mapf){
+	UnaryMapFFNodeMB(int parallelism, std::function<Out(In)>* mapf){
 		add_emitter(new FarmEmitter(parallelism, this->getlb()));
 		add_collector(new FarmCollector(parallelism));
 		std::vector<ff_node *> w;
@@ -55,14 +55,13 @@ private:
 			if(task != PICO_EOS && task != PICO_SYNC){
 				in_microbatch = reinterpret_cast<std::vector<In*>*>(task);
 				// iterate over microbatch
-//				out_microbatch = new std::vector<Out*>();
+				out_microbatch = new std::vector<Out*>();
 				for(In* in : *in_microbatch){
-//					out_microbatch->push_back(new Out(kernel(*in)));
-					ff_send_out(new Out(kernel(*in)));
+					out_microbatch->push_back(new Out(kernel(*in)));
+//					ff_send_out(new Out(kernel(*in)));
 				}
 				//
-//				result.clear();
-//				ff_send_out(out_microbatch);
+				ff_send_out(reinterpret_cast<void*>(out_microbatch));
 				delete in_microbatch;
 			} else {
 	#ifdef DEBUG
