@@ -37,114 +37,107 @@
 
 #include <Pipe.hpp>
 #include <Operators/FlatMap.hpp>
-#include <Operators/InOut/ReadFromFile.hpp>
-#include <Operators/InOut/WriteToDisk.hpp>
-#include <Internals/Types/KeyValue.hpp>
+#include <Operators/InOut/ReadFromStdin.hpp>
+#include <Operators/InOut/WriteToStdout.hpp>
 
-/* define some types */
-typedef std::string StockName;
-typedef KeyValue<StockName, std::string> StockAndTweet;
-typedef KeyValue<StockName, unsigned> StockAndCount;
+#include "defs.h"
 
 /* write stock name and word count to a single text line */
-std::string count_to_string(const StockAndCount stock_and_count)
-{
-    std::stringstream out;
-    out << stock_and_count.Key();
-    out << "\t";
-    out << stock_and_count.Value();
-    return out.str();
+std::string count_to_string(const StockAndCount stock_and_count) {
+	std::stringstream out;
+	out << stock_and_count.Key();
+	out << "\t";
+	out << stock_and_count.Value();
+	return out.str();
 }
 
 /* the set of stock names to match tweets against */
 static std::set<std::string> stock_names;
 
-int main(int argc, char** argv)
-{
-    /* parse command line */
-    if (argc < 2)
-    {
-        std::cerr << "Usage: " << argv[0];
-        std::cerr << " <stock name file>\n";
-        return -1;
-    }
-    std::string stock_fname = argv[1];
+int main(int argc, char** argv) {
+	/* parse command line */
+	if (argc < 2) {
+		std::cerr << "Usage: " << argv[0];
+		std::cerr << " <stock name file>\n";
+		return -1;
+	}
+	std::string stock_fname = argv[1];
 
-    /* bring tags to memory */
-    std::ifstream stocks_file(stock_fname);
-    std::string stock_name;
-    while (stocks_file.good())
-    {
-        stocks_file >> stock_name;
-        stock_names.insert(stock_name);
-    }
+	/* bring tags to memory */
+	std::ifstream stocks_file(stock_fname);
+	std::string stock_name;
+	while (stocks_file.good()) {
+		stocks_file >> stock_name;
+		stock_names.insert(stock_name);
+	}
 
-    /*
-     * define a generic pipeline that:
-     * - filters out all those tweets mentioning zero or multiple stock names
-     * - count the number of words for each remaining tweet
-     */
-    auto filterTweets = FlatMap<std::string, StockAndCount>([] //
-            (std::string tweet)
-            {
-                std::vector<StockAndCount> res;
+	/*
+	 * define a generic pipeline that:
+	 * - filters out all those tweets mentioning zero or multiple stock names
+	 * - count the number of words for each remaining tweet
+	 */
+	auto filterTweets = FlatMap<std::string, StockAndCount>([] //
+			(std::string tweet)
+			{
+				std::vector<StockAndCount> res;
 
-                StockName stock;
-                bool single_stock = false;
-                unsigned long long count = 0;
+				StockName stock;
+				bool single_stock = false;
+				unsigned long long count = 0;
 
-                /* tokenize the tweet */
-                std::istringstream f(tweet);
-                std::string s;
-                while (std::getline(f, s, ' '))
-                {
-                    /* not a stock name */
-                    if(stock_names.find(s) != stock_names.end())
-                    ++count;
+				/* tokenize the tweet */
+				std::istringstream f(tweet);
+				std::string s;
+				while (std::getline(f, s, ' '))
+				{
+					/* not a stock name */
+					if(stock_names.find(s) != stock_names.end())
+					++count;
 
-                    /* stock name occurrence */
-                    else
-                    {
-                        if(!single_stock)
-                        {
-                            /* first stock name occurrence */
-                            stock = s;
-                            single_stock = true;
-                        }
-                        else if(s != stock)
-                        {
-                            /* multiple stock names, invalid record */
-                            single_stock = false;
-                            break;
-                        }
-                    }
-                }
+					/* stock name occurrence */
+					else
+					{
+						if(!single_stock)
+						{
+							/* first stock name occurrence */
+							stock = s;
+							single_stock = true;
+						}
+						else if(s != stock)
+						{
+							/* multiple stock names, invalid record */
+							single_stock = false;
+							break;
+						}
+					}
+				}
 
-                /* emit result if valid record  */
-                if(single_stock)
-                res.push_back(StockAndCount(stock, count));
+				/* emit result if valid record  */
+				if(single_stock)
+				res.push_back(StockAndCount(stock, count));
 
-                return res;
-            });
+				return res;
+			});
 
-    // Black-Scholes can now be used to build batch and streaming pipelines.
+	/* define i/o operators from/to standard input/output */
+	ReadFromStdin<std::string> readTweets([](std::string s)
+	{	return s;});
+	WriteToStdout<StockAndCount> writeCounts(count_to_string);
 
-    /* define i/o operators from/to file */
-    ReadFromStdin<std::string> readTweets([](std::string s)
-    {   return s;});
-    WriteToStdout<StockAndCount> writeCounts(count_to_string);
+	/* compose the main pipeline */
+	Pipe stockTweets(readTweets);
+	stockTweets //
+	.add(filterTweets) //
+	.add(writeCounts);
 
-    /* compose the main pipeline */
-    Pipe stockTweets(readTweets);
-    stockTweets //
-    .add(filterTweets) //
-    .add(writeCounts);
+	/* generate dot file with the semantic DAG */
+	stockTweets.to_dotfile("stock_tweets.dot");
 
-    /* generate dot file with the semantic DAG */
-    p.to_dotfile("stock_tweets.dot");
+	/* execute the pipeline */
+	stockTweets.run();
 
-    /* execute the pipeline */
-    stockTweets.run();
+	/* print execution time */
+	std::cout << "done in " << stockTweets.pipe_time() << " ms\n";
 
-    return 0;
+	return 0;
 }
