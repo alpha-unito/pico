@@ -92,9 +92,8 @@ int main(int argc, char** argv) {
 	 * 3. extracts the maximum price for each stock name
 	 * 4. write prices to file
 	 */
-	Pipe stockPricing; //1
+	Pipe stockPricing(ReadFromFile<StockAndOption>(in_fname, parse_option)); //1
 	stockPricing //
-	.add(ReadFromFile<StockAndOption>(in_fname, parse_option)) //1
 	.to(blackScholes) //2
 //	.add(PReduce<StockAndPrice>(std::max<StockAndPrice>))
 	.add(PReduce<StockAndPrice>([]
