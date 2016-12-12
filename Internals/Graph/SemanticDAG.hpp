@@ -41,7 +41,7 @@ class SemanticDAG {
 public:
 	SemanticDAG() :
 			firstop(nullptr), lastop(nullptr), lastdagnode(nullptr), firstdagnode(
-					nullptr) {
+					nullptr), parDAG(nullptr) {
 #ifdef DEBUG
 		std::cerr << "[SEMDAG] Created new empty DAG\n";
 #endif
@@ -56,19 +56,11 @@ public:
 	SemanticDAG(std::shared_ptr<Operator> start) :
 			SemanticDAG() {
 		add_operator(start);
-#ifdef DEBUG
-		std::cerr << "[SEMDAG] Create new DAG - New DAG size " << graph.size() << std::endl;
-#endif
 	}
 
 	~SemanticDAG() {
 		for (auto it = graph.begin(); it != graph.end(); ++it)
 			delete it->first;
-
-#ifdef DEBUG
-		std::cerr << "[SEMANTIC DAG] semantic dag size " << graph.size() << std::endl;
-#endif
-
 		graph.clear();
 //		delete parDAG;
 	}

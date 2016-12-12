@@ -30,26 +30,13 @@ template <typename In>
 class WriteToDiskFFNodeMB: public ff_node{
 public:
 	WriteToDiskFFNodeMB(std::function<std::string(In)> kernel_, std::string filename_):
-			kernel(kernel_), filename(filename_), recv_sync(false){};
+			kernel(kernel_), filename(filename_), microbatch(nullptr), recv_sync(false){};
 
 	int svc_init(){
-//#ifdef DEBUG
-//		fprintf(stderr, "[WRITE TO DISK] init FFnode\n");
-//#endif
 		outfile.open(filename);
 		return 0;
 	}
 	void* svc(void* task){
-
-//		if(task == PICO_SYNC){
-////#ifdef DEBUG
-//		fprintf(stderr, "[WRITE TO DISK MB] In SVC: RECEIVED PICO_SYNC\n");
-////#endif
-//			recv_sync = true;
-//			return GO_ON;
-//		}
-
-//		if(recv_sync || task != PICO_EOS){
 		if(task != PICO_EOS && task != PICO_SYNC){
 			microbatch = reinterpret_cast<std::vector<In*>*>(task);
 			if (outfile.is_open()) {

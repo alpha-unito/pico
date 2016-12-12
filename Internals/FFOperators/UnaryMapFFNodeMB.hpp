@@ -49,19 +49,19 @@ private:
 
 	class Worker : public ff_node{
 	public:
-		Worker(std::function<Out(In)> kernel_):kernel(kernel_){}
+		Worker(std::function<Out(In)> kernel_): in_microbatch(nullptr), out_microbatch(new std::vector<Out*>()), kernel(kernel_){}
 
 		void* svc(void* task) {
 			if(task != PICO_EOS && task != PICO_SYNC){
 				in_microbatch = reinterpret_cast<std::vector<In*>*>(task);
 				// iterate over microbatch
-				out_microbatch = new std::vector<Out*>();
 				for(In* in : *in_microbatch){
 					out_microbatch->push_back(new Out(kernel(*in)));
 //					ff_send_out(new Out(kernel(*in)));
 				}
 				//
 				ff_send_out(reinterpret_cast<void*>(out_microbatch));
+				out_microbatch = new std::vector<Out*>();
 				delete in_microbatch;
 			} else {
 	#ifdef DEBUG

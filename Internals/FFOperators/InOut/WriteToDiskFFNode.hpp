@@ -30,7 +30,7 @@ template <typename In>
 class WriteToDiskFFNode: public ff_node{
 public:
 	WriteToDiskFFNode(std::function<std::string(In)> kernel_, std::string filename_):
-			kernel(kernel_), filename(filename_), recv_sync(false){};
+			kernel(kernel_), filename(filename_), in(nullptr), recv_sync(false){};
 
 	int svc_init(){
 //#ifdef DEBUG

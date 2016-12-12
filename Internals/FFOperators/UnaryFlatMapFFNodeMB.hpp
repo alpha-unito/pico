@@ -49,7 +49,8 @@ private:
 
 	class Worker : public ff_node{
 	public:
-		Worker(std::function<std::vector<Out>(In)> kernel_): out_microbatch(new std::vector<Out*>()), kernel(kernel_){}
+		Worker(std::function<std::vector<Out>(In)> kernel_): in_microbatch(nullptr), out_microbatch(new std::vector<Out*>()), kernel(kernel_)
+		{}
 
 		void* svc(void* task) {
 			if(task != PICO_EOS && task != PICO_SYNC){
