@@ -29,7 +29,7 @@
 #include "FFOperators/Emitter.hpp"
 #include "FFOperators/RREmitter.hpp"
 #include "FFOperators/BCastEmitter.hpp"
-#include "FFOperators/Collector.hpp"
+#include "FFOperators/FarmCollector.hpp"
 
 using namespace ff;
 using adjList = std::map<SemDAGNode*, std::vector<SemDAGNode*>>;
