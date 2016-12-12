@@ -51,7 +51,7 @@ private:
 	class ByKeyEmitter: public Emitter {
 	public:
 		ByKeyEmitter(int nworkers_, ff_loadbalancer * const lb_) :
-				nworkers(nworkers_), lb(lb_), curr_worker(0) {
+				nworkers(nworkers_), lb(lb_), in_microbatch(nullptr), curr_worker(0) {
 		}
 
 		void* svc(void* task) {
@@ -114,7 +114,7 @@ private:
 	class Worker: public ff_node {
 	public:
 		Worker(std::function<In(In, In)>* preducef) :
-				kernel(*preducef){};
+				kernel(*preducef), kv(nullptr){};
 
 		void* svc(void* task) {
 			if(task != PICO_EOS && task != PICO_SYNC){

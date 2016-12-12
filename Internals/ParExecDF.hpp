@@ -75,9 +75,6 @@ private:
 #endif
 			return iterator;
 		}
-#ifdef DEBUG
-		std::cerr << "[PAR_EXEC_DF] Adding to pipe " << (*iterator)->name() << "\n";
-#endif
 		pipe->add_stage((*iterator)->node_operator(PARALLELISM));
 		return create_ffpipe(pipe, &(DAG->at((*iterator)).at(0)), farmid);
 	}
@@ -103,17 +100,10 @@ private:
 			pipe = new ff_pipeline();
 			pipe->cleanup_nodes();
 			iterator = (DAG->at(*startingNode).at(i));
-#ifdef DEBUG
-			std::cerr << "[add_merge_block] Creating Pipe for id " << i << " of " << npipes << " starting with " << iterator->name()<<" \n";
-#endif
 			iterator = *create_ffpipe(pipe, &iterator, iterator->farmid/*farmid*/);//TODO start from here
 			w.push_back(pipe);
 		}
 		farm->add_workers(w);
-#ifdef DEBUG
-			std::cerr << "[add_merge_block] Farm size " << farm->getWorkers().size()<<" \n";
-#endif
-//		Collector *C = new Collector();
 		FarmCollector *C = new FarmCollector(npipes);
 		farm->add_collector(C);
 		basepipe.add_stage(farm);
@@ -158,9 +148,6 @@ private:
 			build_farm_block(iterator, pipe, false);
 			*iterator = (DAG->at(*iterator).at(0));
 			build_ffnode(iterator, pipe);
-#ifdef DEBUG
-			std::cerr << "[PAR_EXEC_DF] Back iterator " << (*iterator)->name()<<"\n";
-#endif
 			break;
 		case none:
 #ifdef DEBUG

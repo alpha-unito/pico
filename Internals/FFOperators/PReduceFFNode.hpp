@@ -33,7 +33,7 @@ template<typename In>
 class PReduceFFNode: public ff_node {
 public:
 	PReduceFFNode(std::function<In(In, In)>* preducef) :
-			kernel(*preducef){};
+			kernel(*preducef), kv(nullptr){};
 
 	void* svc(void* task) {
 		if(task != PICO_EOS && task != PICO_SYNC){
