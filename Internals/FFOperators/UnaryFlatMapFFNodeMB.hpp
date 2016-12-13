@@ -59,6 +59,9 @@ private:
 				for(In* in : *in_microbatch){
 					result = kernel(*in);
 					//out_microbatch = new std::vector<Out*>();
+					if(result.size() == 0){
+						return GO_ON;
+					}
 					for(Out& res: result){
 						out_microbatch->push_back(new Out(res));
 //						ff_send_out(new Out(res));
