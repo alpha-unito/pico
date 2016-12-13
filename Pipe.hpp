@@ -383,6 +383,9 @@ public:
 		DAG.to_dotfile(filename);
 	}
 
+	/**
+	 * Return execution time of the application in milliseconds.
+	 */
 	double pipe_time(){
 		 return DAG.pipe_time();
 	}
