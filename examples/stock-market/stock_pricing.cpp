@@ -28,6 +28,7 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <iomanip>
 
 #include <Pipe.hpp>
 #include <Operators/Map.hpp>
@@ -60,7 +61,7 @@ StockAndOption parse_option(const std::string in) {
 std::string pricing_to_string(const StockAndPrice stock_and_price) {
 	std::stringstream out;
 	out << stock_and_price.Key();
-	out << "\t";
+	out << " ";
 	out << stock_and_price.Value();
 	return out.str();
 }

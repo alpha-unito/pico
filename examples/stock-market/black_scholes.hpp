@@ -15,7 +15,7 @@
 
 #include <cmath>
 
-typedef float fptype;
+typedef double fptype;
 
 // Cumulative Normal Distribution Function
 // See Hull, Section 11.8, P.243-244
@@ -47,7 +47,7 @@ fptype CNDF(fptype InputX)
     xInput = InputX;
 
     // Compute NPrimeX term common to both four & six decimal accuracy calcs
-    expValues = exp(-0.5f * InputX * InputX);
+    expValues = exp(-0.5 * InputX * InputX);
     xNPrimeofX = expValues;
     xNPrimeofX = xNPrimeofX * inv_sqrt_2xPI;
 
