@@ -21,6 +21,9 @@
 #ifndef INTERNALS_FFOPERATORS_INOUT_READFROMSOCKETFFNODEMB_HPP_
 #define INTERNALS_FFOPERATORS_INOUT_READFROMSOCKETFFNODEMB_HPP_
 
+#include <iostream>
+#include <sstream>
+
 #include <ff/node.hpp>
 #include "../../utils.hpp"
 #include <stdio.h>
@@ -37,9 +40,9 @@ template<typename Out>
 class ReadFromSocketFFNodeMB: public ff_node {
 public:
 	ReadFromSocketFFNodeMB(std::function<Out(std::string)> kernel_,
-			std::string& server_name_, int port_) :
+			std::string& server_name_, int port_, char delimiter_) :
 			kernel(kernel_), server_name(server_name_), port(port_), microbatch(
-					new std::vector<Out*>()) {
+					new std::vector<Out*>()), delimiter(delimiter_) {
 	}
 	;
 
@@ -72,20 +75,21 @@ public:
 			if (n < 0)
 				error("ERROR reading from socket");
 			else {
-				line = std::string(buffer, n);
-				printf("%s", line.c_str());
-				//			std::cout << Out(kernel(line)) << std::endl;
-				microbatch->push_back(new Out(kernel(line)));
-				if (microbatch->size() == MICROBATCH_SIZE) {
-					ff_send_out(reinterpret_cast<void*>(microbatch));
-					microbatch = new std::vector<Out*>();
+				std::istringstream f(buffer);
+				while (std::getline(f, line, delimiter)) {
+					microbatch->push_back(new Out(kernel(line)));
+//					printf("line %s\n", line.c_str());
+					if (microbatch->size() == MICROBATCH_SIZE) {
+						ff_send_out(reinterpret_cast<void*>(microbatch));
+						microbatch = new std::vector<Out*>();
+					}
 				}
+
 			}
 		}
 
 		close(sockfd);
-		if (/*infile.eof() &&*/microbatch->size() < MICROBATCH_SIZE
-				&& microbatch->size() > 0) {
+		if (microbatch->size() < MICROBATCH_SIZE && microbatch->size() > 0) {
 			ff_send_out(reinterpret_cast<void*>(microbatch));
 		}
 #ifdef DEBUG
@@ -103,6 +107,8 @@ private:
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
 	std::vector<Out*>* microbatch;
+	char delimiter;
+
 	void error(const char *msg) {
 		perror(msg);
 		exit(0);

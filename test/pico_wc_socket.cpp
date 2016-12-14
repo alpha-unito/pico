@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
 	// and streaming pipelines.
 
 	/* define i/o operators from/to file */
-	ReadFromSocket<std::string> reader(server, port, [](std::string s) {return s;});
+	ReadFromSocket<std::string> reader(server, port, [](std::string s) {return s;}, '\n');
 	WriteToDisk<KV> writer(outputfilename, [&](KV in) {
 		std::string value= "<";
 			value.append(in.Key()).append(", ").append(std::to_string(in.Value()));
@@ -97,8 +97,8 @@ int main(int argc, char** argv) {
 	std::cout << "PiCo execution time including init and finalize time: " << p2.pipe_time() << " ms\n";
 
 	/* print the semantic DAG and generate dot file */
-	p2.print_DAG();
-	p2.to_dotfile("wordcount.dot");
+//	p2.print_DAG();
+//	p2.to_dotfile("wordcount.dot");
 
 
 	return 0;
