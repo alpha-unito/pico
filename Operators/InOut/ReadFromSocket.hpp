@@ -48,11 +48,12 @@ public:
 	* Constructor. Creates a new ReadFromFile operator by defining its kernel function: std::string -> Out
     * operating on each line of the textfile specified.
 	*/
-	ReadFromSocket(std::string server_name_, int port_, std::function<Out(std::string)> func_)
+	ReadFromSocket(std::string server_name_, int port_, std::function<Out(std::string)> func_, char delimiter_)
 			: InputOperator<Out>(StructureType::LIST) {
 		server_name = server_name_;
 		port = port_;
 		func = func_;
+		delimiter = delimiter_;
 	}
 
 	/**
@@ -62,6 +63,7 @@ public:
 		server_name = copy.server_name;
 		port = copy.port;
 		func = copy.func;
+		delimiter = copy.delimiter;
 	}
 
 	/**
@@ -93,9 +95,9 @@ protected:
 
 	ff::ff_node* node_operator(int parallelism) {
 		if(parallelism==1){
-			return new ReadFromSocketFFNode<Out>(func, server_name, port);
+			return new ReadFromSocketFFNode<Out>(func, server_name, port, delimiter);
 		}
-		return new ReadFromSocketFFNodeMB<Out>(func, server_name, port);
+		return new ReadFromSocketFFNodeMB<Out>(func, server_name, port, delimiter);
 	}
 
 
@@ -103,6 +105,7 @@ private:
 	std::string server_name;
 	int port;
 	std::function<Out(std::string)> func;
+	char delimiter;
 
 };
 

@@ -37,8 +37,9 @@ template<typename Out>
 class ReadFromSocketFFNode: public ff_node {
 public:
 	ReadFromSocketFFNode(std::function<Out(std::string)> kernel_,
-			std::string& server_name_, int port_) :
-			kernel(kernel_), server_name(server_name_), port(port_) {
+			std::string& server_name_, int port_, char delimiter_) :
+			kernel(kernel_), server_name(server_name_), port(port_), delimiter(
+					delimiter_) {
 	}
 	;
 
@@ -62,17 +63,21 @@ public:
 	void* svc(void* in) {
 		std::string line;
 		char buffer[256];
-		if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0){
+		if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))
+				< 0) {
 			error("ERROR connecting");
 		}
 		bzero(buffer, 256);
-		n = read(sockfd, buffer, 255);
-		if (n < 0) {
-			error("ERROR reading from socket");
-		} else {
-			line = std::string(buffer);
-			printf("%s", line.c_str());
-			ff_send_out(reinterpret_cast<void*>(new Out(kernel(line))));
+		while (read(sockfd, buffer, 255) > 0) {
+			if (n < 0)
+				error("ERROR reading from socket");
+			else {
+				std::istringstream f(buffer);
+				while (std::getline(f, line, delimiter)) {
+					ff_send_out(reinterpret_cast<void*>(new Out(kernel(line))));
+				}
+
+			}
 		}
 
 		close(sockfd);
@@ -90,6 +95,7 @@ private:
 	int sockfd, n;
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
+	char delimiter;
 	void error(const char *msg) {
 		perror(msg);
 		exit(0);
