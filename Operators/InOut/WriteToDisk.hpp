@@ -29,7 +29,7 @@
 #include "OutputOperator.hpp"
 
 /**
- * Defines an operator that reads data from a text file and produces an Ordered+Buonded collection (i.e. LIST).
+ * Defines an operator that writes data from a text file.
  *
  * The user specifies the kernel function that operates on each line of the text file, passed as a std::string.
  * The kernel can be a lambda function, a functor or a function.
