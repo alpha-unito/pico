@@ -30,9 +30,10 @@
 #include "InputOperator.hpp"
 
 /**
- * Defines an operator that reads data from a text file and produces an Ordered+Buonded collection (i.e. LIST).
+ * Defines an operator that reads data from a socket and produces a Stream.
  *
- * The user specifies the kernel function that operates on each line of the text file, passed as a std::string.
+ * The user specifies the kernel function that operates on each item of the stream, passed as a std::string.
+ * The delimiter is used to separate single items of the stream.
  * The kernel can be a lambda function, a functor or a function.
  *
  *
@@ -45,11 +46,11 @@ class ReadFromSocket : public InputOperator<Out>{
 public:
 
 	/**
-	* Constructor. Creates a new ReadFromFile operator by defining its kernel function: std::string -> Out
-    * operating on each line of the textfile specified.
+	* Constructor. Creates a new ReadFromSocket operator by defining its kernel function: std::string -> Out
+    * operating on each token of the stream, delimited by the delimiter value.
 	*/
 	ReadFromSocket(std::string server_name_, int port_, std::function<Out(std::string)> func_, char delimiter_)
-			: InputOperator<Out>(StructureType::LIST) {
+			: InputOperator<Out>(StructureType::STREAM) {
 		server_name = server_name_;
 		port = port_;
 		func = func_;

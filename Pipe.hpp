@@ -87,41 +87,7 @@
  * cardinality must be at most one.
  */
 class Pipe {
-	/**
-	 * Add a new stage to the Pipe. If the Pipe is not empty, fails if
-	 * last node's output type is different from the Operator's input type.
-	 * This method fails if:
-	 *  - the current O-Degree of the Pipe is zero
-	 *  - output and input data types are not compatible
-	 *  - Structure Types are not compatible
-	 * @param op_ is an UnaryOperator
-	 */
-	template<typename T>
-	Pipe& add(std::shared_ptr<T> op_) {
-#ifdef DEBUG
-		std::cerr << "[PIPE] Add_ new stage " << op_->name() <<std::endl;
-#endif
-		assert(o_deg == 1); // can not add new nodes if pipe is complete
-		assert(op_->i_degree() != 2); // can not add binary operator
-		if (!DAG.empty()) {
-			assert(op_->i_degree() == 1);
-			assert(DAG.lastOp()->checkOutputTypeSanity(typeid(typename T::inT)));
-			assert(struct_type_check(op_->structure_type()));
-			struct_type_intersection(op_->structure_type());
-			infotypes.back() = typeid(typename T::outT);
-		} else {
-			infotypes.push_back(typeid(typename T::inT));
-			infotypes.push_back(typeid(typename T::outT));
-			i_deg = op_->i_degree();
-			// if Emitter node, Pipe takes its structure type
-			if (i_deg == 0) {
-				copy_struct_type(op_->structure_type());
-			}
-		}
-		DAG.add_operator(op_);
-		o_deg = op_->o_degree();
-		return *this;
-	}
+
 
 public:
 	/**
@@ -392,7 +358,41 @@ public:
 
 
 private:
-
+	/**
+		 * Add a new stage to the Pipe. If the Pipe is not empty, fails if
+		 * last node's output type is different from the Operator's input type.
+		 * This method fails if:
+		 *  - the current O-Degree of the Pipe is zero
+		 *  - output and input data types are not compatible
+		 *  - Structure Types are not compatible
+		 * @param op_ is an UnaryOperator
+		 */
+		template<typename T>
+		Pipe& add(std::shared_ptr<T> op_) {
+	#ifdef DEBUG
+			std::cerr << "[PIPE] Add_ new stage " << op_->name() <<std::endl;
+	#endif
+			assert(o_deg == 1); // can not add new nodes if pipe is complete
+			assert(op_->i_degree() != 2); // can not add binary operator
+			if (!DAG.empty()) {
+				assert(op_->i_degree() == 1);
+				assert(DAG.lastOp()->checkOutputTypeSanity(typeid(typename T::inT)));
+				assert(struct_type_check(op_->structure_type()));
+				struct_type_intersection(op_->structure_type());
+				infotypes.back() = typeid(typename T::outT);
+			} else {
+				infotypes.push_back(typeid(typename T::inT));
+				infotypes.push_back(typeid(typename T::outT));
+				i_deg = op_->i_degree();
+				// if Emitter node, Pipe takes its structure type
+				if (i_deg == 0) {
+					copy_struct_type(op_->structure_type());
+				}
+			}
+			DAG.add_operator(op_);
+			o_deg = op_->o_degree();
+			return *this;
+		}
 
 	inline const std::type_info& getHeadTypeInfo() const {
 		return infotypes.front();
