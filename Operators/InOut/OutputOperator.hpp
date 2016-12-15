@@ -29,11 +29,6 @@
  *
  * The output kernel is defined by the user and can be a lambda function, a functor or a function.
  *
- * Furthermore, the user specifies the structure of the data type the Collector generates. It can be:
- *	- Bag (spec: unordered, bounded)
- *	- List (spec: ordered, bounded)
- *	- Stream (spec: ordered, unbounded)
- *	- Unbounded Bag (spec: unordered, unbounded)
  *
  * Its behaviour w.r.t. composed Pipes (with both append and pair) has to be defined.
  *
