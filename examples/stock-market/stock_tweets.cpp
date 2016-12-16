@@ -37,7 +37,13 @@
 
 #include <Pipe.hpp>
 #include <Operators/FlatMap.hpp>
+#ifdef BATCH
+#include <Operators/InOut/ReadFromFile.hpp>
+#define REQ_ARGS 4
+#else
 #include <Operators/InOut/ReadFromSocket.hpp>
+#define REQ_ARGS 5
+#endif
 #include <Operators/InOut/WriteToDisk.hpp>
 
 #include "defs.h"
@@ -58,18 +64,27 @@ static std::set<std::string> stock_names;
 int main(int argc, char** argv)
 {
     /* parse command line */
-    if (argc < 5)
+    if (argc < REQ_ARGS)
     {
         std::cerr << "Usage: " << argv[0];
         std::cerr << " <stock names file>"
+#ifdef BATCH
+                << " <tweets file>"
+#else
                 << " <tweet socket host> <tweet socket port>"
+#endif
                 << " <output file>\n";
         return -1;
     }
-    std::string stock_fname = argv[1];
-    std::string tweet_host = argv[2];
-    int tweet_port = atoi(argv[3]);
-    std::string out_fname = argv[4];
+    unsigned arg_i = 1;
+    std::string stock_fname = argv[arg_i++];
+#ifdef BATCH
+    std::string in_fname = argv[arg_i++];
+#else
+    std::string tweet_host = argv[arg_i++];
+    int tweet_port = atoi(argv[arg_i++]);
+#endif
+    std::string out_fname = argv[arg_i++];
 
     /* bring tags to memory */
     std::ifstream stocks_file(stock_fname);
@@ -99,12 +114,10 @@ int main(int argc, char** argv)
                 std::string s;
                 while (std::getline(f, s, ' '))
                 {
-                    /* not a stock name */
-                    if(stock_names.find(s) != stock_names.end())
                     ++count;
 
                     /* stock name occurrence */
-                    else
+                    if(stock_names.find(s) != stock_names.end())
                     {
                         if(!single_stock)
                         {
@@ -128,6 +141,14 @@ int main(int argc, char** argv)
                 return res;
             });
 
+#ifdef BACTH
+    /* define i/o operators from/to standard input/output */
+    ReadFromFile<std::string> readTweets(in_fname, //
+            [](std::string s)
+            {
+                return s;
+            });
+#else
     /* define i/o operators from/to standard input/output */
     ReadFromSocket<std::string> readTweets(tweet_host, tweet_port, //
             [](std::string s)
@@ -135,7 +156,9 @@ int main(int argc, char** argv)
                 return s;
             }, //
             '\n');
-    WriteToDisk<StockAndCount> writeCounts(count_to_string);
+#endif
+
+    WriteToDisk<StockAndCount> writeCounts(out_fname, count_to_string);
 
     /* compose the main pipeline */
     Pipe stockTweets(readTweets);
