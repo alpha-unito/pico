@@ -25,34 +25,48 @@
 #include <iostream>
 #include <fstream>
 #include <random>
-#include <set>
+#include <vector>
 #include <cassert>
 
 #define MAX_TWEET_LEN 140
 
 static std::vector<std::string> stock_names;
 
-static inline unsigned generate_tweet( //
+/*
+ * return true if the emitted tweet does mention a unique stock name
+ */
+static inline bool generate_tweet( //
         std::uniform_int_distribution<unsigned long long> &ds)
 {
-    unsigned stock_cnt = 0;
-
     static std::default_random_engine rng;
     static std::uniform_int_distribution<unsigned> dist(1, MAX_TWEET_LEN);
 
     /* distribution for the probability of mentioning a stock name */
+    // probability of mentioning a stock name = 1 / average tweet length
     static std::uniform_int_distribution<unsigned> dm(1, MAX_TWEET_LEN / 2);
 
     /* choose tweet length */
     unsigned tweet_len = dist(rng);
 
+    int stock_cnt = 0;
+    std::string stock_name = "";
+
     do
     {
-        //probability of mentioning a stock name = 1 / average tweet length
-        if (dm(rng) == 1) {
+        if (dm(rng) == 1)
+        {
             /* emit a random stock name */
-            std::cout << stock_names[ds(rng) - 1] << " ";
-            ++stock_cnt;
+            std::string tmp = stock_names[ds(rng) - 1];
+            std::cout << tmp << " ";
+
+            if (stock_cnt == 0)
+            {
+                ++stock_cnt;
+                stock_name = tmp;
+            }
+
+            else if (stock_cnt == 1 && tmp != stock_name)
+                stock_cnt = -1;
         }
         else
             /* emit a dumb character */
@@ -62,27 +76,49 @@ static inline unsigned generate_tweet( //
 
     std::cout << "\n";
 
-    return stock_cnt;
+    return (stock_cnt == 1);
+}
+
+/* parse a size string */
+static long long unsigned get_size(char *str)
+{
+    long long unsigned size;
+    char mod[32];
+
+    switch (sscanf(str, "%llu%1[mMkK]", &size, mod))
+    {
+    case 1:
+        return (size);
+    case 2:
+        switch (*mod)
+        {
+        case 'm':
+        case 'M':
+            return (size << 20);
+        case 'k':
+        case 'K':
+            return (size << 10);
+        default:
+            return (size);
+        }
+        break; //suppress warning
+    default:
+        return (-1);
+    }
 }
 
 int main(int argc, char** argv)
 {
     /* parse command line */
-    bool bounded = false;
     unsigned long long tweets_cnt = 0;
-    if (argc < 2)
+    if (argc < 3)
     {
         std::cerr << "Usage: " << argv[0];
         std::cerr << " <stock names file> [n. of tweets]\n";
         return -1;
     }
     std::string stock_fname = argv[1];
-
-    if (argc > 2)
-    {
-        bounded = true;
-        tweets_cnt = (unsigned long long) atoi(argv[2]);
-    }
+    tweets_cnt = get_size(argv[2]);
 
     /* bring stock names to memory */
     std::ifstream stocks_file(stock_fname);
@@ -94,16 +130,14 @@ int main(int argc, char** argv)
     }
 
     /* generate and emit random tweets */
+    unsigned valid_cnt = 0;
     static std::uniform_int_distribution<unsigned long long> ds(1,
             stock_names.size());
-    if (bounded)
-    {
-        for (; tweets_cnt > 0; --tweets_cnt)
-            generate_tweet(ds);
-    }
-    else
-        while (1)
-            generate_tweet(ds);
+    for (; tweets_cnt > 0; --tweets_cnt)
+        valid_cnt += generate_tweet(ds);
+
+    /* print tweet lentghs */
+    std::cerr << "unique-stock tweets = " << valid_cnt << std::endl;
 
     return 0;
 }
