@@ -49,25 +49,24 @@ private:
 
 	class Worker : public ff_node{
 	public:
-		Worker(std::function<std::vector<Out>(In)> kernel_): in_microbatch(nullptr), out_microbatch(new std::vector<Out*>()), kernel(kernel_)
+		Worker(std::function<std::vector<Out>(In)> kernel_): in_microbatch(nullptr), out_microbatch(new std::vector<Out>()), kernel(kernel_)
 		{}
 
 		void* svc(void* task) {
 			if(task != PICO_EOS && task != PICO_SYNC){
-				in_microbatch = reinterpret_cast<std::vector<In*>*>(task);
+
+				in_microbatch = reinterpret_cast<std::vector<In>*>(task);
 				// iterate over microbatch
-				for(In* in : *in_microbatch){
-					result = kernel(*in);
+				for(In in : *in_microbatch){
+					result = kernel(in);
 					//out_microbatch = new std::vector<Out*>();
-					if(result.size() == 0){
-						return GO_ON;
-					}
+
 					for(Out& res: result){
-						out_microbatch->push_back(new Out(res));
+						out_microbatch->push_back(Out(res));
 //						ff_send_out(new Out(res));
 						if (out_microbatch->size() == MICROBATCH_SIZE) {
 							ff_send_out(reinterpret_cast<void*>(out_microbatch));
-							out_microbatch = new std::vector<Out*>();
+							out_microbatch = new std::vector<Out>();
 						}
 					}
 
@@ -81,15 +80,17 @@ private:
 	#endif
 				if(out_microbatch->size() < MICROBATCH_SIZE && out_microbatch->size() > 0){
 					ff_send_out(reinterpret_cast<void*>(out_microbatch));
+//					count+= out_microbatch->size();
 				}
 				ff_send_out(task);
 			}
 			return GO_ON;
 		}
 
+
 	private:
-		std::vector<In*>* in_microbatch;
-		std::vector<Out*>* out_microbatch;
+		std::vector<In>* in_microbatch;
+		std::vector<Out>* out_microbatch;
 		std::vector<Out> result;
 		std::function<std::vector<Out>(In)> kernel;
 	};

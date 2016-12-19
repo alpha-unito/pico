@@ -42,7 +42,7 @@ public:
 	ReadFromSocketFFNodeMB(std::function<Out(std::string)> kernel_,
 			std::string& server_name_, int port_, char delimiter_) :
 			kernel(kernel_), server_name(server_name_), port(port_), microbatch(
-					new std::vector<Out*>()), delimiter(delimiter_) {
+					new std::vector<Out>()), delimiter(delimiter_) {
 	}
 	;
 
@@ -77,11 +77,11 @@ public:
 			else {
 				std::istringstream f(buffer);
 				while (std::getline(f, line, delimiter)) {
-					microbatch->push_back(new Out(kernel(line)));
+					microbatch->push_back(Out(kernel(line)));
 //					printf("line %s\n", line.c_str());
 					if (microbatch->size() == MICROBATCH_SIZE) {
 						ff_send_out(reinterpret_cast<void*>(microbatch));
-						microbatch = new std::vector<Out*>();
+						microbatch = new std::vector<Out>();
 					}
 				}
 
@@ -106,7 +106,7 @@ private:
 	int sockfd, n;
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
-	std::vector<Out*>* microbatch;
+	std::vector<Out>* microbatch;
 	char delimiter;
 
 	void error(const char *msg) {

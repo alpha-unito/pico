@@ -56,13 +56,13 @@ private:
 
 		void* svc(void* task) {
 			if (task != PICO_EOS && task != PICO_SYNC) {
-				in_microbatch = reinterpret_cast<std::vector<In*>*>(task);
-				for (In* kv : *in_microbatch) {
-					if (k_w_map.find(kv->Key()) != k_w_map.end()) { // key already present
-						lb->ff_send_out_to(reinterpret_cast<void*>(kv), k_w_map[kv->Key()]);
+				in_microbatch = reinterpret_cast<std::vector<In>*>(task);
+				for (In kv : *in_microbatch) {
+					if (k_w_map.find(kv.Key()) != k_w_map.end()) { // key already present
+						lb->ff_send_out_to(reinterpret_cast<void*>(new In(kv)), k_w_map[kv.Key()]);
 					} else {
-						k_w_map[kv->Key()] = (curr_worker++)%nworkers;
-						lb->ff_send_out_to(reinterpret_cast<void*>(kv), k_w_map[kv->Key()]);
+						k_w_map[kv.Key()] = (curr_worker++)%nworkers;
+						lb->ff_send_out_to(reinterpret_cast<void*>(new In(kv)), k_w_map[kv.Key()]);
 					}
 				}
 			} else {
@@ -76,14 +76,14 @@ private:
 		int nworkers;
 		ff_loadbalancer * const lb;
 		std::map<typename In::keytype, int> k_w_map;
-		std::vector<In*>* in_microbatch;
+		std::vector<In>* in_microbatch;
 		int curr_worker;
 	};
 
 
 	class ByKeyCollector: public Collector {
 	public:
-		ByKeyCollector(int nworkers_):nworkers(nworkers_), picoEOSrecv(0), out_microbatch(new std::vector<In*>()){
+		ByKeyCollector(int nworkers_):nworkers(nworkers_), picoEOSrecv(0), out_microbatch(new std::vector<In>()){
 		}
 		void* svc(void* task) {
 			if(task == PICO_SYNC){
@@ -97,10 +97,12 @@ private:
 					return task;
 				}
 			} else { // regular task to be packed in a microbatch
-				out_microbatch->push_back(reinterpret_cast<In*>(task));
+				in = (reinterpret_cast<In*>(task));
+				out_microbatch->push_back(*in);
+				delete in;
 				if(out_microbatch->size() == MICROBATCH_SIZE){
 					ff_send_out(reinterpret_cast<void*>(out_microbatch));
-					out_microbatch = new std::vector<In*>();
+					out_microbatch = new std::vector<In>();
 				}
 			}
 			return GO_ON;
@@ -108,7 +110,8 @@ private:
 	private:
 		int nworkers;
 		int picoEOSrecv;
-		std::vector<In*>* out_microbatch;
+		In* in;
+		std::vector<In>* out_microbatch;
 	};
 
 	class Worker: public ff_node {

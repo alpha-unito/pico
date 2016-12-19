@@ -37,9 +37,7 @@ public:
 		if(task != PICO_EOS && task != PICO_SYNC){
 			in = reinterpret_cast<In*>(task);
 			result = kernel(*in);
-			if(result.size() == 0){
-				return GO_ON;
-			}
+
 			for(Out res: result){
 				ff_send_out(new Out(res));
 			}

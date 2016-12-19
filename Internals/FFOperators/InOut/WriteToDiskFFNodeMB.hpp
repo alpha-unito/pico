@@ -38,16 +38,17 @@ public:
 	}
 	void* svc(void* task){
 		if(task != PICO_EOS && task != PICO_SYNC){
-			microbatch = reinterpret_cast<std::vector<In*>*>(task);
+			microbatch = reinterpret_cast<std::vector<In>*>(task);
 			if (outfile.is_open()) {
-				for(In* in: *microbatch){
-					outfile << kernel(*in)<< std::endl;
-					delete in;
+				for(In in: *microbatch){
+					outfile << kernel(in)<< std::endl;
+					//delete in;
 				}
 			} else {
 				std::cerr << "Unable to open file";
 			}
 		}
+//		delete microbatch;
 		return GO_ON;
 	}
 
@@ -59,7 +60,7 @@ private:
 	std::function<std::string(In)> kernel;
     std::string filename;
     std::ofstream outfile;
-    std::vector<In*>* microbatch;
+    std::vector<In>* microbatch;
     bool recv_sync;
 };
 

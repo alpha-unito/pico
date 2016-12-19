@@ -34,6 +34,8 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#define BATCH
+
 
 #include <Pipe.hpp>
 #include <Operators/FlatMap.hpp>
@@ -141,7 +143,7 @@ int main(int argc, char** argv)
                 return res;
             });
 
-#ifdef BACTH
+#ifdef BATCH
     /* define i/o operators from/to standard input/output */
     ReadFromFile<std::string> readTweets(in_fname, //
             [](std::string s)
