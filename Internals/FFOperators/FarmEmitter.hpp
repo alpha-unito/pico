@@ -26,11 +26,12 @@
 class FarmEmitter: public Emitter {
 public:
 	FarmEmitter(int nworkers_, ff_loadbalancer * const lb_) :
-			nworkers(nworkers_), lb(lb_) {
+			nworkers(nworkers_), lb(lb_), count(0) {
 	}
 
 	void* svc(void* task) {
 		if (task != PICO_EOS && task != PICO_SYNC) {
+			count++;
 			return task;
 		} else {
 			for (int i = 0; i < nworkers; ++i) {
@@ -39,9 +40,11 @@ public:
 		}
 		return GO_ON;
 	}
+
 private:
 	int nworkers;
-	ff_loadbalancer * const lb;
+	ff_loadbalancer * const lb;int count;
 };
+
 
 #endif /* INTERNALS_FFOPERATORS_FARMEMITTER_HPP_ */
