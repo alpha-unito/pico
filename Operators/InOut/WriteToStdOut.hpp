@@ -12,26 +12,26 @@
     along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
 */
 /*
- * 	WriteToDisk.hpp
+ * WriteToStdOut.hpp
  *
- *  Created on: Sep 30, 2016
+ *  Created on: Dec 23, 2016
  *      Author: misale
  */
 
-#ifndef OPERATORS_INOUT_WRITETODISK_HPP_
-#define OPERATORS_INOUT_WRITETODISK_HPP_
+#ifndef OPERATORS_INOUT_WRITETOSTDOUT_HPP_
+#define OPERATORS_INOUT_WRITETOSTDOUT_HPP_
 
 #include <iostream>
 #include <fstream>
 
-#include "../../Internals/FFOperators/InOut/WriteToDiskFFNode.hpp"
-#include "../../Internals/FFOperators/InOut/WriteToDiskFFNodeMB.hpp"
+#include "../../Internals/FFOperators/InOut/WriteToStdOutFFNode.hpp"
+#include "../../Internals/FFOperators/InOut/WriteToStdOutFFNodeMB.hpp"
 #include "OutputOperator.hpp"
 
 /**
- * Defines an operator that writes data to a text file.
+ * Defines an operator that writes data to standard output.
  *
- * The user specifies the kernel function that operates on each line written to the text file, passed as a std::string.
+ * The user specifies the kernel function that operates on each item before being printed to standard output.
  * The kernel can be a lambda function, a functor or a function.
  *
  *
@@ -40,24 +40,22 @@
 
 
 template<typename In>
-class WriteToDisk : public OutputOperator<In>{
+class WriteToStdOut : public OutputOperator<In>{
 public:
 
 	/**
-	* Constructor. Creates a new WriteToDisk operator by defining its kernel function: In -> void
-    * writing to the textfile specified.
+	* Constructor. Creates a new WriteToStdOut operator by defining its kernel function In -> std::string
+    * writing to standard output.
 	*/
-	WriteToDisk(std::string filename_, std::function<std::string(In)> func_)
-			: OutputOperator<In>(StructureType::BAG) {
-		filename = filename_;
+	WriteToStdOut(std::function<std::string(In)> func_)
+			: OutputOperator<In>(StructureType::STREAM) {
 		func = func_;
 	}
 
 	/**
 	 * Copy constructor.
 	 */
-	WriteToDisk(const WriteToDisk &copy) : OutputOperator<In>(copy) {
-		filename = copy.filename;
+	WriteToStdOut(const WriteToStdOut &copy) : OutputOperator<In>(copy) {
 		func = copy.func;
 	}
 
@@ -65,7 +63,7 @@ public:
 	 * Returns a unique name for the operator.
 	 */
 	std::string name() {
-		std::string name("WriteToDisk");
+		std::string name("WriteToStdOut");
 		std::ostringstream address;
 		address << (void const *)this;
 		return name+address.str().erase(0,2);
@@ -75,7 +73,7 @@ public:
 	 * Returns the name of the operator, consisting in the name of the class.
 	 */
 	std::string name_short(){
-		return "WriteToDisk\n["+filename+"]";
+		return "WriteToStdOut";
 	}
 
 protected:
@@ -84,11 +82,11 @@ protected:
 	}
 
 	/**
-	 * Duplicates a WriteToDisk with a copy of the kernel function.
-	 * @return new WriteToDisk pointer
+	 * Duplicates a WriteToStdOut with a copy of the kernel function.
+	 * @return new WriteToStdOut pointer
 	 */
-	WriteToDisk<In>* clone(){
-		return new WriteToDisk<In> (filename, func);
+	WriteToStdOut<In>* clone(){
+		return new WriteToStdOut<In> (func);
 	}
 
 	const OperatorClass operator_class(){
@@ -97,17 +95,17 @@ protected:
 
 	ff::ff_node* node_operator(int parallelism) {
 		if(parallelism==1){
-			return new WriteToDiskFFNode<In>(func, filename);
+			return new WriteToStdOutFFNode<In>(func);
 		}
-		return new WriteToDiskFFNodeMB<In>(func, filename);
+		return new WriteToStdOutFFNodeMB<In>(func);
 	}
 
 
 private:
-	std::string filename;
 	std::function<std::string(In)> func;
 };
 
 
 
-#endif /* ACTORS_INOUT_READFROMFILE_HPP_ */
+
+#endif /* OPERATORS_INOUT_WRITETOSTDOUT_HPP_ */

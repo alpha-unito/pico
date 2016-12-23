@@ -33,7 +33,7 @@
 #include "../Internals/Types/KeyValue.hpp"
 #include "../Operators/FlatMap.hpp"
 #include "../Operators/InOut/ReadFromSocket.hpp"
-#include "../Operators/InOut/WriteToDisk.hpp"
+#include "../Operators/InOut/WriteToStdOut.hpp"
 #include "../Operators/PReduce.hpp"
 #include "../Operators/Reduce.hpp"
 #include "../Pipe.hpp"
@@ -54,13 +54,12 @@ static auto tokenizer = [](std::string in) {
 
 int main(int argc, char** argv) {
 	// parse command line
-	if (argc < 2) {
-		std::cerr << "Usage: ./pico_wc_socket <server> <port> <output file>\n";
+	if (argc < 3) {
+		std::cerr << "Usage: ./pico_wc_socket <server> <port>\n";
 		return -1;
 	}
 	std::string server = argv[1];
 	int port = atoi(argv[2]);
-	std::string outputfilename = argv[3];
 
 	/* define a generic word-count pipeline */
 	Pipe countWords;
@@ -76,11 +75,8 @@ int main(int argc, char** argv) {
 
 	/* define i/o operators from/to file */
 	ReadFromSocket<std::string> reader(server, port, [](std::string s) {return s;}, '\n');
-	WriteToDisk<KV> writer(outputfilename, [&](KV in) {
-		std::string value= "<";
-			value.append(in.Key()).append(", ").append(std::to_string(in.Value()));
-			value.append(">");
-			return value;
+	WriteToStdOut<KV> writer([&](KV in) {
+		return in.to_string();
 	});
 
 	/* compose the pipeline */

@@ -103,6 +103,13 @@ public:
         return key == kv.key;
     }
 
+    std::string to_string(){
+    	std::string value= "<";
+    	value.append(key).append(", ").append(std::to_string(val));
+    	value.append(">");
+    	return value;
+    }
+
 private:
     K key;
     V val;

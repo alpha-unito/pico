@@ -50,7 +50,6 @@ public:
 		}
 
 		if(recv_sync || task != PICO_EOS){
-			in = reinterpret_cast<In*>(task);
 			if (outfile.is_open()) {
 				in = reinterpret_cast<In*>(task);
 				outfile << kernel(*in)<< std::endl;
