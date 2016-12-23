@@ -34,19 +34,20 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-#define BATCH
+//#define BATCH
 
 
 #include <Pipe.hpp>
 #include <Operators/FlatMap.hpp>
 #ifdef BATCH
 #include <Operators/InOut/ReadFromFile.hpp>
+#include <Operators/InOut/WriteToDisk.hpp>
 #define REQ_ARGS 4
 #else
 #include <Operators/InOut/ReadFromSocket.hpp>
-#define REQ_ARGS 5
+#include <Operators/InOut/WriteToStdOut.hpp>
+#define REQ_ARGS 4
 #endif
-#include <Operators/InOut/WriteToDisk.hpp>
 
 #include "defs.h"
 
@@ -71,22 +72,21 @@ int main(int argc, char** argv)
         std::cerr << "Usage: " << argv[0];
         std::cerr << " <stock names file>"
 #ifdef BATCH
-                << " <tweets file>"
+                << " <tweets file> <output file>\n";
 #else
-                << " <tweet socket host> <tweet socket port>"
+                << " <tweet socket host> <tweet socket port>\n";
 #endif
-                << " <output file>\n";
         return -1;
     }
     unsigned arg_i = 1;
     std::string stock_fname = argv[arg_i++];
 #ifdef BATCH
     std::string in_fname = argv[arg_i++];
+    std::string out_fname = argv[arg_i++];
 #else
     std::string tweet_host = argv[arg_i++];
     int tweet_port = atoi(argv[arg_i++]);
 #endif
-    std::string out_fname = argv[arg_i++];
 
     /* bring tags to memory */
     std::ifstream stocks_file(stock_fname);
@@ -150,6 +150,8 @@ int main(int argc, char** argv)
             {
                 return s;
             });
+
+    WriteToDisk<StockAndCount> writeCounts(out_fname, count_to_string);
 #else
     /* define i/o operators from/to standard input/output */
     ReadFromSocket<std::string> readTweets(tweet_host, tweet_port, //
@@ -158,9 +160,9 @@ int main(int argc, char** argv)
                 return s;
             }, //
             '\n');
-#endif
 
-    WriteToDisk<StockAndCount> writeCounts(out_fname, count_to_string);
+    WriteToStdOut<StockAndCount> writeCounts(count_to_string);
+#endif
 
     /* compose the main pipeline */
     Pipe stockTweets(readTweets);
