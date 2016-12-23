@@ -2,14 +2,14 @@ CXX                  = g++
 LINK_OPT             = 
 VERSION              = 
 OPTIMIZE_FLAGS       = -O0 -g3 -std=c++11
-CCFLAGS             = -Wall  -DDEBUG #-DTRACE_FASTFLOW
+CCFLAGS             = -Wall  #-DDEBUG #-DTRACE_FASTFLOW
 CFLAGS               =
 LDFLAGS              = 
 FF                   = ../ff
 LIBS                 = -lpthread
 
 INCLUDES             = -I.. -I$(FF)
-TARGET               = pico_wc pico_merge pico_wc_stream
+TARGET               = pico_wc pico_merge pico_stream
 
 
 .PHONY: all clean cleanall distclean
@@ -24,7 +24,7 @@ all: $(TARGET)
 pico_wc: pico_wc.cpp
 	$(CXX) $(INCLUDES) $(CCFLAGS) $(OPTIMIZE_FLAGS) $(LIBS) $< -o $@
 
-pico_wc_stream: pico_wc_socket.cpp
+pico_stream: pico_wc_socket.cpp
 	$(CXX) $(INCLUDES) $(CCFLAGS) $(OPTIMIZE_FLAGS) $(LIBS) $< -o $@
 
 pico_merge: pico_merge.cpp
