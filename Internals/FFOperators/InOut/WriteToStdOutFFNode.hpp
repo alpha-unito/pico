@@ -44,7 +44,7 @@ public:
 
 		if(recv_sync || task != PICO_EOS){
 			in = reinterpret_cast<In*>(task);
-//			std::cout << kernel(*in)<< std::endl;
+			std::cout << kernel(*in)<< std::endl;
 			delete in;
 		}
 		return GO_ON;

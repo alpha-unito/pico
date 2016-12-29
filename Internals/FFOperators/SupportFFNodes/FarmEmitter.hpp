@@ -44,6 +44,7 @@ public:
 				ff_send_out(reinterpret_cast<void*>(microbatch));
 				microbatch = new std::vector<In>();
 			}
+			delete in;
 			//return task;
 		} else {
 			if(microbatch->size() < MICROBATCH_SIZE && microbatch->size()>0){

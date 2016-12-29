@@ -69,7 +69,7 @@ static inline bool generate_tweet( //
                 stock_cnt = -1;
         } else {
             /* emit a dumb character */
-            std::cout << "* ";
+            std::cout << " * ";
             tweet_len-=3;
         }
     }
