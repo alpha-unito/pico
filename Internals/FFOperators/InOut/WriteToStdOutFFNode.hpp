@@ -34,7 +34,7 @@ public:
 
 			void* svc(void* task) {
 
-				if(task == PICO_SYNC) {
+		if(task == PICO_SYNC) {
 #ifdef DEBUG
 					fprintf(stderr,"[WRITE TO DISK] In SVC: RECEIVED PICO_SYNC\n");
 #endif
@@ -44,7 +44,7 @@ public:
 
 		if(recv_sync || task != PICO_EOS){
 			in = reinterpret_cast<In*>(task);
-			std::cout << kernel(*in)<< std::endl;
+//			std::cout << kernel(*in)<< std::endl;
 			delete in;
 		}
 		return GO_ON;

@@ -12,39 +12,20 @@
  along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * FarmEmitter.hpp
+ * Global.hpp
  *
- *  Created on: Dec 9, 2016
+ *  Created on: Dec 28, 2016
  *      Author: misale
  */
 
-#ifndef INTERNALS_FFOPERATORS_FARMEMITTER_HPP_
-#define INTERNALS_FFOPERATORS_FARMEMITTER_HPP_
-
-#include "Emitter.hpp"
-
-class FarmEmitter: public Emitter {
-public:
-	FarmEmitter(int nworkers_, ff_loadbalancer * const lb_) :
-			nworkers(nworkers_), lb(lb_), count(0) {
-	}
-
-	void* svc(void* task) {
-		if (task != PICO_EOS && task != PICO_SYNC) {
-			count++;
-			return task;
-		} else {
-			for (int i = 0; i < nworkers; ++i) {
-				lb->ff_send_out_to(task, i);
-			}
-		}
-		return GO_ON;
-	}
-
-private:
-	int nworkers;
-	ff_loadbalancer * const lb;int count;
-};
+#ifndef DEFINES_GLOBAL_HPP_
+#define DEFINES_GLOBAL_HPP_
 
 
-#endif /* INTERNALS_FFOPERATORS_FARMEMITTER_HPP_ */
+
+#define PARALLELISM 2
+#define MICROBATCH_SIZE 16
+
+
+
+#endif /* DEFINES_GLOBAL_HPP_ */

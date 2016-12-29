@@ -42,7 +42,7 @@ public:
 	ReadFromSocketFFNodeMB(std::function<Out(std::string)> kernel_,
 			std::string& server_name_, int port_, char delimiter_) :
 			kernel(kernel_), server_name(server_name_), port(port_), microbatch(
-					new std::vector<Out>()), delimiter(delimiter_) {
+					new std::vector<Out>()), delimiter(delimiter_), count(0) {
 	}
 	;
 
@@ -61,37 +61,44 @@ public:
 		(char *)&serv_addr.sin_addr.s_addr,
 		server->h_length);
 		serv_addr.sin_port = htons(port);
+		if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))< 0)
+					error("ERROR connecting");
+				bzero(buffer, 512);
 		return 0;
 	}
 
 	void* svc(void* in) {
+		char buffer[512];
 		std::string line;
-		char buffer[256];
-		if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))
-				< 0)
-			error("ERROR connecting");
-		bzero(buffer, 256);
-		while (read(sockfd, buffer, 255) > 0) {
+
+		    //Receive a reply from the server
+		while ((n=read(sockfd, buffer, sizeof(buffer)-1)) > 0) {
+			count++;
 			if (n < 0)
 				error("ERROR reading from socket");
 			else {
-				std::istringstream f(buffer);
-				while (std::getline(f, line, delimiter)) {
+//				std::istringstream f(buffer);
+				line = std::string(buffer);
+//				printf("tweet size %lu tweet %s\n", line.size(), line.c_str());
+
+
+			//	while (std::getline(f, line, delimiter)) {
+//					printf("line size %lu\n", line.size());
 					microbatch->push_back(Out(kernel(line)));
-//					printf("line %s\n", line.c_str());
 					if (microbatch->size() == MICROBATCH_SIZE) {
 						ff_send_out(reinterpret_cast<void*>(microbatch));
 						microbatch = new std::vector<Out>();
 					}
-				}
-
+//				}
 			}
+			bzero(buffer, sizeof(buffer));
 		}
 
 		close(sockfd);
 		if (microbatch->size() < MICROBATCH_SIZE && microbatch->size() > 0) {
 			ff_send_out(reinterpret_cast<void*>(microbatch));
 		}
+		printf("line counted %d\n", count);
 #ifdef DEBUG
 		fprintf(stderr, "[READ FROM SOCKET-%p] In SVC: SEND OUT PICO_EOS\n", this);
 #endif
@@ -108,7 +115,8 @@ private:
 	struct hostent *server;
 	std::vector<Out>* microbatch;
 	char delimiter;
-
+	int count;
+	char buffer[512];
 	void error(const char *msg) {
 		perror(msg);
 		exit(0);

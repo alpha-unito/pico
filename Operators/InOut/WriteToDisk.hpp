@@ -96,7 +96,7 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism) {
-		if(parallelism==1){
+		if(parallelism>=1){ //always return single item operator
 			return new WriteToDiskFFNode<In>(func, filename);
 		}
 		return new WriteToDiskFFNodeMB<In>(func, filename);

@@ -39,7 +39,7 @@ public:
 					std::cout << kernel(in)<< std::endl;
 				}
 		}
-//		delete microbatch;
+		delete microbatch;
 		return GO_ON;
 	}
 

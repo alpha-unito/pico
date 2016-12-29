@@ -24,8 +24,8 @@
 #include <ff/farm.hpp>
 #include "../Types/KeyValue.hpp"
 #include "../utils.hpp"
-#include "Emitter.hpp"
-#include "Collector.hpp"
+#include "SupportFFNodes/Emitter.hpp"
+#include "SupportFFNodes/Collector.hpp"
 #include "PReduceFFNode.hpp"
 #include <map>
 
@@ -43,11 +43,107 @@ public:
 //			w.push_back(new PReduceFFNode(preducef));
 		}
 		add_workers(w);
-	};
-
+	}
+	;
 
 private:
 
+	class ByKeyEmitter: public Emitter {
+	public:
+		ByKeyEmitter(int nworkers_, ff_loadbalancer * const lb_) :
+				nworkers(nworkers_), lb(lb_), kv(nullptr), curr_worker(0) {
+			}
+
+			void* svc(void* task) {
+				if (task != PICO_EOS && task != PICO_SYNC) {
+					kv = reinterpret_cast<In*>(task);
+						if (k_w_map.find(kv->Key()) != k_w_map.end()) { // key already present
+							lb->ff_send_out_to(reinterpret_cast<void*>(new In(*kv)), k_w_map[kv->Key()]);
+						} else {
+							k_w_map[kv->Key()] = (curr_worker++)%nworkers;
+							lb->ff_send_out_to(reinterpret_cast<void*>(new In(*kv)), k_w_map[kv->Key()]);
+						}
+				} else {
+					for (int i = 0; i < nworkers; ++i) {
+						lb->ff_send_out_to(task, i);
+					}
+				}
+				return GO_ON;
+			}
+		private:
+			int nworkers;
+			ff_loadbalancer * const lb;
+			In* kv;
+			std::map<typename In::keytype, int> k_w_map;
+			int curr_worker;
+		};
+
+
+		class ByKeyCollector: public Collector {
+		public:
+			ByKeyCollector(int nworkers_):nworkers(nworkers_), picoEOSrecv(0), in(nullptr){
+			}
+			void* svc(void* task) {
+				if(task == PICO_SYNC){
+					return GO_ON;
+				}
+				if(task==PICO_EOS){
+					if(++picoEOSrecv == nworkers){
+						return task;
+					}
+				} else { // regular task
+					return task;
+				}
+				return GO_ON;
+		    }
+		private:
+			int nworkers;
+			int picoEOSrecv;
+			In* in;
+		};
+
+	class Worker: public ff_node {
+	public:
+		Worker(std::function<In(In, In)>* preducef) :
+				kernel(*preducef), kv(nullptr){};
+
+		void* svc(void* task) {
+			if(task != PICO_EOS && task != PICO_SYNC){
+				kv = reinterpret_cast<In*>(task);
+
+				if(kvmap.find(kv->Key()) != kvmap.end()){
+					kvmap[kv->Key()] = kernel(kvmap[kv->Key()], *kv);
+				} else {
+					kvmap[kv->Key()] = *kv;
+				}
+				delete kv;
+			} else if (task == PICO_EOS) {
+	#ifdef DEBUG
+			fprintf(stderr, "[P-REDUCE-FFNODE-MB%p] In SVC RECEIVED PICO_EOS \n", this);
+	#endif
+				ff_send_out(PICO_SYNC);
+				typename std::map<typename In::keytype, In>::iterator it;
+				for (it=kvmap.begin(); it!=kvmap.end(); ++it){
+					ff_send_out(reinterpret_cast<void*>(new In(it->second)));
+				}
+				return task;
+			}
+			return GO_ON;
+		}
+
+	private:
+		std::function<In(In, In)> kernel;
+		In* kv;
+		std::map<typename In::keytype, In> kvmap;
+	};
+
+};
+
+#endif /* INTERNALS_FFOPERATORS_PREDUCEFFNODEMB_HPP_ */
+
+
+
+/*
 	class ByKeyEmitter: public Emitter {
 	public:
 		ByKeyEmitter(int nworkers_, ff_loadbalancer * const lb_) :
@@ -113,42 +209,4 @@ private:
 		In* in;
 		std::vector<In>* out_microbatch;
 	};
-
-	class Worker: public ff_node {
-	public:
-		Worker(std::function<In(In, In)>* preducef) :
-				kernel(*preducef), kv(nullptr){};
-
-		void* svc(void* task) {
-			if(task != PICO_EOS && task != PICO_SYNC){
-				kv = reinterpret_cast<In*>(task);
-
-				if(kvmap.find(kv->Key()) != kvmap.end()){
-					kvmap[kv->Key()] = kernel(kvmap[kv->Key()], *kv);
-				} else {
-					kvmap[kv->Key()] = *kv;
-				}
-				delete kv;
-			} else if (task == PICO_EOS) {
-	#ifdef DEBUG
-			fprintf(stderr, "[P-REDUCE-FFNODE-MB%p] In SVC RECEIVED PICO_EOS \n", this);
-	#endif
-				ff_send_out(PICO_SYNC);
-				typename std::map<typename In::keytype, In>::iterator it;
-				for (it=kvmap.begin(); it!=kvmap.end(); ++it){
-					ff_send_out(reinterpret_cast<void*>(new In(it->second)));
-				}
-				return task;
-			}
-			return GO_ON;
-		}
-
-	private:
-		std::function<In(In, In)> kernel;
-		In* kv;
-		std::map<typename In::keytype, In> kvmap;
-	};
-
-};
-
-#endif /* INTERNALS_FFOPERATORS_PREDUCEFFNODEMB_HPP_ */
+*/
