@@ -26,15 +26,16 @@
 #include <ff/farm.hpp>
 #include "utils.hpp"
 #include "Graph/SemDAGNode.hpp"
-#include "FFOperators/Emitter.hpp"
-#include "FFOperators/RREmitter.hpp"
-#include "FFOperators/BCastEmitter.hpp"
-#include "FFOperators/FarmCollector.hpp"
+#include "FFOperators/SupportFFNodes/Emitter.hpp"
+#include "FFOperators/SupportFFNodes/BCastEmitter.hpp"
+#include "FFOperators/SupportFFNodes/MergeCollector.hpp"
+#include "FFOperators/SupportFFNodes/RREmitter.hpp"
+
 
 using namespace ff;
 using adjList = std::map<SemDAGNode*, std::vector<SemDAGNode*>>;
 
-#define PARALLELISM 2
+
 
 class ParExecDF {
 public:
@@ -104,7 +105,7 @@ private:
 			w.push_back(pipe);
 		}
 		farm->add_workers(w);
-		FarmCollector *C = new FarmCollector(npipes);
+		MergeCollector *C = new MergeCollector(npipes);
 		farm->add_collector(C);
 		basepipe.add_stage(farm);
 		*startingNode = iterator;

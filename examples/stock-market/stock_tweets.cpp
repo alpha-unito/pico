@@ -54,11 +54,11 @@
 /* write stock name and word count to a single text line */
 std::string count_to_string(const StockAndCount stock_and_count)
 {
-    std::stringstream out;
-    out << stock_and_count.Key();
-    out << "\t";
-    out << stock_and_count.Value();
-    return out.str();
+//    std::stringstream out;
+//    out << stock_and_count.Key();
+//    out << "\t";
+//    out << stock_and_count.Value();
+    return stock_and_count.to_string(); //out.str();
 }
 
 /* the set of stock names to match tweets against */
@@ -162,6 +162,7 @@ int main(int argc, char** argv)
             '\n');
 
     WriteToStdOut<StockAndCount> writeCounts(count_to_string);
+
 #endif
 
     /* compose the main pipeline */

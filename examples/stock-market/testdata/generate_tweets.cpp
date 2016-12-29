@@ -46,7 +46,7 @@ static inline bool generate_tweet( //
     static std::uniform_int_distribution<unsigned> dm(1, MAX_TWEET_LEN / 2);
 
     /* choose tweet length */
-    unsigned tweet_len = dist(rng);
+    int tweet_len = dist(rng);
 
     int stock_cnt = 0;
     std::string stock_name = "";
@@ -58,7 +58,7 @@ static inline bool generate_tweet( //
             /* emit a random stock name */
             std::string tmp = stock_names[ds(rng) - 1];
             std::cout << tmp << " ";
-
+            tweet_len-= (tmp.size() + 1);
             if (stock_cnt == 0)
             {
                 ++stock_cnt;
@@ -67,12 +67,13 @@ static inline bool generate_tweet( //
 
             else if (stock_cnt == 1 && tmp != stock_name)
                 stock_cnt = -1;
-        }
-        else
+        } else {
             /* emit a dumb character */
             std::cout << "* ";
+            tweet_len-=3;
+        }
     }
-    while (tweet_len--);
+    while (tweet_len>1);
 
     std::cout << "\n";
 

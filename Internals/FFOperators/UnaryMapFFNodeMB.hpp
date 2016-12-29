@@ -24,8 +24,8 @@
 #include <ff/farm.hpp>
 
 #include "../utils.hpp"
-#include "FarmCollector.hpp"
-#include "FarmEmitter.hpp"
+#include "SupportFFNodes/FarmCollector.hpp"
+#include "SupportFFNodes/FarmEmitter.hpp"
 
 using namespace ff;
 
@@ -35,8 +35,8 @@ class UnaryMapFFNodeMB: public ff_farm<> {
 public:
 
 	UnaryMapFFNodeMB(int parallelism, std::function<Out(In)>* mapf){
-		add_emitter(new FarmEmitter(parallelism, this->getlb()));
-		add_collector(new FarmCollector(parallelism));
+		add_emitter(new FarmEmitter<In>(parallelism, this->getlb()));
+		add_collector(new FarmCollector<Out>(parallelism));
 		std::vector<ff_node *> w;
 		for(int i = 0; i < parallelism; ++i){
 			w.push_back(new Worker(*mapf));
@@ -57,9 +57,7 @@ private:
 				// iterate over microbatch
 				for(In in : *in_microbatch){
 					out_microbatch->push_back(Out(kernel(in)));
-//					ff_send_out(new Out(kernel(*in)));
 				}
-				//
 				ff_send_out(reinterpret_cast<void*>(out_microbatch));
 				out_microbatch = new std::vector<Out>();
 				delete in_microbatch;

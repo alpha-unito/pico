@@ -24,8 +24,8 @@
 #include <ff/farm.hpp>
 
 #include "../utils.hpp"
-#include "FarmCollector.hpp"
-#include "FarmEmitter.hpp"
+#include "SupportFFNodes/FarmCollector.hpp"
+#include "SupportFFNodes/FarmEmitter.hpp"
 
 using namespace ff;
 
@@ -35,8 +35,8 @@ class UnaryFlatMapFFNodeMB: public ff_farm<> {
 public:
 
 	UnaryFlatMapFFNodeMB(int parallelism, std::function<std::vector<Out>(In)>* flatmapf){
-		add_emitter(new FarmEmitter(parallelism, this->getlb()));
-		add_collector(new FarmCollector(parallelism));
+		add_emitter(new FarmEmitter<In>(parallelism, this->getlb()));
+		add_collector(new FarmCollector<Out>(parallelism));
 		std::vector<ff_node *> w;
 		for(int i = 0; i < parallelism; ++i){
 			w.push_back(new Worker(*flatmapf));
