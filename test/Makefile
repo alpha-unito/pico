@@ -9,7 +9,7 @@ FF                   = ../ff
 LIBS                 = -lpthread
 
 INCLUDES             = -I.. -I$(FF)
-TARGET               = pico_wc pico_merge pico_stream
+TARGET               = pico_wc pico_merge pico_wc_socket
 
 
 .PHONY: all clean cleanall distclean
@@ -24,7 +24,7 @@ all: $(TARGET)
 pico_wc: pico_wc.cpp
 	$(CXX) $(INCLUDES) $(CCFLAGS) $(OPTIMIZE_FLAGS) $(LIBS) $< -o $@
 
-pico_stream: pico_wc_socket.cpp
+pico_wc_socket: pico_wc_socket.cpp
 	$(CXX) $(INCLUDES) $(CCFLAGS) $(OPTIMIZE_FLAGS) $(LIBS) $< -o $@
 
 pico_merge: pico_merge.cpp
