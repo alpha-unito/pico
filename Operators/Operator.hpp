@@ -27,7 +27,7 @@
 #include <ff/node.hpp>
 
 #include "../Internals/GroupParam.hpp"
-#include "../Internals/WindowParam.hpp"
+#include "../Internals/WindowPolicy.hpp"
 
 /**
  * Base class defining a semantic dataflow operator.
@@ -56,12 +56,12 @@ public:
 
 	virtual std::string name_short()=0;
 	virtual ~Operator(){};
-
+virtual const OperatorClass operator_class()=0;
 protected:
 	//virtual Operator* clone()=0; // works because of covariant return types
 	virtual bool checkInputTypeSanity(TypeInfoRef id)=0;
 	virtual bool checkOutputTypeSanity(TypeInfoRef id)=0;
-	virtual const OperatorClass operator_class()=0;
+
 	virtual ff::ff_node* node_operator(int par_deg)=0;
 
     bool* structure_type() {
@@ -97,9 +97,18 @@ protected:
         return raw_struct_type[stype];
     }
 
+    StructureType data_stype() const{
+   		return st;
+   	}
+
+   	 void set_data_stype(const StructureType st_){
+   		st = st_;
+   	}
+
 private:
 	size_t iDegree, oDegree;
 	bool raw_struct_type[4];
+	StructureType st;
 };
 
 

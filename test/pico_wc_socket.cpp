@@ -37,6 +37,8 @@
 #include "../Operators/PReduce.hpp"
 #include "../Operators/Reduce.hpp"
 #include "../Pipe.hpp"
+#include "../Internals/WindowPolicy.hpp"
+
 
 typedef KeyValue<std::string, int> KV;
 
@@ -61,12 +63,15 @@ int main(int argc, char** argv) {
 	std::string server = argv[1];
 	int port = atoi(argv[2]);
 
+	/* define batch windowing */
+	size_t size = 8;
+
 	/* define a generic word-count pipeline */
 	Pipe countWords;
 	countWords
-	.add(FlatMap<std::string, std::string>(tokenizer)) //
-	.add(Map<std::string, KV>([&](std::string in) {return KV(in,1);}))
-	.add(PReduce<KV>([&](KV v1, KV v2) {return v1+v2;}));
+	.add(FlatMap<std::string, std::string>(tokenizer))//.window(size)) //
+	.add(Map<std::string, KV>([&](std::string in) {return KV(in,1);}))//.window(size))
+	.add(PReduce<KV>([&](KV v1, KV v2) {return v1+v2;}).window(size));
 
 	// countWords can now be used to build batch pipelines.
 	// If we enrich the last combine operator with a windowing policy (i.e.,
@@ -74,7 +79,8 @@ int main(int argc, char** argv) {
 	// and streaming pipelines.
 
 	/* define i/o operators from/to file */
-	ReadFromSocket<std::string> reader(server, port, [](std::string s) {return s;}, '\n');
+//	ReadFromSocket<std::string> reader(server, port, [](std::string s) {return s;}, '\n');
+	ReadFromSocket<std::string> reader("testdata/nopunct.txt", [](std::string s) {return s;});
 	WriteToStdOut<KV> writer([&](KV in) {
 		return in.to_string();
 	});

@@ -36,6 +36,7 @@ public:
 				return task;
 			}
 		} else if (task != PICO_SYNC) {
+
 			//unpack microbatch and send out items
 			in_microbatch = reinterpret_cast<std::vector<Out>*>(task);
 			for(Out item: *in_microbatch){

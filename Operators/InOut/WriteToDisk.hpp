@@ -41,6 +41,7 @@
 
 template<typename In>
 class WriteToDisk : public OutputOperator<In>{
+
 public:
 
 	/**
@@ -91,9 +92,9 @@ protected:
 		return new WriteToDisk<In> (filename, func);
 	}
 
-	const OperatorClass operator_class(){
-		return OperatorClass::OUTPUT;
-	}
+//	const OperatorClass operator_class(){
+//		return OperatorClass::OUTPUT;
+//	}
 
 	ff::ff_node* node_operator(int parallelism) {
 		if(parallelism>=1){ //always return single item operator

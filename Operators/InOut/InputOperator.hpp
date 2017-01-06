@@ -1,16 +1,16 @@
 /*
-    This file is part of PiCo.
-    PiCo is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    PiCo is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-    You should have received a copy of the GNU Lesser General Public License
-    along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ This file is part of PiCo.
+ PiCo is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ PiCo is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+ You should have received a copy of the GNU Lesser General Public License
+ along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
+ */
 /*
  * InputOperator.hpp
  *
@@ -37,7 +37,8 @@
  * The operator is global and unique for the Pipe it refers to.
  */
 template<typename Out>
-class InputOperator : public UnaryOperator<void, Out>{
+class InputOperator: public UnaryOperator<void, Out> {
+
 public:
 	/**
 	 * Constructor.
@@ -52,7 +53,7 @@ public:
 		this->set_stype(UNBOUNDED, false);
 		this->set_stype(ORDERED, false);
 		this->set_stype(UNORDERED, false);
-		switch(st_){
+		switch (st_) {
 		case LIST:
 			this->set_stype(BOUNDED, true);
 			this->set_stype(ORDERED, true);
@@ -70,31 +71,37 @@ public:
 			this->set_stype(UNORDERED, true);
 			break;
 		}
-	};
+		this->set_data_stype(st_);
+	}
+	;
 
 	/**
 	 * Copy constructor
 	 */
-	InputOperator(const InputOperator &copy) : UnaryOperator<void, Out>(copy) {
+	InputOperator(const InputOperator &copy) :
+		UnaryOperator<void, Out>(copy) {
 
 	}
 
 	/**
 	 * Returns the name of the operator, consisting in the name of the class.
 	 */
-	std::string name_short(){
+	std::string name_short() {
 		return "Emitter";
 	}
 
-	virtual ~InputOperator(){};
+	virtual ~InputOperator() {
+	}
+	;
 
 	virtual void run_kernel()=0;
 
-protected:
-	const OperatorClass operator_class(){
+
+//protected:
+	const OperatorClass operator_class() {
 		return OperatorClass::INPUT;
 	}
-};
 
+};
 
 #endif /* ACTORS_INPUTACTORNODE_HPP_ */

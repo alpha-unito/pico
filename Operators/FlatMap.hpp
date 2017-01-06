@@ -22,7 +22,12 @@
 #define OPERATORS_FLATMAP_HPP_
 
 #include "../Internals/FFOperators/UnaryFlatMapFFNode.hpp"
-#include "../Internals/FFOperators/UnaryFlatMapFFNodeMB.hpp"
+#include "../Internals/FFOperators/UnaryFlatMapFFNodeMBOLD_OLD.hpp"
+#include "../Internals/FFOperators/UnaryFMapBatch.hpp"
+#include "../Internals/WindowPolicy.hpp"
+#include "../Internals/Types/TimedToken.hpp"
+#include "../Internals/Types/Token.hpp"
+#include "../Internals/FFOperators/SupportFFNodes/FarmWrapper.hpp"
 #include "UnaryOperator.hpp"
 /**
  * Defines an operator performing a FlatMap, taking in input one element from
@@ -45,6 +50,7 @@ public:
 	 */
 	FlatMap(std::function<std::vector<Out>(In)> flatmapf_) {
 		flatmapf = flatmapf_;
+		win = nullptr;
 		this->set_input_degree(1);
 		this->set_output_degree(1);
         this->set_stype(BOUNDED, true);
@@ -59,6 +65,11 @@ public:
 	std::string name_short(){
 		return "FlatMap";
 	}
+
+//	FlatMap& window(size_t size) {
+//		win = new BatchWindow<TimedToken<In>>(size);
+//		return *this;
+//	}
 
 protected:
 	void run(In* task) {
@@ -76,12 +87,22 @@ protected:
 		if(parallelism==1){
 			return new UnaryFlatMapFFNode<In, Out>(&flatmapf);
 		}
-		return new UnaryFlatMapFFNodeMB<In, Out>(parallelism, &flatmapf);
+//
+		if(this->data_stype()  == StructureType::STREAM){
+			win = new BatchWindow<TimedToken<In>>(MICROBATCH_SIZE);
+			return new UnaryFMapBatch<In, Out, ff_ofarm, TimedToken<In>, TimedToken<Out>>(parallelism, &flatmapf, win);
+		}
+//		std::cout << "st " << this->data_stype() << std::endl;
+		win = new noWindow<Token<In>>();
+		return new UnaryFMapBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, &flatmapf, win);
+//		return new UnaryFlatMapFFNodeMB_OLD<In, Out>(parallelism, &flatmapf);
 	}
 
 
 private:
 	std::function<std::vector<Out>(In)> flatmapf;
+	WindowPolicy* win;
+//	StructureType st;
 };
 
 #endif /* OPERATORS_FLATMAP_HPP_ */

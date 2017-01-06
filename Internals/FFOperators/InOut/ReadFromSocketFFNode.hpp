@@ -23,6 +23,7 @@
 
 #include <ff/node.hpp>
 #include "../../utils.hpp"
+#include "../../Types/TimedToken.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -30,6 +31,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include "ReadFromFakeSocket.hpp"
 
 using namespace ff;
 
@@ -39,7 +41,7 @@ public:
 	ReadFromSocketFFNode(std::function<Out(std::string)> kernel_,
 			std::string& server_name_, int port_, char delimiter_) :
 			kernel(kernel_), server_name(server_name_), port(port_), delimiter(
-					delimiter_) {
+					delimiter_), counter(0) {
 	}
 	;
 
@@ -62,21 +64,22 @@ public:
 
 	void* svc(void* in) {
 		std::string line;
-		char buffer[256];
+		char buffer[512];
 		if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))
 				< 0) {
 			error("ERROR connecting");
 		}
-		bzero(buffer, 256);
-		while (read(sockfd, buffer, 255) > 0) {
+		bzero(buffer, sizeof(buffer));
+		while (read(sockfd, buffer, sizeof(buffer)-1) > 0) {
 			if (n < 0)
 				error("ERROR reading from socket");
 			else {
 				std::istringstream f(buffer);
 				while (std::getline(f, line, delimiter)) {
-					ff_send_out(reinterpret_cast<void*>(new Out(kernel(line))));
+					item = Out(kernel(line));
+					ff_send_out(reinterpret_cast<void*>(new TimedToken<Out>(reinterpret_cast<void*>(&item), counter++)));
 				}
-
+				bzero(buffer, sizeof(buffer));
 			}
 		}
 
@@ -96,6 +99,8 @@ private:
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
 	char delimiter;
+	Out item;
+	size_t counter;
 	void error(const char *msg) {
 		perror(msg);
 		exit(0);

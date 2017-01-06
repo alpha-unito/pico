@@ -18,8 +18,8 @@
  *      Author: misale
  */
 
-#ifndef INTERNALS_FFOPERATORS_UNARYMAPFFNODEMB_HPP_
-#define INTERNALS_FFOPERATORS_UNARYMAPFFNODEMB_HPP_
+#ifndef INTERNALS_FFOPERATORS_UNARYMAPFFNODEMBOLD_OLD_HPP_
+#define INTERNALS_FFOPERATORS_UNARYMAPFFNODEMBOLD_OLD_HPP_
 
 #include <ff/farm.hpp>
 
@@ -31,10 +31,10 @@ using namespace ff;
 
 
 template<typename In, typename Out>
-class UnaryMapFFNodeMB: public ff_farm<> {
+class UnaryMapFFNodeMB_OLD: public ff_farm<> {
 public:
 
-	UnaryMapFFNodeMB(int parallelism, std::function<Out(In)>* mapf){
+	UnaryMapFFNodeMB_OLD(int parallelism, std::function<Out(In)>* mapf){
 		add_emitter(new FarmEmitter<In>(parallelism, this->getlb()));
 		add_collector(new FarmCollector<Out>(parallelism));
 		std::vector<ff_node *> w;
@@ -80,4 +80,4 @@ private:
 
 
 
-#endif /* INTERNALS_FFOPERATORS_UNARYMAPFFNODEMB_HPP_ */
+#endif /* INTERNALS_FFOPERATORS_UNARYMAPFFNODEMBOLD_OLD_HPP_ */

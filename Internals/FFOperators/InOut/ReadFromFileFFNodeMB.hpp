@@ -35,10 +35,10 @@ public:
 	void* svc(void* in){
 		std::string line;
 		std::ifstream infile(filename);
+
 		if (infile.is_open()) {
 			while (getline(infile, line)) {
 				microbatch->push_back((kernel(line)));
-
 				if(microbatch->size() == MICROBATCH_SIZE) {
 					ff_send_out(reinterpret_cast<void*>(microbatch));
 					microbatch = new std::vector<Out>();

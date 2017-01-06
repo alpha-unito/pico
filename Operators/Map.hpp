@@ -21,9 +21,15 @@
 #ifndef MAPACTORNODE_HPP_
 #define MAPACTORNODE_HPP_
 
+#include "../Internals/FFOperators/UnaryMapBatch.hpp"
 #include "../Internals/FFOperators/UnaryMapFFNode.hpp"
-#include "../Internals/FFOperators/UnaryMapFFNodeMB.hpp"
+#include "../Internals/FFOperators/UnaryMapFFNodeMBOLD_OLD.hpp"
+#include "../Internals/WindowPolicy.hpp"
 #include "UnaryOperator.hpp"
+#include "../Internals/Types/TimedToken.hpp"
+#include "../Internals/Types/Token.hpp"
+#include "../Internals/FFOperators/SupportFFNodes/FarmWrapper.hpp"
+
 /**
  * Defines an operator performing a Map function, taking in input one element from
  * the input source and producing one in output.
@@ -45,6 +51,7 @@ public:
 	 */
 	Map(std::function<Out(In)> mapf_){
 		mapf = mapf_;
+		win = nullptr;
 		this->set_input_degree(1);
 		this->set_output_degree(1);
 		this->set_stype(BOUNDED, true);
@@ -59,6 +66,11 @@ public:
 	std::string name_short(){
 		return "Map";
 	}
+
+//	Map& window(size_t size) {
+//		win = new BatchWindow<TimedToken<In>>(size);
+//		return *this;
+//	}
 
 protected:
 
@@ -96,11 +108,19 @@ protected:
 		if(parallelism == 1){
 			return new UnaryMapFFNode<In, Out>(&mapf);
 		}
-		return new UnaryMapFFNodeMB<In, Out>(parallelism, &mapf);
+		if (this->data_stype() == (StructureType::STREAM)){
+			win = new BatchWindow<TimedToken<In>>(MICROBATCH_SIZE);
+			return new UnaryMapBatch<In, Out, ff_ofarm, TimedToken<In>, TimedToken<Out>>(parallelism, &mapf, win);
+		}
+
+		win = new noWindow<Token<In>>();
+		return new UnaryMapBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, &mapf, win);
+//		return new UnaryMapFFNodeMB_OLD<In, Out>(parallelism, &mapf);
 	}
 
 private:
 	std::function<Out(In)> mapf;
+	WindowPolicy* win;
 };
 
 #endif /* MAPACTORNODE_HPP_ */

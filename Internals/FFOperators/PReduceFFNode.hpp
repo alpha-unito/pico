@@ -51,7 +51,7 @@ public:
 			ff_send_out(PICO_SYNC);
 			typename std::map<typename In::keytype, In>::iterator it;
 			for (it=kvmap.begin(); it!=kvmap.end(); ++it){
-				ff_send_out(new In(it->second));
+				ff_send_out(reinterpret_cast<void*>(new In(it->second)));
 			}
 
 		}

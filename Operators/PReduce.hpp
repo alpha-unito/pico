@@ -21,9 +21,13 @@
 #ifndef PREDUCE_HPP_
 #define PREDUCE_HPP_
 
+#include "../Internals/FFOperators/PReduceBatch.hpp"
 #include "UnaryOperator.hpp"
 #include "../Internals/FFOperators/PReduceFFNode.hpp"
-#include "../Internals/FFOperators/PReduceFFNodeMB.hpp"
+#include "../Internals/FFOperators/PReduceFFNodeMBOLD_OLD.hpp"
+#include "../Internals/Types/TimedToken.hpp"
+#include "../Internals/Types/Token.hpp"
+//#include "../Internals/FFOperators/SupportFFNodes/FarmWrapper.hpp"
 
 /**
  * Defines a PReduce operator performing a tree reduce function on partitioned input (i.e. reduce by key).
@@ -41,7 +45,7 @@ public:
 	 * Constructor. Creates a new PReduce operator by defining its kernel function reducef: <In, In> -> In
 	 */
 	PReduce(std::function<In(In, In)> reducef_) :
-			reducef(reducef_) {
+			reducef(reducef_), win(nullptr) {
 		this->set_input_degree(1);
 		this->set_output_degree(1);
 		this->set_stype(BOUNDED, true);
@@ -57,6 +61,15 @@ public:
 		return "PReduce";
 	}
 
+	/*
+	 * Sets a fixed size for windows when operating on streams.
+	 * Windowing is applied on partitioning basis: each window contains only items belonging to a single partition.
+	 */
+	PReduce& window(size_t size) {
+		win = new ByKeyWindow<TimedToken<In>>(size);
+		return *this;
+	}
+
 protected:
 	void run() {
 		assert(false);
@@ -70,11 +83,18 @@ protected:
 	ff::ff_node* node_operator(int parallelism) {
 		if(parallelism == 1)
 			return new PReduceFFNode<In>(&reducef);
-		return new PReduceFFNodeMB<In>(parallelism, &reducef);
+		if(this->data_stype() == (StructureType::STREAM)){
+
+			return new PReduceBatch<In, TimedToken<In>, FarmWrapper>(parallelism, &reducef, win);
+		} // else preducemb with regular farm and window NoWindow
+		win =  new ByKeyWindow<Token<In>>(MICROBATCH_SIZE);
+		return new PReduceBatch<In, Token<In>, FarmWrapper>(parallelism, &reducef, win);
+//		return new PReduceFFNodeMB_OLD<In>(parallelism, &reducef);
 	}
 
 private:
 	std::function<In(In, In)> reducef;
+	WindowPolicy* win;
 };
 
 

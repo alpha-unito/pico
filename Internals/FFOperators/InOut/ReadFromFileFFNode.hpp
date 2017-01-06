@@ -24,6 +24,7 @@
 
 #include <ff/node.hpp>
 #include "../../utils.hpp"
+#include "../../Types/Token.hpp"
 
 using namespace ff;
 
@@ -36,12 +37,13 @@ public:
 	void* svc(void* in){
 		std::string line;
 		std::ifstream infile(filename);
-//#ifdef DEBUG
-//		fprintf(stderr, "[READ FROM FILE-%p] In SVC: reading %s\n", this, filename.c_str());
-//#endif
+#ifdef DEBUG
+		fprintf(stderr, "[READ FROM FILE-%p] In SVC: reading %s\n", this, filename.c_str());
+#endif
 		if (infile.is_open()) {
 			while (getline(infile, line)) {
-				ff_send_out(reinterpret_cast<void*>(new Out(kernel(line))));
+//				ff_send_out(reinterpret_cast<void*>(new Out(kernel(line))));
+				ff_send_out(reinterpret_cast<void*>(new Token<Out>(kernel(line))));
 			}
 			infile.close();
 		} else {

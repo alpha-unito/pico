@@ -24,6 +24,7 @@
 #include <iostream>
 #include <fstream>
 
+#include "../../Internals/FFOperators/InOut/ReadFromFakeSocket.hpp"
 #include "../../Internals/FFOperators/InOut/ReadFromFileFFNode.hpp"
 #include "../../Internals/FFOperators/InOut/ReadFromFileFFNodeMB.hpp"
 #include "InputOperator.hpp"
@@ -47,7 +48,7 @@ public:
     * operating on each line of the textfile specified.
 	*/
 	ReadFromFile(std::string filename_, std::function<Out(std::string)> func_)
-			: InputOperator<Out>(StructureType::LIST) {
+			: InputOperator<Out>(StructureType::BAG) {
 		filename = filename_;
 		func = func_;
 	}
@@ -83,15 +84,9 @@ protected:
 		assert(false);
 	}
 
-	const OperatorClass operator_class(){
-		return OperatorClass::INPUT;
-	}
-
 	ff::ff_node* node_operator(int parallelism) {
-		if(parallelism>=1){ //always return single item operator
-			return new ReadFromFileFFNode<Out>(func, filename);
-		}
-		return new ReadFromFileFFNodeMB<Out>(func, filename);
+//			return new ReadFromFileTest<Out>(func, filename);
+		return new ReadFromFileFFNode<Out>(func, filename);
 	}
 
 

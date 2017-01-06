@@ -142,6 +142,7 @@ public:
 	/* should be const but it does not work*/
 	template<typename T>
 	Pipe& add(const T &op) {
+
 		return add(std::shared_ptr<T>(new T(op))); //copy constructor
 	}
 

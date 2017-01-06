@@ -23,6 +23,8 @@
 
 #include "ff/node.hpp"
 #include "../../utils.hpp"
+#include "../../Types/TimedToken.hpp"
+#include "../../Types/Token.hpp"
 
 using namespace ff;
 
@@ -30,22 +32,23 @@ template<typename In>
 class WriteToStdOutFFNode: public ff_node {
 public:
 	WriteToStdOutFFNode(std::function<std::string(In)> kernel_) :
-			kernel(kernel_), in(nullptr), recv_sync(false) {};
+			kernel(kernel_), recv_sync(false), tt(nullptr) {};
 
-			void* svc(void* task) {
-
+	void* svc(void* task) {
+//		std::cout << "recv task\n";
 		if(task == PICO_SYNC) {
 #ifdef DEBUG
 					fprintf(stderr,"[WRITE TO DISK] In SVC: RECEIVED PICO_SYNC\n");
 #endif
+
 			recv_sync = true;
 			return GO_ON;
 		}
 
 		if(recv_sync || task != PICO_EOS){
-			in = reinterpret_cast<In*>(task);
-			std::cout << kernel(*in)<< std::endl;
-			delete in;
+			tt = reinterpret_cast<Token<In>*>(task);
+			std::cout <<  kernel((tt->get_data()))<< std::endl;
+			delete tt;
 		}
 		return GO_ON;
 	}
@@ -53,8 +56,8 @@ public:
 
 private:
 	std::function<std::string(In)> kernel;
-    In* in;
     bool recv_sync;
+    Token<In>* tt;
 
 };
 

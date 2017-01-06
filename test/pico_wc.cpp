@@ -38,6 +38,7 @@
 #include "../Operators/Reduce.hpp"
 #include "../Pipe.hpp"
 
+
 typedef KeyValue<std::string, int> KV;
 
 /* static tokenizer function */
@@ -60,6 +61,8 @@ int main(int argc, char** argv) {
 	}
 	std::string filename = argv[1];
 	std::string outputfilename = argv[2];
+
+
 
 	/* define a generic word-count pipeline */
 	Pipe countWords;

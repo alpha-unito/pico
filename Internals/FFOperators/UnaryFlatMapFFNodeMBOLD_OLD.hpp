@@ -18,8 +18,8 @@
  *      Author: misale
  */
 
-#ifndef INTERNALS_FFOPERATORS_UNARYFLATMAPFFNODEMB_HPP_
-#define INTERNALS_FFOPERATORS_UNARYFLATMAPFFNODEMB_HPP_
+#ifndef INTERNALS_FFOPERATORS_UNARYFLATMAPFFNODEMBOLD_OLD_HPP_
+#define INTERNALS_FFOPERATORS_UNARYFLATMAPFFNODEMBOLD_OLD_HPP_
 
 #include <ff/farm.hpp>
 
@@ -31,10 +31,10 @@ using namespace ff;
 
 
 template<typename In, typename Out>
-class UnaryFlatMapFFNodeMB: public ff_farm<> {
+class UnaryFlatMapFFNodeMB_OLD: public ff_farm<> {
 public:
 
-	UnaryFlatMapFFNodeMB(int parallelism, std::function<std::vector<Out>(In)>* flatmapf){
+	UnaryFlatMapFFNodeMB_OLD(int parallelism, std::function<std::vector<Out>(In)>* flatmapf){
 		add_emitter(new FarmEmitter<In>(parallelism, this->getlb()));
 		add_collector(new FarmCollector<Out>(parallelism));
 		std::vector<ff_node *> w;
@@ -63,6 +63,7 @@ private:
 
 					for(Out& res: result){
 						out_microbatch->push_back(Out(res));
+
 //						ff_send_out(new Out(res));
 						if (out_microbatch->size() == MICROBATCH_SIZE) {
 							ff_send_out(reinterpret_cast<void*>(out_microbatch));
@@ -98,4 +99,4 @@ private:
 
 
 
-#endif /* INTERNALS_FFOPERATORS_UNARYFLATMAPFFNODEMB_HPP_ */
+#endif /* INTERNALS_FFOPERATORS_UNARYFLATMAPFFNODEMBOLD_OLD_HPP_ */
