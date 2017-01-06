@@ -87,10 +87,12 @@ public:
 
 	virtual void run_kernel(In*)=0;
 
-protected:
-	const OperatorClass operator_class(){
+const OperatorClass operator_class(){
 		return OperatorClass::OUTPUT;
 	}
+
+protected:
+
 };
 
 

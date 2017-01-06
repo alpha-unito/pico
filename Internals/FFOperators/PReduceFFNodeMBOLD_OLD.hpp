@@ -18,8 +18,8 @@
  *      Author: misale
  */
 
-#ifndef INTERNALS_FFOPERATORS_PREDUCEFFNODEMB_HPP_
-#define INTERNALS_FFOPERATORS_PREDUCEFFNODEMB_HPP_
+#ifndef INTERNALS_FFOPERATORS_PREDUCEFFNODEMBOLD_OLD_HPP_
+#define INTERNALS_FFOPERATORS_PREDUCEFFNODEMBOLD_OLD_HPP_
 
 #include <ff/farm.hpp>
 #include "../Types/KeyValue.hpp"
@@ -32,9 +32,9 @@
 using namespace ff;
 
 template<typename In>
-class PReduceFFNodeMB: public ff_farm<> {
+class PReduceFFNodeMB_OLD: public ff_farm<> {
 public:
-	PReduceFFNodeMB(int parallelism, std::function<In(In, In)>* preducef) {
+	PReduceFFNodeMB_OLD(int parallelism, std::function<In(In, In)>* preducef) {
 		add_emitter(new ByKeyEmitter(parallelism, this->getlb()));
 		add_collector(new ByKeyCollector(parallelism));
 		std::vector<ff_node *> w;
@@ -139,7 +139,7 @@ private:
 
 };
 
-#endif /* INTERNALS_FFOPERATORS_PREDUCEFFNODEMB_HPP_ */
+#endif /* INTERNALS_FFOPERATORS_PREDUCEFFNODEMBOLD_OLD_HPP_ */
 
 
 

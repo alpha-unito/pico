@@ -94,10 +94,10 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism) {
-		if(parallelism>=1){ //always return single item operator
+//		if(parallelism>=1){ //always return single item operator
 			return new WriteToStdOutFFNode<In>(func);
-		}
-		return new WriteToStdOutFFNodeMB<In>(func);
+//		}
+//		return new WriteToStdOutFFNodeMB<In>(func);
 	}
 
 

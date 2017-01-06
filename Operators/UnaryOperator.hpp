@@ -43,6 +43,7 @@ public:
         set_stype(UNBOUNDED, copy.stype(UNBOUNDED));
         set_stype(ORDERED, copy.stype(ORDERED));
         set_stype(UNORDERED, copy.stype(UNORDERED));
+        set_data_stype(copy.data_stype());
     }
 
     virtual ~UnaryOperator()
@@ -73,6 +74,7 @@ protected:
     }
 
     virtual const OperatorClass operator_class()=0;
+
 };
 
 #endif /* OPERATORS_UNARYOPERATOR_HPP_ */
