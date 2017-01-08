@@ -25,9 +25,10 @@
 #include <iostream>
 #include <fstream>
 
-#include "../../Internals/FFOperators/InOut/ReadFromSocketFFNode.hpp"
-#include "../../Internals/FFOperators/InOut/ReadFromSocketFFNodeMB.hpp"
-#include "InputOperator.hpp"
+#include <Internals/FFOperators/InOut/ReadFromSocketFFNode.hpp>
+#include <Internals/FFOperators/InOut/ReadFromSocketFFNodeMB.hpp>
+#include <Internals/FFOperators/InOut/ReadFromFakeSocket.hpp>
+#include <Operators/InOut/InputOperator.hpp>
 
 /**
  * Defines an operator that reads data from a socket and produces a Stream.
@@ -106,12 +107,8 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism) {
-		if(parallelism>=1){ //always return single item operator
-//			return new ReadFromSocketFFNode<Out>(func, server_name, port, delimiter);
-
-			return new ReadFromFakeSocket<Out>(func, filename);
-		}
-		return new ReadFromSocketFFNodeMB<Out>(func, server_name, port, delimiter);
+//		return new ReadFromFakeSocket<Out>(func, filename);
+		return new ReadFromSocketFFNode<Out>(func, server_name, port, delimiter);
 	}
 
 

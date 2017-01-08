@@ -30,14 +30,14 @@
 #include <string>
 #include <sstream>
 
-#include "../Internals/Types/KeyValue.hpp"
-#include "../Operators/FlatMap.hpp"
-#include "../Operators/InOut/ReadFromSocket.hpp"
-#include "../Operators/InOut/WriteToStdOut.hpp"
-#include "../Operators/PReduce.hpp"
-#include "../Operators/Reduce.hpp"
-#include "../Pipe.hpp"
-#include "../Internals/WindowPolicy.hpp"
+#include <Internals/Types/KeyValue.hpp>
+#include <Operators/FlatMap.hpp>
+#include <Operators/InOut/ReadFromSocket.hpp>
+#include <Operators/InOut/WriteToStdOut.hpp>
+#include <Operators/PReduce.hpp>
+#include <Operators/Reduce.hpp>
+#include <Pipe.hpp>
+#include <Internals/WindowPolicy.hpp>
 
 
 typedef KeyValue<std::string, int> KV;
@@ -79,8 +79,8 @@ int main(int argc, char** argv) {
 	// and streaming pipelines.
 
 	/* define i/o operators from/to file */
-//	ReadFromSocket<std::string> reader(server, port, [](std::string s) {return s;}, '\n');
-	ReadFromSocket<std::string> reader("testdata/nopunct.txt", [](std::string s) {return s;});
+	ReadFromSocket<std::string> reader(server, port, [](std::string s) {return s;}, '\n');
+//	ReadFromSocket<std::string> reader("testdata/nopunct.txt", [](std::string s) {return s;});
 	WriteToStdOut<KV> writer([&](KV in) {
 		return in.to_string();
 	});
