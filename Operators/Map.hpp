@@ -112,7 +112,6 @@ protected:
 			win = new BatchWindow<TimedToken<In>>(MICROBATCH_SIZE);
 			return new UnaryMapBatch<In, Out, ff_ofarm, TimedToken<In>, TimedToken<Out>>(parallelism, &mapf, win);
 		}
-
 		win = new noWindow<Token<In>>();
 		return new UnaryMapBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, &mapf, win);
 //		return new UnaryMapFFNodeMB_OLD<In, Out>(parallelism, &mapf);

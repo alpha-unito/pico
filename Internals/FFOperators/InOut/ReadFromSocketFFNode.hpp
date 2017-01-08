@@ -22,8 +22,6 @@
 #define INTERNALS_FFOPERATORS_INOUT_READFROMSOCKETFFNODE_HPP_
 
 #include <ff/node.hpp>
-#include "../../utils.hpp"
-#include "../../Types/TimedToken.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -31,7 +29,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-#include "ReadFromFakeSocket.hpp"
+#include <Internals/Types/TimedToken.hpp>
+#include <Internals/utils.hpp>
 
 using namespace ff;
 
@@ -41,7 +40,7 @@ public:
 	ReadFromSocketFFNode(std::function<Out(std::string)> kernel_,
 			std::string& server_name_, int port_, char delimiter_) :
 			kernel(kernel_), server_name(server_name_), port(port_), delimiter(
-					delimiter_), counter(0) {
+					delimiter_), counter(0), count(0) {
 	}
 	;
 
@@ -64,9 +63,9 @@ public:
 
 	void* svc(void* in) {
 		std::string line;
-		char buffer[512];
-		if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))
-				< 0) {
+		std::string tail;
+		char buffer[144];
+		if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
 			error("ERROR connecting");
 		}
 		bzero(buffer, sizeof(buffer));
@@ -74,10 +73,23 @@ public:
 			if (n < 0)
 				error("ERROR reading from socket");
 			else {
-				std::istringstream f(buffer);
+//				printf("%d %s\n", count++, buffer);
+//				printf("tweet %s\n", buffer);
+				tail.append(buffer);
+				std::istringstream f(tail);
 				while (std::getline(f, line, delimiter)) {
-					item = Out(kernel(line));
-					ff_send_out(reinterpret_cast<void*>(new TimedToken<Out>(reinterpret_cast<void*>(&item), counter++)));
+//					printf("tweet %s\n", line.c_str());
+					if(!f.eof()) {// line contains another delimiter
+//						printf("%s\n", line.c_str());
+//						printf("tweet len %d tweet %s\n", line.size(), line.c_str());
+						auto tt = new TimedToken<Out>(Out(kernel(line)), counter++);
+						ff_send_out(reinterpret_cast<void*>(tt));
+						tail.clear();
+					} else { // trunked line, store for next parsing
+						tail.clear();
+						tail.append(line);
+//						printf("tail %s\n", tail.c_str());
+					}
 				}
 				bzero(buffer, sizeof(buffer));
 			}
@@ -101,6 +113,7 @@ private:
 	char delimiter;
 	Out item;
 	size_t counter;
+	int count;
 	void error(const char *msg) {
 		perror(msg);
 		exit(0);
@@ -108,3 +121,4 @@ private:
 };
 
 #endif /* INTERNALS_FFOPERATORS_INOUT_READFROMSOCKETFFNODE_HPP_ */
+

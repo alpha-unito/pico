@@ -21,32 +21,30 @@
 #ifndef INTERNALS_FFOPERATORS_INOUT_WRITETOSTDOUTFFNODE_HPP_
 #define INTERNALS_FFOPERATORS_INOUT_WRITETOSTDOUTFFNODE_HPP_
 
-#include "ff/node.hpp"
-#include "../../utils.hpp"
-#include "../../Types/TimedToken.hpp"
-#include "../../Types/Token.hpp"
+#include <ff/node.hpp>
+#include <Internals/utils.hpp>
+#include <Internals/Types/TimedToken.hpp>
+#include <Internals/Types/Token.hpp>
 
 using namespace ff;
 
-template<typename In>
+template<typename In, typename TokenType>
 class WriteToStdOutFFNode: public ff_node {
 public:
 	WriteToStdOutFFNode(std::function<std::string(In)> kernel_) :
 			kernel(kernel_), recv_sync(false), tt(nullptr) {};
 
 	void* svc(void* task) {
-//		std::cout << "recv task\n";
 		if(task == PICO_SYNC) {
 #ifdef DEBUG
 					fprintf(stderr,"[WRITE TO DISK] In SVC: RECEIVED PICO_SYNC\n");
 #endif
-
 			recv_sync = true;
 			return GO_ON;
 		}
 
 		if(recv_sync || task != PICO_EOS){
-			tt = reinterpret_cast<Token<In>*>(task);
+			tt = reinterpret_cast<TokenType*>(task);
 			std::cout <<  kernel((tt->get_data()))<< std::endl;
 			delete tt;
 		}
@@ -57,7 +55,7 @@ public:
 private:
 	std::function<std::string(In)> kernel;
     bool recv_sync;
-    Token<In>* tt;
+    TokenType* tt;
 
 };
 

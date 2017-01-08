@@ -106,7 +106,6 @@ int main(int argc, char** argv)
             [] (std::string tweet)
             {
                 std::vector<StockAndCount> res;
-
                 StockName stock;
                 bool single_stock = false;
                 unsigned long long count = 0;
@@ -117,10 +116,10 @@ int main(int argc, char** argv)
                 while (std::getline(f, s, ' '))
                 {
                     ++count;
-
                     /* stock name occurrence */
                     if(stock_names.find(s) != stock_names.end())
                     {
+
                         if(!single_stock)
                         {
                             /* first stock name occurrence */
@@ -137,8 +136,10 @@ int main(int argc, char** argv)
                 }
 
                 /* emit result if valid record  */
-                if(single_stock)
-                res.push_back(StockAndCount(stock, count));
+
+                if(single_stock){
+                	res.push_back(StockAndCount(stock, count));
+                }
 
                 return res;
             });
@@ -159,7 +160,7 @@ int main(int argc, char** argv)
             {
                 return s;
             }, //
-            '\n');
+            '-');
 
     WriteToStdOut<StockAndCount> writeCounts(count_to_string);
 

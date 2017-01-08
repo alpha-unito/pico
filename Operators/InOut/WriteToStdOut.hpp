@@ -24,9 +24,9 @@
 #include <iostream>
 #include <fstream>
 
-#include "../../Internals/FFOperators/InOut/WriteToStdOutFFNode.hpp"
-#include "../../Internals/FFOperators/InOut/WriteToStdOutFFNodeMB.hpp"
-#include "OutputOperator.hpp"
+#include <Internals/FFOperators/InOut/WriteToStdOutFFNode.hpp>
+#include <Internals/FFOperators/InOut/WriteToStdOutFFNodeMB.hpp>
+#include <Operators/InOut/OutputOperator.hpp>
 
 /**
  * Defines an operator that writes data to standard output.
@@ -95,7 +95,10 @@ protected:
 
 	ff::ff_node* node_operator(int parallelism) {
 //		if(parallelism>=1){ //always return single item operator
-			return new WriteToStdOutFFNode<In>(func);
+		if(this->data_stype()  == StructureType::STREAM){
+			return new WriteToStdOutFFNode<In, TimedToken<In>>(func);
+		}
+		return new WriteToStdOutFFNode<In, Token<In>>(func);
 //		}
 //		return new WriteToStdOutFFNodeMB<In>(func);
 	}

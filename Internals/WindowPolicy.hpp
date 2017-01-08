@@ -21,8 +21,9 @@
 #ifndef INTERNALS_WINDOWPOLICY_HPP_
 #define INTERNALS_WINDOWPOLICY_HPP_
 
-#include "FFOperators/WindowFFNodes/WinBatchEmitter.hpp"
-#include "FFOperators/WindowFFNodes/KeyWinEmitter.hpp"
+#include <Internals/FFOperators/WindowFFNodes/WinBatchEmitter.hpp>
+#include <Internals/FFOperators/WindowFFNodes/KeyWinEmitter.hpp>
+#include <Internals/FFOperators/SupportFFNodes/FarmEmitter.hpp>
 
 class WindowPolicy {
 public:

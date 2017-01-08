@@ -92,7 +92,6 @@ protected:
 			win = new BatchWindow<TimedToken<In>>(MICROBATCH_SIZE);
 			return new UnaryFMapBatch<In, Out, ff_ofarm, TimedToken<In>, TimedToken<Out>>(parallelism, &flatmapf, win);
 		}
-//		std::cout << "st " << this->data_stype() << std::endl;
 		win = new noWindow<Token<In>>();
 		return new UnaryFMapBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, &flatmapf, win);
 //		return new UnaryFlatMapFFNodeMB_OLD<In, Out>(parallelism, &flatmapf);
