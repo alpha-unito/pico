@@ -90,6 +90,13 @@ private:
 			return GO_ON;
 		}
 
+		~Worker() {
+            /* delete the dandling empty microbatch, if present */
+            if (out_microbatch->size() == 0) {
+                delete out_microbatch;
+            }
+        }
+
 
 	private:
 		std::vector<TokenTypeIn>* in_microbatch;
