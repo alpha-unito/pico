@@ -31,6 +31,13 @@ public:
 			nworkers(nworkers_), lb(lb_), microbatch(new std::vector<In>()), in(nullptr) {
 	}
 
+	~FarmEmitter() {
+	    /* delete the dandling empty microbatch, if present */
+        if (microbatch->size() == 0) {
+            delete microbatch;
+        }
+	}
+
 	int svc_init() {
 		microbatch->reserve(MICROBATCH_SIZE);
 		return 0;
@@ -50,10 +57,6 @@ public:
 		} else {
 			if(microbatch->size() < MICROBATCH_SIZE && microbatch->size()>0){
 				ff_send_out(reinterpret_cast<void*>(microbatch));
-			}
-			else if(task == PICO_EOS && microbatch->size()==0) {
-			    /* delete the dandling empty microbatch */
-			    delete microbatch;
 			}
 
 			for (int i = 0; i < nworkers; ++i) {
