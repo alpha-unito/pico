@@ -51,6 +51,11 @@ public:
 			if(microbatch->size() < MICROBATCH_SIZE && microbatch->size()>0){
 				ff_send_out(reinterpret_cast<void*>(microbatch));
 			}
+			else if(task == PICO_EOS && microbatch->size()==0) {
+			    /* delete the dandling empty microbatch */
+			    delete microbatch;
+			}
+
 			for (int i = 0; i < nworkers; ++i) {
 				lb->ff_send_out_to(task, i);
 			}
