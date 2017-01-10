@@ -57,7 +57,7 @@ public:
 	}
 
 private:
-    std::function<Out(std::string)> kernel;
+    std::function<Out(std::string &)> kernel;
     std::string filename;
 };
 

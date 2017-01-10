@@ -24,46 +24,46 @@
 template<typename T>
 class Token {
 public:
-	typedef T datatype;
+    typedef T datatype;
 
-	Token(){}
-	;
+    Token(Token &&tt)
+            : data(std::move(tt.data))
+    {
+    }
 
-	Token(T item_):data(item_){
-	}
+    Token& operator=(Token &&tt)
+    {
+        data = std::move(tt.data); //invoke T move assignment
+        return *this;
+    }
 
-	template<typename U>
-	Token(T item_, const Token<U> &second) :
-			data(item_) {
-	}
-	;
-	Token(const Token &tt) :
-			data(tt.data) {
-	}
-	;
-	Token(Token &&tt) :
-			data(tt.data) {
-	}
-	;
-	Token& operator=(const Token &tt) {
-		data = tt.data;
-		return *this;
-	}
-	Token& operator=(Token &&tt) {
-		data = tt.data;
-		return *this;
-	}
+    /*
+     * constructor from T r-value ref
+     */
+    template<typename U>
+    Token(T &&item_)
+            : data(std::move(item_)) //invoke T move constructor
+    {
+    }
 
-	friend std::ostream& operator<<(std::ostream& os, const Token& tt) {
-		os << "<" << tt.data << ">";
-		return os;
-	}
+    template<typename U>
+    Token(T &&item_, const Token<U> &second)
+            : Token(std::move(item_)) //invoke move constructor
+    {
+    }
 
-	T get_data() {
-		return data;
-	}
+    friend std::ostream& operator<<(std::ostream& os, const Token& tt)
+    {
+        os << "<" << tt.data << ">";
+        return os;
+    }
+
+    T &get_data()
+    {
+        return data;
+    }
 private:
-	T data;
+    T data;
 };
 
 #endif /* INTERNALS_TYPES_TOKEN_HPP_ */

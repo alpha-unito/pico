@@ -34,7 +34,7 @@ public:
 	}
 
 	~KeyWinEmitter() {
-	    /* delete dandling empty windows */
+	    /* delete dangling empty windows */
 	    for (auto it=k_win_map.begin(); it!=k_win_map.end(); ++it){
 	        auto kv = it->first;
 	        if(it->second->size() == 0) {
@@ -46,38 +46,25 @@ public:
 	void* svc(void* task) {
 		if (task != PICO_EOS && task != PICO_SYNC) {
 			tt = reinterpret_cast<TokenType*>(task);
-			auto kv = tt->get_data();
-//			if (k_worker_map.find(kv->Key()) != k_worker_map.end()) { // key already present
-			if (k_worker_map.find(kv.Key()) != k_worker_map.end()) { // key already present
-//				k_win_map[kv->Key()]->push_back(*tt);
-				k_win_map[kv.Key()]->push_back(*tt);
+			typename TokenType::datatype::keytype &key(tt->get_data());
+			if (k_win_map.find(key) != k_win_map.end()) { // key already present
+				k_win_map[key]->push_back(new TokenType(tt));
 
-//				if(k_win_map[kv->Key()]->size() == w_size){
-				if(k_win_map[kv.Key()]->size() == w_size){
-//					lb->ff_send_out_to(reinterpret_cast<void*>(k_win_map[kv->Key()]),k_worker_map[kv->Key()]);
-					lb->ff_send_out_to(reinterpret_cast<void*>(k_win_map[kv.Key()]),k_worker_map[kv.Key()]);
-				//	std::cout << "send out  " <<k_win_map[kv->Key()]->at(0)<< " key " << k_win_map[kv->Key()]->at(0).get_data()->Key() << std::endl;
-//					k_win_map[kv->Key()] = new std::vector<TokenType>();
-					k_win_map[kv.Key()] = new std::vector<TokenType>();
+				if(k_win_map[key]->size() == w_size){
+					lb->ff_send_out_to(reinterpret_cast<void*>(k_win_map[key]), key_to_worker(key));
+					k_win_map[key] = new std::vector<TokenType *>();
 				}
 			} else {
-//				k_worker_map[kv->Key()] = (curr_worker++)%nworkers;
-//				k_win_map[kv->Key()] = new std::vector<TokenType>();
-//				k_win_map[kv->Key()]->push_back(*tt);
-				k_worker_map[kv.Key()] = (curr_worker++)%nworkers;
-				k_win_map[kv.Key()] = new std::vector<TokenType>();
-				k_win_map[kv.Key()]->push_back(*tt);
-//				lb->ff_send_out_to(reinterpret_cast<void*>(new In(*kv)), k_worker_map[kv->Key()]);
+				k_win_map[key] = new std::vector<TokenType *>();
+				k_win_map[key]->push_back(new TokenType(tt));
 			}
 			delete tt;
 		} else {
 			typename std::map<typename TokenType::datatype::keytype, std::vector<TokenType>*>::iterator it;
 			for (it=k_win_map.begin(); it!=k_win_map.end(); ++it){
 				auto kv = it->first;
-//				std::cout << "Key *" << it->first << "* value size: " << it->second->size() << std::endl;
 				if(it->second->size() > 0){
-					lb->ff_send_out_to(reinterpret_cast<void*>(it->second),k_worker_map[it->first]);
-//					std::cout << "send out  " <<it->second->at(0)<< " key " << it->second->at(0).get_data()->Key() << std::endl;
+					lb->ff_send_out_to(reinterpret_cast<void*>(it->second), key_to_worker(it->first));
 				}
 			}
 
@@ -89,13 +76,17 @@ public:
 	}
 
 private:
+	typedef typename TokenType::datatype::keytype keytype;
 	int nworkers;
 	ff_loadbalancer * const lb;
 	TokenType* tt;
-	std::map<typename TokenType::datatype::keytype, int> k_worker_map;
-	std::map<typename TokenType::datatype::keytype, std::vector<TokenType>*> k_win_map;
+	std::map<typename TokenType::datatype::keytype, std::vector<TokenType*>*> k_win_map;
 	int curr_worker;
 	size_t w_size;
+
+	inline size_t key_to_worker(keytype &k) {
+	    return std::hash<keytype>(k) % nworkers;
+	}
 };
 
 
