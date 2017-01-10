@@ -28,6 +28,8 @@
 #include <vector>
 #include <cassert>
 
+#include <utils.hpp>
+
 #define MIN_WPL 1   //min words per line
 #define MAX_WPL 128 //max words per line
 
@@ -78,26 +80,6 @@ static long long unsigned get_size(char *str)
     default:
         return (-1);
     }
-}
-
-/* some verbose printing */
-void print_progress(float progress)
-{
-    int barWidth = 70;
-    int pos = barWidth * progress;
-
-    std::cerr << "[";
-    for (int i = 0; i < barWidth; ++i)
-    {
-        if (i < pos)
-            std::cerr << "=";
-        else if (i == pos)
-            std::cerr << ">";
-        else
-            std::cerr << " ";
-    }
-    std::cerr << "] " << int(progress * 100.0) << " %\r";
-    std::cerr.flush();
 }
 
 int main(int argc, char** argv)
