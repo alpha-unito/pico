@@ -33,6 +33,13 @@ public:
 			nworkers(nworkers_), lb(lb_), microbatch(new std::vector<TokenType>()), t(nullptr), w_size(w_size_) {
 	}
 
+	~WinBatchEmitter() {
+        /* delete the dandling empty microbatch, if present */
+        if (microbatch->size() == 0) {
+            delete microbatch;
+        }
+	}
+
 	int svc_init() {
 		microbatch->reserve(w_size);
 		return 0;

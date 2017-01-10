@@ -43,11 +43,11 @@ typedef KeyValue<std::string, int> KV;
 /* static tokenizer function */
 static auto tokenizer = [](std::string in) {
 	std::istringstream f(in);
-	std::vector<std::string> tokens;
+	std::vector<KV> tokens;
 	std::string s;
 
 	while (std::getline(f, s, ' ')) {
-		tokens.push_back(s);
+		tokens.push_back(KV(s,1));
 	}
 	return tokens;
 };
@@ -64,8 +64,7 @@ int main(int argc, char** argv) {
 	/* define a generic word-count pipeline */
 	Pipe countWords;
 	countWords
-	.add(FlatMap<std::string, std::string>(tokenizer)) //
-	.add(Map<std::string, KV>([&](std::string in) {return KV(in,1);})) //
+	.add(FlatMap<std::string, KV>(tokenizer)) //
 	.add(PReduce<KV>([&](KV v1, KV v2) {return v1+v2;}));
 
 	// countWords can now be used to build batch pipelines.
