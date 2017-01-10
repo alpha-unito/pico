@@ -36,7 +36,7 @@ using namespace ff;
 template<typename In, typename TokenType, typename FarmType=ff_farm<>>
 class PReduceBatch: public FarmType {
 public:
-	PReduceBatch(int parallelism, std::function<In(In, In)>* preducef, WindowPolicy* win) {
+	PReduceBatch(int parallelism, std::function<In(In&, In&)>* preducef, WindowPolicy* win) {
 //		add_emitter(new ByKeyEmitter(parallelism, this->getlb()));
 //		add_collector(new ByKeyCollector(parallelism));
 		this->setEmitterF(win->window_farm(parallelism, this->getlb()));
@@ -76,18 +76,18 @@ private:
 
 	class Worker: public ff_node {
 	public:
-		Worker(std::function<In(In, In)>* preducef) :
+		Worker(std::function<In(In&, In&)>* preducef) :
 				kernel(*preducef), kv(nullptr), in_microbatch(nullptr){};
 
 		void* svc(void* task) {
 			if(task != PICO_EOS && task != PICO_SYNC){
-				in_microbatch = reinterpret_cast<std::vector<TokenType>*>(task);
+				in_microbatch = reinterpret_cast<std::vector<TokenType*>*>(task);
 //				kv = reinterpret_cast<In*>(task);
-				TokenType tt = in_microbatch->at(0);
-				In kv = tt.get_data();
+				TokenType *tt = in_microbatch->at(0);
+				In kv = tt->get_data();
 				for (typename std::vector<TokenType>::size_type i = 1; i < in_microbatch->size(); ++i){ // reduce on microbatch
 //					*kv = kernel(*(in_microbatch->at(i).get_data()), *kv);
-					kv = kernel((in_microbatch->at(i).get_data()), kv);
+					kv = kernel(*(in_microbatch->at(i).get_data()), kv);
 
 				}
 //				if(kvmap.find(kv->Key()) != kvmap.end()){
@@ -115,7 +115,7 @@ private:
 		}
 
 	private:
-		std::function<In(In, In)> kernel;
+		std::function<In(In&, In&)> kernel;
 		In* kv;
 		std::vector<TokenType>* in_microbatch;
 		std::map<typename In::keytype, In> kvmap;

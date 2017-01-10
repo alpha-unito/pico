@@ -67,23 +67,27 @@ private:
             }
         }
 
+		int svc_init() {
+		    out_microbatch->reserve(MICROBATCH_SIZE);
+		    return 0;
+		}
+
 		void* svc(void* task) {
 			if(task != PICO_EOS && task != PICO_SYNC){
-				in_microbatch = reinterpret_cast<std::vector<TokenTypeIn>*>(task);
+				in_microbatch = reinterpret_cast<std::vector<TokenTypeIn*>*>(task);
 				// iterate over microbatch
-				for(TokenTypeIn in : *in_microbatch){
-					In data = in.get_data();//reinterpret_cast<In*>(in.item);
-					result = kernel(data);
-					for(Out& res: result){
-						TokenTypeOut tt( Out(res), in);
+				for(TokenTypeIn *in : *in_microbatch){
+					for(Out& res: kernel(in->get_data())){
+					    TokenTypeOut *tt = new TokenTypeOut(std::move(res), in);
 						out_microbatch->push_back(tt); //TODO check each item != go_on
 						if (out_microbatch->size() == MICROBATCH_SIZE) {
 							ff_send_out(reinterpret_cast<void*>(out_microbatch));
-							out_microbatch = new std::vector<TokenTypeOut>();
+							out_microbatch = new std::vector<TokenTypeOut*>();
+							out_microbatch->reserve(MICROBATCH_SIZE);
 						}
 					}
+					delete in;
 				}
-				result.clear();
 				delete in_microbatch;
 			} else {
 	#ifdef DEBUG
@@ -99,10 +103,9 @@ private:
 
 
 	private:
-		std::vector<TokenTypeIn>* in_microbatch;
-		std::vector<TokenTypeOut>* out_microbatch;
-		std::vector<Out> result;
-		std::function<std::vector<Out>(In)> kernel;
+		std::vector<TokenTypeIn*>* in_microbatch;
+		std::vector<TokenTypeOut*>* out_microbatch;
+		std::function<std::vector<Out>(In&)> kernel;
 	};
 };
 

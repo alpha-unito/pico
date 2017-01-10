@@ -28,7 +28,7 @@ template<typename In>
 class FarmEmitter: public Emitter {
 public:
 	FarmEmitter(int nworkers_, ff_loadbalancer * const lb_) :
-			nworkers(nworkers_), lb(lb_), microbatch(new std::vector<In>()), in(nullptr) {
+			nworkers(nworkers_), lb(lb_), microbatch(new std::vector<In*>()), in(nullptr) {
 	}
 
 	~FarmEmitter() {
@@ -46,13 +46,14 @@ public:
 	void* svc(void* task) {
 		if (task != PICO_EOS && task != PICO_SYNC) {
 			in = reinterpret_cast<In*>(task);
-			microbatch->push_back(*in);
+			microbatch->push_back(in);
 //			std::cout << *in << std::endl;
 			if (microbatch->size() == MICROBATCH_SIZE) {
 				ff_send_out(reinterpret_cast<void*>(microbatch));
-				microbatch = new std::vector<In>();
+				microbatch = new std::vector<In*>();
+				microbatch->reserve(MICROBATCH_SIZE);
 			}
-			delete in;
+			//delete in;
 			//return task;
 		} else {
 			if(microbatch->size() < MICROBATCH_SIZE && microbatch->size()>0){
@@ -69,7 +70,7 @@ public:
 private:
 	int nworkers;
 	ff_loadbalancer * const lb;
-	std::vector<In>* microbatch;
+	std::vector<In*>* microbatch;
 	In* in;
 };
 
