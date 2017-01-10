@@ -37,7 +37,6 @@ public:
 		if (task != PICO_EOS && task != PICO_SYNC) {
 			tt = reinterpret_cast<TokenType*>(task);
 			auto kv = tt->get_data();
-
 //			if (k_worker_map.find(kv->Key()) != k_worker_map.end()) { // key already present
 			if (k_worker_map.find(kv.Key()) != k_worker_map.end()) { // key already present
 //				k_win_map[kv->Key()]->push_back(*tt);

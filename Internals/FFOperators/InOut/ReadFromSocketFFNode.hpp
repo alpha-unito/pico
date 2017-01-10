@@ -64,7 +64,7 @@ public:
 	void* svc(void* in) {
 		std::string line;
 		std::string tail;
-		char buffer[144];
+		char buffer[256];
 		if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
 			error("ERROR connecting");
 		}
@@ -73,22 +73,17 @@ public:
 			if (n < 0)
 				error("ERROR reading from socket");
 			else {
-//				printf("%d %s\n", count++, buffer);
-//				printf("tweet %s\n", buffer);
 				tail.append(buffer);
 				std::istringstream f(tail);
 				while (std::getline(f, line, delimiter)) {
-//					printf("tweet %s\n", line.c_str());
 					if(!f.eof()) {// line contains another delimiter
 //						printf("%s\n", line.c_str());
-//						printf("tweet len %d tweet %s\n", line.size(), line.c_str());
 						auto tt = new TimedToken<Out>(Out(kernel(line)), counter++);
 						ff_send_out(reinterpret_cast<void*>(tt));
 						tail.clear();
 					} else { // trunked line, store for next parsing
 						tail.clear();
 						tail.append(line);
-//						printf("tail %s\n", tail.c_str());
 					}
 				}
 				bzero(buffer, sizeof(buffer));
@@ -96,6 +91,10 @@ public:
 		}
 
 		close(sockfd);
+		if(tail.size() > 0) {
+			auto tt = new TimedToken<Out>(Out(kernel(tail)), counter++);
+			ff_send_out(reinterpret_cast<void*>(tt));
+		}
 #ifdef DEBUG
 		fprintf(stderr, "[READ FROM SOCKET-%p] In SVC: SEND OUT PICO_EOS\n", this);
 #endif
