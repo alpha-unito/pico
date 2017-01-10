@@ -62,7 +62,7 @@ public:
 		for (auto it = graph.begin(); it != graph.end(); ++it)
 			delete it->first;
 		graph.clear();
-//		delete parDAG;
+		delete parDAG;
 	}
 
 	bool add_operator(std::shared_ptr<Operator> op) {

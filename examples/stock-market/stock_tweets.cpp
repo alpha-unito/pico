@@ -115,7 +115,9 @@ int main(int argc, char** argv)
                 std::string s;
                 while (std::getline(f, s, ' '))
                 {
-                    ++count;
+                    /* count token length + blank space */
+                    count += s.size() + 1;
+
                     /* stock name occurrence */
                     if(stock_names.find(s) != stock_names.end())
                     {

@@ -85,7 +85,7 @@ private:
 //				kv = reinterpret_cast<In*>(task);
 				TokenType tt = in_microbatch->at(0);
 				In kv = tt.get_data();
-				for (int i = 1; i < in_microbatch->size(); ++i){ // reduce on microbatch
+				for (typename std::vector<TokenType>::size_type i = 1; i < in_microbatch->size(); ++i){ // reduce on microbatch
 //					*kv = kernel(*(in_microbatch->at(i).get_data()), *kv);
 					kv = kernel((in_microbatch->at(i).get_data()), kv);
 

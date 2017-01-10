@@ -60,6 +60,13 @@ private:
 	public:
 		Worker(std::function<Out(In)> kernel_): in_microbatch(nullptr), out_microbatch(new std::vector<TokenTypeOut>()), kernel(kernel_), data(nullptr){}
 
+        ~Worker() {
+            /* delete the dandling empty microbatch, if present */
+            if (out_microbatch->size() == 0) {
+                delete out_microbatch;
+            }
+        }
+
 		void* svc(void* task) {
 			if(task != PICO_EOS && task != PICO_SYNC){
 				in_microbatch = reinterpret_cast<std::vector<TokenTypeIn>*>(task);

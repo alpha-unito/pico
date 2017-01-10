@@ -33,6 +33,16 @@ public:
 			nworkers(nworkers_), lb(lb_), tt(nullptr), curr_worker(0), w_size(w_size_) {
 	}
 
+	~KeyWinEmitter() {
+	    /* delete dandling empty windows */
+	    for (auto it=k_win_map.begin(); it!=k_win_map.end(); ++it){
+	        auto kv = it->first;
+	        if(it->second->size() == 0) {
+	            delete it->second;
+            }
+	    }
+	}
+
 	void* svc(void* task) {
 		if (task != PICO_EOS && task != PICO_SYNC) {
 			tt = reinterpret_cast<TokenType*>(task);
