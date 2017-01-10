@@ -10,8 +10,8 @@ LIBS                 = -lpthread
 ROOT                 = ../..
 FF                   = $(ROOT)/ff
 
-INCLUDES             = -I$(ROOT) -I$(FF)
-TARGET               = pico_wc
+INCLUDES             = -I$(ROOT) -I$(FF) -I../include
+TARGET               = pico_wc seq_wc
 
 
 .PHONY: all clean cleanall
@@ -29,8 +29,9 @@ all: $(TARGET)
 
 #dependencies
 pico_wc: pico_wc.o
+seq_wc: seq_wc.o
 
-clean: 
+clean:
 	rm -rf *.o *~
 
 cleanall: clean
