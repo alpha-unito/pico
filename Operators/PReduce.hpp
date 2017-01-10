@@ -81,8 +81,8 @@ protected:
 
 
 	ff::ff_node* node_operator(int parallelism) {
-		if(parallelism == 1)
-			return new PReduceFFNode<In>(&reducef);
+		//if(parallelism == 1)
+			//return new PReduceFFNode<In>(&reducef);
 		if(this->data_stype() == (StructureType::STREAM)){
 			return new PReduceBatch<In, TimedToken<In>, FarmWrapper>(parallelism, &reducef, win);
 		} // else preducemb with regular farm and window NoWindow
