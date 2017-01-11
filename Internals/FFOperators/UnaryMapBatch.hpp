@@ -40,7 +40,7 @@ public:
 	UnaryMapBatch(int parallelism, std::function<Out(In)>* mapf, WindowPolicy* win){
 	//	if (ordered) {
 			this->setEmitterF(win->window_farm(parallelism, this->getlb()));
-			this->setCollectorF(new FarmCollector<TokenTypeOut>(parallelism));
+			this->setCollectorF(new FarmCollector(parallelism));
 			delete win;
 	/*	} else {
 			this->add_emitter(new FarmEmitter<In>(parallelism, this->getlb()));

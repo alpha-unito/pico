@@ -41,15 +41,13 @@
 typedef KeyValue<std::string, int> KV;
 
 /* static tokenizer function */
-static auto tokenizer = [](std::string& in) {
+static auto tokenizer = [](std::string& in, FlatMapCollector<KV>& collector) {
 	std::istringstream f(in);
-	std::vector<KV> tokens;
 	std::string s;
 
 	while (std::getline(f, s, ' ')) {
-		tokens.push_back(KV(s,1));
+		collector.add(KV(s,1));
 	}
-	return tokens;
 };
 
 int main(int argc, char** argv) {

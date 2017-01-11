@@ -25,8 +25,7 @@
 #include <iostream>
 #include <fstream>
 
-#include "../../Internals/FFOperators/InOut/ReadFromFakeSocket.hpp"
-#include "../../Internals/FFOperators/InOut/ReadFromFileFFNode.hpp"
+#include <Internals/FFOperators/InOut/ReadFromFileFFNode.hpp>
 #include "InputOperator.hpp"
 /**
  * Defines an operator that reads data from a text file and produces an Ordered+Buonded collection (i.e. LIST).

@@ -35,21 +35,19 @@ template<typename TokenType>
 class TokenCollector : public FlatMapCollector<typename TokenType::datatype> {
 public:
     void new_microbatch() {
-        mb = new mb_t(MICROBATCH_SIZE);
+        mb = new Microbatch<TokenType>(MICROBATCH_SIZE);
     }
 
-    void add(const datatype &x) {
-        mb->push_back(x);
+    void add(const typename TokenType::datatype &x) {
+        mb->push_back(TokenType(x));
     }
 
-    mb_t *microbatch() {
+    Microbatch<TokenType> *microbatch() {
         return mb;
     }
 
 private:
-    typedef typename TokenType::datatype datatype;
-    typedef Microbatch<TokenType> mb_t;
-    mb_t *mb;
+    Microbatch<TokenType> *mb;
 };
 
 

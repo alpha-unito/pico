@@ -21,13 +21,12 @@
 #ifndef PREDUCE_HPP_
 #define PREDUCE_HPP_
 
-#include "../Internals/FFOperators/PReduceBatch.hpp"
+#include <Internals/FFOperators/PReduceBatch.hpp>
+#include <Internals/FFOperators/PReduceSeq.hpp>
 #include "UnaryOperator.hpp"
-#include "../Internals/FFOperators/PReduceFFNode.hpp"
-#include "../Internals/FFOperators/PReduceFFNodeMBOLD_OLD.hpp"
-#include "../Internals/Types/TimedToken.hpp"
-#include "../Internals/Types/Token.hpp"
-//#include "../Internals/FFOperators/SupportFFNodes/FarmWrapper.hpp"
+//#include <Internals/FFOperators/PReduceFFNode.hpp>
+#include <Internals/Types/TimedToken.hpp>
+#include <Internals/Types/Token.hpp>
 
 /**
  * Defines a PReduce operator performing a tree reduce function on partitioned input (i.e. reduce by key).
@@ -86,9 +85,9 @@ protected:
 		if(this->data_stype() == (StructureType::STREAM)){
 			return new PReduceBatch<In, TimedToken<In>, FarmWrapper>(parallelism, &reducef, win);
 		} // else preducemb with regular farm and window NoWindow
-		win =  new ByKeyWindow<Token<In>>(MICROBATCH_SIZE);
-		return new PReduceBatch<In, Token<In>, FarmWrapper>(parallelism, &reducef, win);
-//		return new PReduceFFNodeMB_OLD<In>(parallelism, &reducef);
+//		win =  new ByKeyWindow<Token<In>>(MICROBATCH_SIZE);
+//		return new PReduceBatch<In, Token<In>, FarmWrapper>(parallelism, &reducef, win);
+		return new PReduceSeq<In, Token<In>>(reducef);
 	}
 
 private:
