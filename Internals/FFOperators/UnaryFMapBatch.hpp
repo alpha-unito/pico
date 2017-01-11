@@ -80,7 +80,7 @@ private:
 					for(Out& res: kernel(in->get_data())){
 					    TokenTypeOut *tt = new TokenTypeOut(std::move(res));
 //					    tt.timestamp(in->get_timestamp());
-						out_microbatch->push_back(tt); //TODO check each item != go_on
+						out_microbatch->push_back(tt);
 						if (out_microbatch->size() == MICROBATCH_SIZE) {
 							ff_send_out(reinterpret_cast<void*>(out_microbatch));
 							out_microbatch = new std::vector<TokenTypeOut*>();

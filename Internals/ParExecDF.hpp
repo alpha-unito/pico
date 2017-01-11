@@ -49,6 +49,7 @@ public:
 		lastop = lastop_;
 		create_exec_graph();
 		picoDAG.cleanup_nodes();
+		//picoDAG.setFixedSize(false); //TODO check
 	}
 
 

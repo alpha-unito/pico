@@ -47,17 +47,24 @@ public:
 		if (task != PICO_EOS && task != PICO_SYNC) {
 			tt = reinterpret_cast<TokenType*>(task);
 			typename TokenType::datatype::keytype &key(tt->get_data().Key());
-			if (k_win_map.find(key) != k_win_map.end()) { // key already present
-				k_win_map[key]->push_back(tt);
+			size_t dst = key_to_worker(key);
+			std::vector<TokenType*>** mb_ptr;
 
-				if(k_win_map[key]->size() == w_size){
-					lb->ff_send_out_to(reinterpret_cast<void*>(k_win_map[key]), key_to_worker(key));
-					k_win_map[key] = new std::vector<TokenType *>();
-				}
-			} else {
-				k_win_map[key] = new std::vector<TokenType *>();
-				k_win_map[key]->push_back(tt);
-			}
+			if (k_win_map.find(key) != k_win_map.end()) { // key already present
+			    mb_ptr = &k_win_map[key];
+                (*mb_ptr)->push_back(tt);
+
+                if ((*mb_ptr)->size() == w_size) {
+                    lb->ff_send_out_to(reinterpret_cast<void*>(*mb_ptr), dst);
+                    *mb_ptr = new std::vector<TokenType *>();
+                }
+            }
+
+            else {
+                k_win_map[key] = new std::vector<TokenType *>();
+                mb_ptr = &k_win_map[key];
+                (*mb_ptr)->push_back(tt);
+            }
 //			delete tt;
 		} else {
 			typename std::map<keytype, std::vector<TokenType*>*>::iterator it;
