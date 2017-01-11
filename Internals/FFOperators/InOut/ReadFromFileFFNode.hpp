@@ -22,8 +22,9 @@
 #define INTERNALS_FFOPERATORS_INOUT_READFROMFILEFFNODE_HPP_
 
 #include <ff/node.hpp>
-#include "../../utils.hpp"
+#include <Internals/utils.hpp>
 #include <Internals/Types/Token.hpp>
+#include <Internals/Types/Microbatch.hpp>
 
 using namespace ff;
 
@@ -31,21 +32,20 @@ template <typename Out>
 class ReadFromFileFFNode: public ff_node {
 public:
 	ReadFromFileFFNode(std::function<Out(std::string)> kernel_, std::string filename_):
-		kernel(kernel_), filename(filename_), microbatch(new std::vector<Token<Out>*>()){};
+		kernel(kernel_), filename(filename_), microbatch(new Microbatch<Token<Out>>(MICROBATCH_SIZE)){};
 
 	void* svc(void* in){
 		std::string line;
 		std::ifstream infile(filename);
-
 		if (infile.is_open()) {
 			while (getline(infile, line)) {
 				microbatch->push_back(std::move(kernel(line)));
-				if(microbatch->size() == MICROBATCH_SIZE) {
+				if(microbatch->full()) {
 					ff_send_out(reinterpret_cast<void*>(microbatch));
-					microbatch = new std::vector<Token<Out>*>();
+					microbatch = new Microbatch<Token<Out>>(MICROBATCH_SIZE);
 				}
 			}
-			if(infile.eof() && microbatch->size() < MICROBATCH_SIZE && microbatch->size()>0){
+			if(infile.eof() && !microbatch->empty()){
 				ff_send_out(reinterpret_cast<void*>(microbatch));
 			}
 			infile.close();
@@ -62,8 +62,7 @@ public:
 private:
     std::function<Out(std::string)> kernel;
     std::string filename;
-    std::vector<Token<Out>>* microbatch;
-
+    Microbatch<Token<Out>>* microbatch;
 };
 
 
