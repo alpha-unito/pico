@@ -21,12 +21,12 @@
 #ifndef OPERATORS_INOUT_READFROMFILE_HPP_
 #define OPERATORS_INOUT_READFROMFILE_HPP_
 
+#include <Internals/FFOperators/InOut/ReadFromFileFFNode.hpp>
 #include <iostream>
 #include <fstream>
 
 #include "../../Internals/FFOperators/InOut/ReadFromFakeSocket.hpp"
 #include "../../Internals/FFOperators/InOut/ReadFromFileFFNode.hpp"
-#include "../../Internals/FFOperators/InOut/ReadFromFileFFNodeMB.hpp"
 #include "InputOperator.hpp"
 /**
  * Defines an operator that reads data from a text file and produces an Ordered+Buonded collection (i.e. LIST).
@@ -86,7 +86,7 @@ protected:
 
 	ff::ff_node* node_operator(int parallelism) {
 //		return new ReadFromFileFFNode<Out>(func, filename);
-		return new ReadFromFileFFNodeMB<Out>(func, filename);
+		return new ReadFromFileFFNode<Out>(func, filename);
 	}
 
 
