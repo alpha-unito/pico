@@ -85,8 +85,8 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism) {
-//			return new ReadFromFileTest<Out>(func, filename);
-		return new ReadFromFileFFNode<Out>(func, filename);
+//		return new ReadFromFileFFNode<Out>(func, filename);
+		return new ReadFromFileFFNodeMB<Out>(func, filename);
 	}
 
 
