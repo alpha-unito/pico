@@ -45,11 +45,6 @@ public:
     {
     }
 
-//    Token(T &&item_)
-//            : Token(std::move(item_)) //invoke move constructor
-//    {
-//    }
-
     friend std::ostream& operator<<(std::ostream& os, const Token& tt)
     {
         os << "<" << tt.data << ">";
@@ -60,6 +55,17 @@ public:
     {
         return data;
     }
+
+    /*
+     * delete all non-move constructors and assignments
+     */
+    Token(const Token &tt) = delete;
+    Token(Token tt) = delete;
+    Token(const T &item_) = delete;
+    Token(T item_) = delete;
+    Token& operator=(const Token &tt) = delete;
+    Token& operator=(Token tt) = delete;
+
 private:
     T data;
 };
