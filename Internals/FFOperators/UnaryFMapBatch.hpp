@@ -28,6 +28,7 @@
 #include "SupportFFNodes/FarmEmitter.hpp"
 #include "../Types/TimedToken.hpp"
 #include "../WindowPolicy.hpp"
+#include <Internals/Types/FlatMapCollector.hpp>
 
 using namespace ff;
 
@@ -36,67 +37,40 @@ template<typename In, typename Out, typename Farm, typename TokenTypeIn, typenam
 class UnaryFMapBatch: public Farm {
 public:
 
-	UnaryFMapBatch(int parallelism, std::function<std::vector<Out>(In&)>* flatmapf, WindowPolicy* win){
-	//	if (ordered) {
-			this->setEmitterF(win->window_farm(parallelism, this->getlb()));
-			this->setCollectorF(new FarmCollector<TokenTypeOut>(parallelism));
-			delete win;
-	/*	} else {
-			this->add_emitter(new FarmEmitter<In>(parallelism, this->getlb()));
-			this->add_collector(new FarmCollector<Out>(parallelism));
-		}*/
-		std::vector<ff_node *> w;
-		for(int i = 0; i < parallelism; ++i){
-			w.push_back(new Worker(*flatmapf));
-		}
-		this->add_workers(w);
-	};
-
+    UnaryFMapBatch(int parallelism, std::function<std::vector<Out>(In&)>* flatmapf, WindowPolicy* win) {
+        this->setEmitterF(win->window_farm(parallelism, this->getlb()));
+        this->setCollectorF(new FarmCollector<TokenTypeOut>(parallelism));
+        delete win;
+        std::vector<ff_node *> w;
+        for (int i = 0; i < parallelism; ++i)
+        {
+            w.push_back(new Worker(*flatmapf));
+        }
+        this->add_workers(w);
+    }
 
 private:
 
 	class Worker : public ff_node{
 	public:
-		Worker(std::function<std::vector<Out>(In&)> kernel_): in_microbatch(nullptr), out_microbatch(new std::vector<TokenTypeOut*>()), kernel(kernel_)
-		{}
-
-		~Worker() {
-            /* delete the dandling empty microbatch, if present */
-            if (out_microbatch->size() == 0) {
-                delete out_microbatch;
-            }
-        }
-
-		int svc_init() {
-		    out_microbatch->reserve(MICROBATCH_SIZE);
-		    return 0;
+		Worker(std::function<std::vector<Out>(In&)> kernel_): in_microbatch(nullptr), kernel(kernel_) {
+		    collector = new TokenCollector<TokenTypeOut>();
 		}
 
 		void* svc(void* task) {
 			if(task != PICO_EOS && task != PICO_SYNC){
-				in_microbatch = reinterpret_cast<std::vector<TokenTypeIn*>*>(task);
+				in_microbatch = reinterpret_cast<Microbatch<TokenTypeIn>*>(task);
+				collector->new_microbatch();
 				// iterate over microbatch
-				for(TokenTypeIn *in : *in_microbatch){
-					for(Out& res: kernel(in->get_data())){
-					    TokenTypeOut *tt = new TokenTypeOut(std::move(res));
-//					    tt.timestamp(in->get_timestamp());
-						out_microbatch->push_back(tt);
-						if (out_microbatch->size() == MICROBATCH_SIZE) {
-							ff_send_out(reinterpret_cast<void*>(out_microbatch));
-							out_microbatch = new std::vector<TokenTypeOut*>();
-							out_microbatch->reserve(MICROBATCH_SIZE);
-						}
-					}
-					delete in;
+				for(TokenTypeIn in : *in_microbatch){
+				    kernel(in->get_data(), collector);
 				}
 				delete in_microbatch;
+				return collector->microbatch();
 			} else {
 	#ifdef DEBUG
 			fprintf(stderr, "[UNARYFLATMAP-MB-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
 	#endif
-				if(out_microbatch->size() < MICROBATCH_SIZE && out_microbatch->size() > 0){
-					ff_send_out(reinterpret_cast<void*>(out_microbatch));
-				}
 				ff_send_out(task);
 			}
 			return GO_ON;
@@ -104,9 +78,9 @@ private:
 
 
 	private:
-		std::vector<TokenTypeIn*>* in_microbatch;
-		std::vector<TokenTypeOut*>* out_microbatch;
-		std::function<std::vector<Out>(In&)> kernel;
+		Microbatch<TokenTypeIn>* in_microbatch;
+		TokenCollector<TokenTypeOut> *collector;
+		std::function<std::vector<Out>(In&, FlatMapCollector<Out> &)> kernel;
 	};
 };
 

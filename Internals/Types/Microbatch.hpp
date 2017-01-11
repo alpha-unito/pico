@@ -33,6 +33,10 @@ public:
 		mb.push_back(std::move(t));
 	}
 
+	void push_back(const T& t) {
+	    mb.push_back(t);
+	}
+
 	bool full(){
 		return mb.size() == mb_size;
 	}
@@ -40,6 +44,11 @@ public:
 	bool empty(){
 		return mb.empty();
 	}
+
+	/*
+	 * delete non-move methods
+	 */
+	void push_back(T t) = delete;
 private:
 	std::vector<T> mb;
 	unsigned int mb_size;

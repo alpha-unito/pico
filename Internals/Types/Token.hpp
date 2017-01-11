@@ -57,7 +57,7 @@ public:
     }
 
     /*
-     * delete all non-move constructors and assignments
+     * delete all non-move constructors, assignments etc.
      */
     Token(const Token &tt) = delete;
     Token(Token tt) = delete;

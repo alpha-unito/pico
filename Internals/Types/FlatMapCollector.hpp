@@ -12,41 +12,46 @@
  along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * FarmEmitter.hpp
+ * FlatMapCollector.hpp
  *
- *  Created on: Dec 9, 2016
+ *  Created on: Jan 11, 2017
  *      Author: misale
  */
 
-#ifndef INTERNALS_FFOPERATORS_FARMEMITTER_HPP_
-#define INTERNALS_FFOPERATORS_FARMEMITTER_HPP_
+#ifndef INTERNALS_TYPES_FLATMAPCOLLECTOR_HPP_
+#define INTERNALS_TYPES_FLATMAPCOLLECTOR_HPP_
 
-#include "Emitter.hpp"
-#include <Internals/utils.hpp>
-#include <Internals/Types/Microbatch.hpp>
+#include "Microbatch.hpp"
 
-template<typename TokenType>
-class FarmEmitter: public Emitter {
+template<typename Out>
+class FlatMapCollector {
 public:
-	FarmEmitter(int nworkers_, ff_loadbalancer * const lb_) :
-			nworkers(nworkers_), lb(lb_) {
-	}
+    virtual void add(const Out &) = 0;
 
-	void* svc(void* task) {
-		if (task != PICO_EOS && task != PICO_SYNC) {
-			return task;
-		} else {
-			for (int i = 0; i < nworkers; ++i) {
-				lb->ff_send_out_to(task, i);
-			}
-		}
-		return GO_ON;
-	}
-
-private:
-	typedef Microbatch<TokenType> mb_t;
-	int nworkers;
-	ff_loadbalancer * const lb;
+    virtual ~FlatMapCollector() {}
 };
 
-#endif /* INTERNALS_FFOPERATORS_FARMEMITTER_HPP_ */
+template<typename TokenType>
+class TokenCollector : public FlatMapCollector<typename TokenType::datatype> {
+public:
+    void new_microbatch() {
+        mb = new mb_t(MICROBATCH_SIZE);
+    }
+
+    void add(const datatype &x) {
+        mb->push_back(x);
+    }
+
+    mb_t *microbatch() {
+        return mb;
+    }
+
+private:
+    typedef typename TokenType::datatype datatype;
+    typedef Microbatch<TokenType> mb_t;
+    mb_t *mb;
+};
+
+
+
+#endif /* INTERNALS_TYPES_FLATMAPCOLLECTOR_HPP_ */

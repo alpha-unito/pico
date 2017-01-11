@@ -22,27 +22,23 @@
 #define INTERNALS_FFOPERATORS_FARMCOLLECTOR_HPP_
 
 #include "Collector.hpp"
-#include "../../utils.hpp"
+#include <Internals/utils.hpp>
 
 template<typename Out>
 class FarmCollector : public Collector {
 public:
-	FarmCollector(int nworkers_):nworkers(nworkers_), picoEOSrecv(0), in_microbatch(nullptr){
+	FarmCollector(int nworkers_):nworkers(nworkers_), picoEOSrecv(0) {
 	}
 
 	void* svc(void* task) {
-		if(task==PICO_EOS){
+	    if(task == PICO_EOS && task != PICO_SYNC) {
+	        return task;
+	    }
+
+		if(task == PICO_EOS) {
 			if(++picoEOSrecv == nworkers){
 				return task;
 			}
-		} else if (task != PICO_SYNC) {
-
-			//unpack microbatch and send out items
-			in_microbatch = reinterpret_cast<std::vector<Out*>*>(task);
-			for(Out *item: *in_microbatch){
-				ff_send_out(reinterpret_cast<void*>(item));
-			}
-			delete in_microbatch;
 		}
 		return GO_ON;
     }
@@ -50,7 +46,6 @@ public:
 private:
 	int nworkers;
 	int picoEOSrecv;
-	std::vector<Out*>* in_microbatch;
 };
 
 #endif /* INTERNALS_FFOPERATORS_FARMCOLLECTOR_HPP_ */
