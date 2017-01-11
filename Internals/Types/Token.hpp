@@ -40,17 +40,15 @@ public:
     /*
      * constructor from T r-value ref
      */
-    template<typename U>
     Token(T &&item_)
             : data(std::move(item_)) //invoke T move constructor
     {
     }
 
-    template<typename U>
-    Token(T &&item_, const Token<U> &second)
-            : Token(std::move(item_)) //invoke move constructor
-    {
-    }
+//    Token(T &&item_)
+//            : Token(std::move(item_)) //invoke move constructor
+//    {
+//    }
 
     friend std::ostream& operator<<(std::ostream& os, const Token& tt)
     {

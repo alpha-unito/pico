@@ -30,32 +30,36 @@ public:
 	TimedToken() :
 			data(nullptr), timestamp(0) {
 	}
-	TimedToken(T item_, size_t timestamp_) :
-			data(item_), timestamp(timestamp_) {
-	}
 
-	template <typename U>
-	TimedToken (T item_, const TimedToken<U> &tt):
-		data(item_), timestamp(tt.get_timestamp()) {
-	}
+//	TimedToken(T item_, size_t timestamp_) :
+//			data(item_), timestamp(timestamp_) {
+//	}
 
-	TimedToken(const TimedToken &tt) :
-			data(tt.data), timestamp(tt.timestamp) {
-	}
+	TimedToken(T&& item):
+		data(std::move(item)), timestamp(0){};
+
+//	template <typename U>
+//	TimedToken (T&& item_, const TimedToken<U> &tt):
+//		data(std::move(item_)), timestamp(tt.get_timestamp()) {
+//	}
+////
+//	TimedToken(const TimedToken &tt) :
+//			data(tt.data), timestamp(tt.timestamp) {
+//	}
 
 	TimedToken(TimedToken &&tt) :
-			data(tt.data), timestamp(tt.timestamp) {
+			data(std::move(tt.data)), timestamp(std::move(tt.timestamp)) {
 	}
 
-	TimedToken& operator=(const TimedToken &tt) {
-		data = tt.data;
-		timestamp = tt.timestamp;
-		return *this;
-	}
+//	TimedToken& operator=(const TimedToken &tt) {
+//		data = (tt.data);
+//		timestamp = (tt.timestamp);
+//		return *this;
+//	}
 
 	TimedToken& operator=(TimedToken &&tt) {
-		data = tt.data;
-		timestamp = tt.timestamp;
+		data = std::move(tt.data);
+		timestamp = std::move(tt.timestamp);
 		return *this;
 	}
 
@@ -64,12 +68,16 @@ public:
 		return os;
 	}
 
-	 T get_data() {
+	 T &get_data() {
 	 	return data;
 	 }
 
-	 size_t get_timestamp() const{
+	 inline size_t get_timestamp() const{
 		 return timestamp;
+	 }
+
+	 void set_timestamp(size_t t){
+		 timestamp = t;
 	 }
 private:
 	T data;
