@@ -44,9 +44,16 @@ public:
 	const K& Key() const {
 		return key;
 	}
+
+	K& Key()  {
+			return key;
+		}
+
 	const V& Value() const {
 		return val;
 	}
+
+
 	void Key(K key_) {
 		key = key_;
 	}

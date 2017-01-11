@@ -85,9 +85,9 @@ private:
 //				kv = reinterpret_cast<In*>(task);
 				TokenType *tt = in_microbatch->at(0);
 				In kv = tt->get_data();
-				for (typename std::vector<TokenType>::size_type i = 1; i < in_microbatch->size(); ++i){ // reduce on microbatch
+				for (typename std::vector<TokenType*>::size_type i = 1; i < in_microbatch->size(); ++i){ // reduce on microbatch
 //					*kv = kernel(*(in_microbatch->at(i).get_data()), *kv);
-					kv = kernel(*(in_microbatch->at(i).get_data()), kv);
+					kv = kernel((in_microbatch->at(i)->get_data()), kv);
 
 				}
 //				if(kvmap.find(kv->Key()) != kvmap.end()){
@@ -107,7 +107,7 @@ private:
 				ff_send_out(PICO_SYNC);
 				typename std::map<typename In::keytype, In>::iterator it;
 				for (it=kvmap.begin(); it!=kvmap.end(); ++it){
-					ff_send_out(reinterpret_cast<void*>(new Token<In>(it->second))); // TODO
+					ff_send_out(reinterpret_cast<void*>(new Token<In>(std::move(it->second)))); // TODO
 				}
 				return task;
 			}
@@ -117,7 +117,7 @@ private:
 	private:
 		std::function<In(In&, In&)> kernel;
 		In* kv;
-		std::vector<TokenType>* in_microbatch;
+		std::vector<TokenType*>* in_microbatch;
 		std::map<typename In::keytype, In> kvmap;
 	};
 

@@ -36,7 +36,7 @@ template<typename In, typename Out, typename Farm, typename TokenTypeIn, typenam
 class UnaryFMapBatch: public Farm {
 public:
 
-	UnaryFMapBatch(int parallelism, std::function<std::vector<Out>(In)>* flatmapf, WindowPolicy* win){
+	UnaryFMapBatch(int parallelism, std::function<std::vector<Out>(In&)>* flatmapf, WindowPolicy* win){
 	//	if (ordered) {
 			this->setEmitterF(win->window_farm(parallelism, this->getlb()));
 			this->setCollectorF(new FarmCollector<TokenTypeOut>(parallelism));
@@ -57,7 +57,7 @@ private:
 
 	class Worker : public ff_node{
 	public:
-		Worker(std::function<std::vector<Out>(In)> kernel_): in_microbatch(nullptr), out_microbatch(new std::vector<TokenTypeOut>()), kernel(kernel_)
+		Worker(std::function<std::vector<Out>(In&)> kernel_): in_microbatch(nullptr), out_microbatch(new std::vector<TokenTypeOut*>()), kernel(kernel_)
 		{}
 
 		~Worker() {
@@ -78,7 +78,8 @@ private:
 				// iterate over microbatch
 				for(TokenTypeIn *in : *in_microbatch){
 					for(Out& res: kernel(in->get_data())){
-					    TokenTypeOut *tt = new TokenTypeOut(std::move(res), in);
+					    TokenTypeOut *tt = new TokenTypeOut(std::move(res));
+//					    tt.timestamp(in->get_timestamp());
 						out_microbatch->push_back(tt); //TODO check each item != go_on
 						if (out_microbatch->size() == MICROBATCH_SIZE) {
 							ff_send_out(reinterpret_cast<void*>(out_microbatch));

@@ -44,7 +44,7 @@ public:
 	/**
 	 * Constructor. Creates a new PReduce operator by defining its kernel function reducef: <In, In> -> In
 	 */
-	PReduce(std::function<In(In, In)> reducef_) :
+	PReduce(std::function<In(In&, In&)> reducef_) :
 			reducef(reducef_), win(nullptr) {
 		this->set_input_degree(1);
 		this->set_output_degree(1);
@@ -92,7 +92,7 @@ protected:
 	}
 
 private:
-	std::function<In(In, In)> reducef;
+	std::function<In(In&, In&)> reducef;
 	WindowPolicy* win;
 };
 

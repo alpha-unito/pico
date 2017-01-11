@@ -46,9 +46,9 @@ public:
 	void* svc(void* task) {
 		if (task != PICO_EOS && task != PICO_SYNC) {
 			tt = reinterpret_cast<TokenType*>(task);
-			typename TokenType::datatype::keytype &key(tt->get_data());
+			typename TokenType::datatype::keytype &key(tt->get_data().Key());
 			if (k_win_map.find(key) != k_win_map.end()) { // key already present
-				k_win_map[key]->push_back(new TokenType(tt));
+				k_win_map[key]->push_back(tt);
 
 				if(k_win_map[key]->size() == w_size){
 					lb->ff_send_out_to(reinterpret_cast<void*>(k_win_map[key]), key_to_worker(key));
@@ -56,11 +56,11 @@ public:
 				}
 			} else {
 				k_win_map[key] = new std::vector<TokenType *>();
-				k_win_map[key]->push_back(new TokenType(tt));
+				k_win_map[key]->push_back(tt);
 			}
-			delete tt;
+//			delete tt;
 		} else {
-			typename std::map<typename TokenType::datatype::keytype, std::vector<TokenType>*>::iterator it;
+			typename std::map<keytype, std::vector<TokenType*>*>::iterator it;
 			for (it=k_win_map.begin(); it!=k_win_map.end(); ++it){
 				auto kv = it->first;
 				if(it->second->size() > 0){
@@ -80,12 +80,12 @@ private:
 	int nworkers;
 	ff_loadbalancer * const lb;
 	TokenType* tt;
-	std::map<typename TokenType::datatype::keytype, std::vector<TokenType*>*> k_win_map;
+	std::map<keytype, std::vector<TokenType*>*> k_win_map;
 	int curr_worker;
 	size_t w_size;
 
-	inline size_t key_to_worker(keytype &k) {
-	    return std::hash<keytype>(k) % nworkers;
+	inline size_t key_to_worker( const keytype& k) {
+	    return std::hash<keytype>{}(k) % nworkers;
 	}
 };
 

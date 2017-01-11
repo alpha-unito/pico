@@ -48,7 +48,7 @@ public:
 	 * Creates a new FlatMap operator by defining its kernel function  flatMapf: In->Out
 	 * @param flatmapf std::function<Out(In)> FlatMap kernel function with input type In producing zero, one or more element of type Out
 	 */
-	FlatMap(std::function<std::vector<Out>(In)> flatmapf_) {
+	FlatMap(std::function<std::vector<Out>(In&)> flatmapf_) {
 		flatmapf = flatmapf_;
 		win = nullptr;
 		this->set_input_degree(1);
@@ -84,9 +84,9 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism) {
-		if(parallelism==1){
-			return new UnaryFlatMapFFNode<In, Out>(&flatmapf);
-		}
+//		if(parallelism==1){
+//			return new UnaryFlatMapFFNode<In, Out>(&flatmapf);
+//		}
 //
 		if(this->data_stype()  == StructureType::STREAM){
 			win = new BatchWindow<TimedToken<In>>(MICROBATCH_SIZE);
@@ -99,7 +99,7 @@ protected:
 
 
 private:
-	std::function<std::vector<Out>(In)> flatmapf;
+	std::function<std::vector<Out>(In&)> flatmapf;
 	WindowPolicy* win;
 //	StructureType st;
 };

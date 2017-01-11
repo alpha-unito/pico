@@ -30,7 +30,7 @@ class WinBatchEmitter : public Emitter {
 
 public:
 	WinBatchEmitter(int nworkers_, ff_loadbalancer * const lb_, size_t w_size_) :
-			nworkers(nworkers_), lb(lb_), microbatch(new std::vector<TokenType>()), t(nullptr), w_size(w_size_) {
+			nworkers(nworkers_), lb(lb_), microbatch(new std::vector<TokenType*>()), t(nullptr), w_size(w_size_) {
 	}
 
 	~WinBatchEmitter() {
@@ -48,10 +48,10 @@ public:
 	void* svc(void* task) {
 		if (task != PICO_EOS && task != PICO_SYNC) {
 			t = reinterpret_cast<TokenType*>(task);
-			microbatch->push_back(*t);
+			microbatch->push_back(t);
 			if (microbatch->size() == w_size) {
 				ff_send_out(reinterpret_cast<void*>(microbatch));
-				microbatch = new std::vector<TokenType>();
+				microbatch = new std::vector<TokenType*>();
 			}
 			delete t;
 			//return task;
@@ -71,7 +71,7 @@ public:
 private:
 	int nworkers;
 	ff_loadbalancer * const lb;
-	std::vector<TokenType>* microbatch;
+	std::vector<TokenType*>* microbatch;
 	TokenType *t;
 	size_t w_size;
 };
