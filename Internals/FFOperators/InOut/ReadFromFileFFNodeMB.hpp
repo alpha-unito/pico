@@ -23,6 +23,7 @@
 
 #include <ff/node.hpp>
 #include "../../utils.hpp"
+#include <Internals/Types/Token.hpp>
 
 using namespace ff;
 
@@ -30,7 +31,7 @@ template <typename Out>
 class ReadFromFileFFNodeMB: public ff_node {
 public:
 	ReadFromFileFFNodeMB(std::function<Out(std::string)> kernel_, std::string filename_):
-		kernel(kernel_), filename(filename_), microbatch(new std::vector<Out>()){};
+		kernel(kernel_), filename(filename_), microbatch(new std::vector<Token<Out>*>()){};
 
 	void* svc(void* in){
 		std::string line;
@@ -38,10 +39,10 @@ public:
 
 		if (infile.is_open()) {
 			while (getline(infile, line)) {
-				microbatch->push_back((kernel(line)));
+				microbatch->push_back(std::move(kernel(line)));
 				if(microbatch->size() == MICROBATCH_SIZE) {
 					ff_send_out(reinterpret_cast<void*>(microbatch));
-					microbatch = new std::vector<Out>();
+					microbatch = new std::vector<Token<Out>*>();
 				}
 			}
 			if(infile.eof() && microbatch->size() < MICROBATCH_SIZE && microbatch->size()>0){
@@ -61,7 +62,7 @@ public:
 private:
     std::function<Out(std::string)> kernel;
     std::string filename;
-    std::vector<Out>* microbatch;
+    std::vector<Token<Out>>* microbatch;
 
 };
 
