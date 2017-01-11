@@ -77,17 +77,37 @@ private:
 	class Worker: public ff_node {
 	public:
 		Worker(std::function<In(In&, In&)>* preducef) :
-				kernel(*preducef), kv(nullptr), in_microbatch(nullptr){};
+				kernel(*preducef), /*kv(nullptr),*/ in_microbatch(nullptr){};
 
 		void* svc(void* task) {
 			if(task != PICO_EOS && task != PICO_SYNC){
 				in_microbatch = reinterpret_cast<std::vector<TokenType*>*>(task);
-//				kv = reinterpret_cast<In*>(task);
+#if 1
+				typename std::vector<TokenType*>::size_type i = 0;
+				In &kv(in_microbatch->at(0)->get_data());
+				In *kv_ptr = nullptr;
+				if(kvmap.find(kv.Key()) != kvmap.end())
+				    kv_ptr = &kvmap[kv.Key()];
+				else {
+				    kvmap[kv.Key()] = In(in_microbatch->at(0)->get_data());
+				    kv_ptr = &kvmap[kv.Key()];
+				    i++;
+				    delete in_microbatch->at(0);
+				}
+
+				for (; i < in_microbatch->size(); ++i){ // reduce on microbatch
+				    *kv_ptr = kernel((in_microbatch->at(i)->get_data()), *kv_ptr);
+				    delete in_microbatch->at(i);
+				}
+#else
+//              kv = reinterpret_cast<In*>(task);
 				TokenType *tt = in_microbatch->at(0);
 				In kv = tt->get_data();
+				delete tt;
 				for (typename std::vector<TokenType*>::size_type i = 1; i < in_microbatch->size(); ++i){ // reduce on microbatch
 //					*kv = kernel(*(in_microbatch->at(i).get_data()), *kv);
 					kv = kernel((in_microbatch->at(i)->get_data()), kv);
+					delete in_microbatch->at(i);
 
 				}
 //				if(kvmap.find(kv->Key()) != kvmap.end()){
@@ -99,15 +119,15 @@ private:
 					kvmap[kv.Key()] = kv;
 				}
 //				delete kv;
+#endif
 				delete in_microbatch;
 			} else if (task == PICO_EOS) {
 	#ifdef DEBUG
 			fprintf(stderr, "[P-REDUCE-FFNODE-MB%p] In SVC RECEIVED PICO_EOS \n", this);
 	#endif
 				ff_send_out(PICO_SYNC);
-				typename std::map<typename In::keytype, In>::iterator it;
-				for (it=kvmap.begin(); it!=kvmap.end(); ++it){
-					ff_send_out(reinterpret_cast<void*>(new Token<In>(std::move(it->second)))); // TODO
+				for (auto it=kvmap.begin(); it!=kvmap.end(); ++it){
+					ff_send_out(reinterpret_cast<void*>(new Token<In>(std::move(it->second))));
 				}
 				return task;
 			}
@@ -116,7 +136,7 @@ private:
 
 	private:
 		std::function<In(In&, In&)> kernel;
-		In* kv;
+		//In* kv;
 		std::vector<TokenType*>* in_microbatch;
 		std::map<typename In::keytype, In> kvmap;
 	};
