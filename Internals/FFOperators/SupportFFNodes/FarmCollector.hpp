@@ -24,7 +24,6 @@
 #include "Collector.hpp"
 #include <Internals/utils.hpp>
 
-template<typename Out>
 class FarmCollector : public Collector {
 public:
 	FarmCollector(int nworkers_):nworkers(nworkers_), picoEOSrecv(0) {

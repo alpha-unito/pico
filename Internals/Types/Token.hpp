@@ -60,8 +60,8 @@ public:
      * delete all non-move constructors, assignments etc.
      */
     Token(const Token &tt) = delete;
-    Token(Token tt) = delete;
-    Token(const T &item_) = delete;
+    Token(const T &item_)
+    	 : data(item_){}
     Token(T item_) = delete;
     Token& operator=(const Token &tt) = delete;
     Token& operator=(Token tt) = delete;

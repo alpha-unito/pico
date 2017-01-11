@@ -25,7 +25,6 @@
 #include <fstream>
 
 #include "../../Internals/FFOperators/InOut/WriteToDiskFFNode.hpp"
-#include "../../Internals/FFOperators/InOut/WriteToDiskFFNodeMB.hpp"
 #include "OutputOperator.hpp"
 
 /**
@@ -92,15 +91,8 @@ protected:
 		return new WriteToDisk<In> (filename, func);
 	}
 
-//	const OperatorClass operator_class(){
-//		return OperatorClass::OUTPUT;
-//	}
-
 	ff::ff_node* node_operator(int parallelism) {
-		if(parallelism>=1){ //always return single item operator
-			return new WriteToDiskFFNode<In>(func, filename);
-		}
-		return new WriteToDiskFFNodeMB<In>(func, filename);
+		return new WriteToDiskFFNode<In>(func, filename);
 	}
 
 

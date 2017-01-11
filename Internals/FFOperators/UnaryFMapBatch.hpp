@@ -37,14 +37,14 @@ template<typename In, typename Out, typename Farm, typename TokenTypeIn, typenam
 class UnaryFMapBatch: public Farm {
 public:
 
-    UnaryFMapBatch(int parallelism, std::function<std::vector<Out>(In&)>* flatmapf, WindowPolicy* win) {
+    UnaryFMapBatch(int parallelism, std::function<void(In&, FlatMapCollector<Out> &)> flatmapf, WindowPolicy* win) {
         this->setEmitterF(win->window_farm(parallelism, this->getlb()));
-        this->setCollectorF(new FarmCollector<TokenTypeOut>(parallelism));
+        this->setCollectorF(new FarmCollector(parallelism));
         delete win;
         std::vector<ff_node *> w;
         for (int i = 0; i < parallelism; ++i)
         {
-            w.push_back(new Worker(*flatmapf));
+            w.push_back(new Worker(flatmapf));
         }
         this->add_workers(w);
     }
@@ -53,7 +53,7 @@ private:
 
 	class Worker : public ff_node{
 	public:
-		Worker(std::function<std::vector<Out>(In&)> kernel_): in_microbatch(nullptr), kernel(kernel_) {
+		Worker(std::function<void(In&, FlatMapCollector<Out> &)> kernel_): in_microbatch(nullptr), kernel(kernel_) {
 		    collector = new TokenCollector<TokenTypeOut>();
 		}
 
@@ -80,7 +80,7 @@ private:
 	private:
 		Microbatch<TokenTypeIn>* in_microbatch;
 		TokenCollector<TokenTypeOut> *collector;
-		std::function<std::vector<Out>(In&, FlatMapCollector<Out> &)> kernel;
+		std::function<void(In&, FlatMapCollector<Out> &)> kernel;
 	};
 };
 
