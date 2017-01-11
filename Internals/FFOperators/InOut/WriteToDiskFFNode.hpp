@@ -23,6 +23,7 @@
 
 #include "ff/node.hpp"
 #include "../../utils.hpp"
+#include <Internals/Types/Token.hpp>
 
 using namespace ff;
 
@@ -30,7 +31,7 @@ template <typename In>
 class WriteToDiskFFNode: public ff_node{
 public:
 	WriteToDiskFFNode(std::function<std::string(In)> kernel_, std::string filename_):
-			kernel(kernel_), filename(filename_), in(nullptr), recv_sync(false){};
+			kernel(kernel_), filename(filename_), in(nullptr), recv_sync(false), in_microbatch(nullptr){};
 
 	int svc_init(){
 //#ifdef DEBUG
@@ -51,9 +52,11 @@ public:
 
 		if(recv_sync || task != PICO_EOS){
 			if (outfile.is_open()) {
-				in = reinterpret_cast<In*>(task);
-				outfile << kernel(*in)<< std::endl;
-				delete in;
+				in_microbatch = reinterpret_cast<std::vector<Token<In>>*>(task);
+				for(In& in: *in_microbatch){
+					outfile << kernel(in)<< std::endl;
+				}
+				delete in_microbatch;
 			} else {
 				std::cerr << "Unable to open file";
 			}
@@ -69,8 +72,8 @@ private:
 	std::function<std::string(In)> kernel;
     std::string filename;
     std::ofstream outfile;
-    In* in;
     bool recv_sync;
+    std::vector<Token<In>>* in_microbatch;
 };
 
 

@@ -40,7 +40,7 @@ public:
 	ReadFromSocketFFNode(std::function<Out(std::string)> kernel_,
 			std::string& server_name_, int port_, char delimiter_) :
 			kernel(kernel_), server_name(server_name_), port(port_), delimiter(
-					delimiter_), counter(0), count(0) {
+					delimiter_), counter(0), microbatch(nullptr) {
 	}
 	;
 
@@ -77,9 +77,14 @@ public:
 				std::istringstream f(tail);
 				while (std::getline(f, line, delimiter)) {
 					if(!f.eof()) {// line contains another delimiter
-//						printf("%s\n", line.c_str());
-						auto tt = new TimedToken<Out>(Out(kernel(line)), counter++);
-						ff_send_out(reinterpret_cast<void*>(tt));
+//						auto tt = new TimedToken<Out>(Out(kernel(line)), counter++);
+//						ff_send_out(reinterpret_cast<void*>(tt));
+
+						microbatch->push_back(std::move(TimedToken<Out>(Out(kernel(line)), counter++)));
+						if (microbatch->size() == MICROBATCH_SIZE) {
+							ff_send_out(reinterpret_cast<void*>(microbatch));
+							microbatch = new std::vector<TimedToken<Out>>();
+						}
 						tail.clear();
 					} else { // trunked line, store for next parsing
 						tail.clear();
@@ -91,10 +96,15 @@ public:
 		}
 
 		close(sockfd);
-		if(tail.size() > 0) {
-			auto tt = new TimedToken<Out>(Out(kernel(tail)), counter++);
-			ff_send_out(reinterpret_cast<void*>(tt));
+		if (microbatch->size() < MICROBATCH_SIZE && microbatch->size() > 0) {
+			if(tail.size() > 0) {
+				microbatch->push_back(std::move(TimedToken<Out>(Out(kernel(tail)), counter++)));
+//						auto tt = new TimedToken<Out>(Out(kernel(tail)), counter++);
+//						ff_send_out(reinterpret_cast<void*>(tt));
+			}
+			ff_send_out(reinterpret_cast<void*>(microbatch));
 		}
+
 #ifdef DEBUG
 		fprintf(stderr, "[READ FROM SOCKET-%p] In SVC: SEND OUT PICO_EOS\n", this);
 #endif
@@ -112,7 +122,7 @@ private:
 	char delimiter;
 	Out item;
 	size_t counter;
-	int count;
+	std::vector<TimedToken<Out>>* microbatch;
 	void error(const char *msg) {
 		perror(msg);
 		exit(0);
