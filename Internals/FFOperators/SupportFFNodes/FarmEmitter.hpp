@@ -32,7 +32,7 @@ public:
 	}
 
 	~FarmEmitter() {
-	    /* delete the dandling empty microbatch, if present */
+	    /* delete the dangling empty microbatch, if present */
         if (microbatch->size() == 0) {
             delete microbatch;
         }
