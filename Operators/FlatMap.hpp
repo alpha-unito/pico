@@ -21,8 +21,6 @@
 #ifndef OPERATORS_FLATMAP_HPP_
 #define OPERATORS_FLATMAP_HPP_
 
-#include "../Internals/FFOperators/UnaryFlatMapFFNode.hpp"
-#include "../Internals/FFOperators/UnaryFlatMapFFNodeMBOLD_OLD.hpp"
 #include "../Internals/FFOperators/UnaryFMapBatch.hpp"
 #include "../Internals/WindowPolicy.hpp"
 #include "../Internals/Types/TimedToken.hpp"
@@ -66,11 +64,6 @@ public:
 		return "FlatMap";
 	}
 
-//	FlatMap& window(size_t size) {
-//		win = new BatchWindow<TimedToken<In>>(size);
-//		return *this;
-//	}
-
 protected:
 	void run(In* task) {
 		assert(false);
@@ -94,14 +87,12 @@ protected:
 		}
 		win = new noWindow<Token<In>>();
 		return new UnaryFMapBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, &flatmapf, win);
-//		return new UnaryFlatMapFFNodeMB_OLD<In, Out>(parallelism, &flatmapf);
 	}
 
 
 private:
 	std::function<std::vector<Out>(In&)> flatmapf;
 	WindowPolicy* win;
-//	StructureType st;
 };
 
 #endif /* OPERATORS_FLATMAP_HPP_ */
