@@ -117,7 +117,6 @@ private:
 		case UMAP: //same as unary flatmap
 			(*iterator)->op->set_data_stype(pipe_st);
 			if (DAG->at(*iterator).at(0)->op->operator_class() == OperatorClass::COMBINE) {
-				printf("Flatmap's next operator is a combine\n");
 				pipe.add_stage((*iterator)->node_operator(PARALLELISM,DAG->at(*iterator).at(0)->op));
 			} else {
 				pipe.add_stage((*iterator)->node_operator(PARALLELISM));
