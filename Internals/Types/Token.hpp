@@ -26,24 +26,15 @@ class Token {
 public:
     typedef T datatype;
 
-//    Token(Token &&tt)
-//            : data(std::move(tt.data))
-//    {
-//    }
-
-//    Token& operator=(Token &&tt)
-//    {
-//        data = std::move(tt.data); //invoke T move assignment
-//        return *this;
-//    }
-
     /*
      * constructor from T r-value ref
      */
-    Token(T &&item_)
-            : data(std::move(item_)) //invoke T move constructor
-    {
-    }
+    Token(T &&item_) : data(std::move(item_)) {}
+
+    /*
+     * constructor from T l-value ref
+     */
+    Token(const T &item_) : data(item_){}
 
     friend std::ostream& operator<<(std::ostream& os, const Token& tt)
     {
@@ -55,19 +46,6 @@ public:
     {
         return data;
     }
-
-    /*
-     * non-move constructors, assignments etc.
-     */
-    Token(const Token &tt) : data(tt.data) {
-
-    }
-    Token(const T &item_)
-    	 : data(item_){}
-
-//    Token(T item_) = delete;
-//    Token& operator=(const Token &tt) = delete;
-//    Token& operator=(Token tt) = delete;
 
 private:
     T data;
