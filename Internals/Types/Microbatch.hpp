@@ -37,6 +37,10 @@ public:
 	    mb.push_back(t);
 	}
 
+	void clear() {
+	    mb.clear();
+	}
+
 	bool full(){
 		return mb.size() == mb_size;
 	}

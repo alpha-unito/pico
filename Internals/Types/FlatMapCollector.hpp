@@ -38,6 +38,14 @@ public:
         mb = new Microbatch<TokenType>(MICROBATCH_SIZE);
     }
 
+    void delete_microbatch() {
+        delete mb;
+    }
+
+    void clear() {
+        mb->clear();
+    }
+
     void add(const typename TokenType::datatype &x) {
         mb->push_back(TokenType(x));
     }
