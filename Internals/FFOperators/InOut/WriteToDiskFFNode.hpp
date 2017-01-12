@@ -52,9 +52,9 @@ public:
 
 		if(recv_sync || task != PICO_EOS){
 			if (outfile.is_open()) {
-				in_microbatch = reinterpret_cast<std::vector<Token<In>>*>(task);
-				for(In& in: *in_microbatch){
-					outfile << kernel(in)<< std::endl;
+				in_microbatch = reinterpret_cast<Microbatch<Token<In>>*>(task);
+				for(Token<In>& in: *in_microbatch){
+					outfile << kernel(in.get_data())<< std::endl;
 				}
 				delete in_microbatch;
 			} else {
@@ -73,7 +73,7 @@ private:
     std::string filename;
     std::ofstream outfile;
     bool recv_sync;
-    std::vector<Token<In>>* in_microbatch;
+    Microbatch<Token<In>>* in_microbatch;
 };
 
 

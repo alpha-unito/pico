@@ -39,12 +39,12 @@ public:
 			in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
 
 
-			for (typename std::vector<TokenType>::size_type i = 0; i < in_microbatch->size(); ++i) { // reduce on microbatch
-				In &kv(in_microbatch->at(i).get_data());
+			for (TokenType &mb_item : *in_microbatch) { // reduce on microbatch
+				In &kv(mb_item.get_data());
 				if (kvmap.find(kv.Key()) != kvmap.end()) {
-					kvmap[kv.Key()] = kernel((in_microbatch->at(i)->get_data()), kvmap[kv.Key()]);
+					kvmap[kv.Key()] = reducef(kv, kvmap[kv.Key()]);
 				} else {
-					kvmap[kv.Key()] = In(in_microbatch->at(i).get_data());
+					kvmap[kv.Key()] = In(kv);
 				}
 			}
 			delete in_microbatch;
