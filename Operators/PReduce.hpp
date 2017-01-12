@@ -69,6 +69,10 @@ public:
 		return *this;
 	}
 
+	std::function<In(In&, In&)> kernel(){
+			return reducef;
+		}
+
 protected:
 	void run() {
 		assert(false);
@@ -79,7 +83,7 @@ protected:
 	}
 
 
-	ff::ff_node* node_operator(int parallelism) {
+	ff::ff_node* node_operator(int parallelism, Operator* nextop=nullptr) {
 		//if(parallelism == 1)
 //			return new PReduceFFNode<In>(&reducef);
 		if(this->data_stype() == (StructureType::STREAM)){

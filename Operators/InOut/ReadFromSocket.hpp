@@ -106,7 +106,7 @@ protected:
 		return OperatorClass::INPUT;
 	}
 
-	ff::ff_node* node_operator(int parallelism) {
+	ff::ff_node* node_operator(int parallelism, Operator* nextop=nullptr) {
 //		return new ReadFromFakeSocket<Out>(func, filename);
 		return new ReadFromSocketFFNode<Out>(func, server_name, port, delimiter);
 	}

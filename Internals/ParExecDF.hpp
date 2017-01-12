@@ -115,56 +115,40 @@ private:
 	void build_ffnode(SemDAGNode** iterator, ff_pipeline& pipe) {
 		switch ((*iterator)->op->operator_class()) {
 		case UMAP: //same as unary flatmap
-#ifdef DEBUG
-		std::cerr << "[PAR_EXEC_DF] Map/FMap operator found " << (*iterator)->op->operator_class() << std::endl;
-#endif
 			(*iterator)->op->set_data_stype(pipe_st);
-			pipe.add_stage((*iterator)->node_operator(PARALLELISM));
+			if (DAG->at(*iterator).at(0)->op->operator_class() == OperatorClass::COMBINE) {
+				printf("Flatmap's next operator is a combine\n");
+				pipe.add_stage((*iterator)->node_operator(PARALLELISM,DAG->at(*iterator).at(0)->op));
+			} else {
+				pipe.add_stage((*iterator)->node_operator(PARALLELISM));
+			}
+
 			*iterator = (DAG->at(*iterator).at(0));
+
 			build_ffnode(iterator, pipe);
-//
 			break;
 		case BMAP: //same as binary flatmap
-#ifdef DEBUG
-//		std::cerr << "[PAR_EXEC_DF] BMap/BFMap operator found " << (*iterator)->op->operator_class() << std::endl;
-#endif
 			(*iterator)->op->set_data_stype(pipe_st);
 			break;
 		case COMBINE:
-#ifdef DEBUG
-//			std::cerr << "[PAR_EXEC_DF] Combine operator found " << (*iterator)->op->operator_class() << std::endl;
-#endif
 			(*iterator)->op->set_data_stype(pipe_st);
 			pipe.add_stage((*iterator)->node_operator(PARALLELISM));
 			*iterator = (DAG->at(*iterator).at(0));
 			build_ffnode(iterator, pipe);
 			break;
 		case INPUT:
-#ifdef DEBUG
-			std::cerr << "[PAR_EXEC_DF] Input operator found " << (*iterator)->op->operator_class() << std::endl;
-#endif
 			pipe_st = (*iterator)->op->data_stype();
-			//std::cout << "pipe Stype INPUT " << pipe_st << " " <<  (*iterator)->op->operator_class() << std::endl;
 			pipe.add_stage((*iterator)->node_operator(PARALLELISM));
 			*iterator = (DAG->at(*iterator).at(0));
 			build_ffnode(iterator, pipe);
 			break;
 		case MERGE:
-#ifdef DEBUG
-//			std::cerr << "[PAR_EXEC_DF] Merge operator found " << (*iterator)->op->operator_class() << std::endl;
-#endif
 			build_farm_block(iterator, pipe, false);
 			*iterator = (DAG->at(*iterator).at(0));
 			build_ffnode(iterator, pipe);
 			break;
 		case none:
-#ifdef DEBUG
-			std::cerr << "[PAR_EXEC_DF] Entry/Exit point found\n";
-#endif
 			if ((*iterator)->role == DAGNodeRole::BCast) {
-#ifdef DEBUG
-				std::cerr << "[PAR_EXEC_DF] BCast found\n";
-#endif
 				build_farm_block(iterator, pipe, true);
 				*iterator = (DAG->at(*iterator).at(0));
 				build_ffnode(iterator, pipe);
@@ -173,9 +157,6 @@ private:
 		case OUTPUT:
 			pipe.add_stage((*iterator)->node_operator(PARALLELISM));
 //			(*iterator)->op->data_stype(pipe_st);
-#ifdef DEBUG
-//			std::cerr << "[CREATE_EXEC_DF] OUTPUT operator found " << (*iterator)->op->operator_class() << std::endl;
-#endif
 			return;
 		default:
 			break;
