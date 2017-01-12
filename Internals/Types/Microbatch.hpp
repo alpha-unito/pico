@@ -45,6 +45,10 @@ public:
 		return mb.empty();
 	}
 
+	unsigned int size() {
+		return mb.size();
+	}
+
 	typename std::vector<T>::iterator begin() {
 	    return mb.begin();
 	}

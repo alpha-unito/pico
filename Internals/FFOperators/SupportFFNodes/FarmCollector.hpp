@@ -30,7 +30,7 @@ public:
 	}
 
 	void* svc(void* task) {
-	    if(task == PICO_EOS && task != PICO_SYNC) {
+	    if(task != PICO_EOS && task != PICO_SYNC) {
 	        return task;
 	    }
 
