@@ -26,6 +26,8 @@
 #include <Internals/Types/Token.hpp>
 #include <Internals/Types/Microbatch.hpp>
 
+#include <unordered_map>
+
 using namespace ff;
 
 template<typename In, typename TokenType>
@@ -69,7 +71,7 @@ public:
 
 private:
 	std::function<In(In&, In&)> reducef;
-	std::map<typename In::keytype, In> kvmap;
+	std::unordered_map<typename In::keytype, In> kvmap;
 	Microbatch<TokenType>* in_microbatch;
 	Microbatch<TokenType>* out_microbatch;
 };

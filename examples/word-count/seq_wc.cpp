@@ -30,7 +30,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <map>
+#include <unordered_map>
 #include <fstream>
 
 #include <timers.hpp>
@@ -49,7 +49,7 @@ int main(int argc, char** argv)
     std::string outputfilename = argv[2];
 
     /* prepare the output word-count map */
-    std::map<std::string, unsigned> word_cnt;
+    std::unordered_map<std::string, unsigned> word_cnt;
 
     /* prepare the timers */
     time_point_t t0, t1;
