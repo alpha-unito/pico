@@ -26,6 +26,8 @@
 #include <Internals/Types/Token.hpp>
 #include <Internals/Types/Microbatch.hpp>
 
+#include <unordered_map>
+
 using namespace ff;
 
 template<typename In, typename TokenType>
@@ -39,12 +41,11 @@ public:
 
 			in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
 			for (TokenType &mb_item : *in_microbatch) { // reduce on microbatch
-				In &kv(mb_item.get_data());
-				if (kvmap.find(kv.Key()) != kvmap.end()) {
-					kvmap[kv.Key()] = reducef(kv, kvmap[kv.Key()]);
-				} else {
-					kvmap[kv.Key()] = In(kv);
-				}
+			    In &kv(mb_item.get_data());
+			    if(kvmap.find(kv.Key()) != kvmap.end())
+			        kvmap[kv.Key()] = reducef(kv, kvmap[kv.Key()]);
+			    else
+			        kvmap[kv.Key()] = kv;
 			}
 			delete in_microbatch;
 		} else if(task == PICO_EOS){
@@ -73,7 +74,7 @@ public:
 
 private:
 	std::function<In(In&, In&)> reducef;
-	std::map<typename In::keytype, In> kvmap;
+	std::unordered_map<typename In::keytype, In> kvmap;
 	Microbatch<TokenType>* in_microbatch;
 	Microbatch<TokenType>* out_microbatch;
 };

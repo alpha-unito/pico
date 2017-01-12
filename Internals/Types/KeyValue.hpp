@@ -83,6 +83,11 @@ public:
 		return os;
 	}
 
+	KeyValue& operator+=(const KeyValue& rhs) {
+	    val += rhs.val; // reuse compound assignment
+	    return *this; // return the result by value (uses move constructor)
+	}
+
 	// friends defined inside class body are inline and are hidden from non-ADL lookup
 	friend KeyValue operator+(KeyValue lhs, // passing lhs by value helps optimize chained a+b+c
 			const KeyValue& rhs) // otherwise, both parameters may be const references
