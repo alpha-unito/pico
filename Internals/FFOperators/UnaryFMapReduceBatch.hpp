@@ -85,6 +85,7 @@ private:
 						kvmap[kv.Key()] = kv;
 					}
 				}
+#if 0
 				out_microbatch = new Microbatch<TokenTypeOut>(MICROBATCH_SIZE);
 				for (auto it=kvmap.begin(); it!=kvmap.end(); ++it){
 					out_microbatch->push_back(std::move(it->second));
@@ -93,6 +94,7 @@ private:
 				ff_send_out(reinterpret_cast<void*>(out_microbatch));
 				kvmap.clear();
 //				ff_send_out(reinterpret_cast<void*>(collector->microbatch()));
+#endif
 
 				//clean up
 				delete in_microbatch;
@@ -101,7 +103,21 @@ private:
 	#ifdef DEBUG
 			fprintf(stderr, "[UNARYFLATMAP-PREDUCE-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
 	#endif
-				ff_send_out(task);
+                out_microbatch = new Microbatch<TokenTypeOut>(MICROBATCH_SIZE);
+                for (auto it = kvmap.begin(); it != kvmap.end(); ++it)
+                {
+                    out_microbatch->push_back(std::move(it->second));
+                    if(out_microbatch->full()) {
+                        ff_send_out(reinterpret_cast<void*>(out_microbatch));
+                        out_microbatch = new Microbatch<TokenTypeOut>(MICROBATCH_SIZE);
+                    }
+                }
+
+                if(!out_microbatch->empty())  {
+                ff_send_out(reinterpret_cast<void*>(out_microbatch));
+                }
+
+                ff_send_out(task);
 			}
 			return GO_ON;
 		}
