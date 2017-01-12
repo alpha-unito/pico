@@ -41,7 +41,7 @@ public:
 			w_size = w.w_size;
 			return *this;
 		}
-//	template<typename In>
+
 	virtual	ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const lb_)=0;
 
 	virtual ~WindowPolicy(){};

@@ -91,7 +91,7 @@ protected:
 		return new WriteToDisk<In> (filename, func);
 	}
 
-	ff::ff_node* node_operator(int parallelism) {
+	ff::ff_node* node_operator(int parallelism, Operator* nextop=nullptr) {
 		return new WriteToDiskFFNode<In>(func, filename);
 	}
 

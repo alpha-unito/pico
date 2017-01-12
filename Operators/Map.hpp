@@ -103,7 +103,7 @@ protected:
 	}
 
 
-	ff::ff_node* node_operator(int parallelism){
+	ff::ff_node* node_operator(int parallelism, Operator* nextop=nullptr){
 		if(parallelism == 1){
 			return new UnaryMapFFNode<In, Out>(&mapf);
 		}

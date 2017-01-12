@@ -48,10 +48,11 @@ public:
 		opclass = op->operator_class();
 	}
 
-	ff::ff_node* node_operator(size_t par_deg=1){
+	ff::ff_node* node_operator(size_t par_deg=1, std::shared_ptr<Operator> nextop=nullptr){
 		ff::ff_node *res = nullptr;
-		if(op.get())
-			res = op->node_operator(par_deg);
+		if(op.get()){
+			res = op->node_operator(par_deg, nextop.get());
+		}
 		return res;
 	}
 

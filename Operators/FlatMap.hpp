@@ -21,11 +21,14 @@
 #ifndef OPERATORS_FLATMAP_HPP_
 #define OPERATORS_FLATMAP_HPP_
 
-#include "../Internals/FFOperators/UnaryFMapBatch.hpp"
-#include "../Internals/WindowPolicy.hpp"
-#include "../Internals/Types/TimedToken.hpp"
-#include "../Internals/Types/Token.hpp"
-#include "../Internals/FFOperators/SupportFFNodes/FarmWrapper.hpp"
+
+#include <Internals/WindowPolicy.hpp>
+#include <Internals/Types/TimedToken.hpp>
+#include <Internals/Types/Token.hpp>
+#include <Internals/FFOperators/SupportFFNodes/FarmWrapper.hpp>
+#include <Internals/FFOperators/UnaryFMapBatch.hpp>
+#include <Internals/FFOperators/UnaryFMapReduceBatch.hpp>
+#include "PReduce.hpp"
 #include "UnaryOperator.hpp"
 /**
  * Defines an operator performing a FlatMap, taking in input one element from
@@ -76,7 +79,7 @@ protected:
 		return OperatorClass::UMAP;
 	}
 
-	ff::ff_node* node_operator(int parallelism) {
+	ff::ff_node* node_operator(int parallelism, Operator* nextop) {
 //		if(parallelism==1){
 //			return new UnaryFlatMapFFNode<In, Out>(&flatmapf);
 //		}
@@ -86,6 +89,12 @@ protected:
 //			return new UnaryFMapBatch<In, Out, ff_ofarm, TimedToken<In>, TimedToken<Out>>(parallelism, flatmapf, win);
 //		}
 		win = new noWindow<Token<In>>();
+		if(nextop != nullptr){
+
+			return new UnaryFMapReduceBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, flatmapf,
+					(dynamic_cast<PReduce<Out>*>(nextop))->kernel(), win);
+
+		}
 		return new UnaryFMapBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, flatmapf, win);
 	}
 

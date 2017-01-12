@@ -83,7 +83,7 @@ protected:
 		assert(false);
 	}
 
-	ff::ff_node* node_operator(int parallelism) {
+	ff::ff_node* node_operator(int parallelism, Operator* nextop=nullptr) {
 //		return new ReadFromFileFFNode<Out>(func, filename);
 		return new ReadFromFileFFNode<Out>(func, filename);
 	}
