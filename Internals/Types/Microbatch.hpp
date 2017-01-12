@@ -53,10 +53,6 @@ public:
 	    return mb.end();
 	}
 
-	/*
-	 * delete non-move methods
-	 */
-	//void push_back(T t) = delete;
 private:
 	std::vector<T> mb;
 	unsigned int mb_size;
