@@ -42,7 +42,10 @@ public:
 			in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
 			for (TokenType &mb_item : *in_microbatch) { // reduce on microbatch
 			    In &kv(mb_item.get_data());
-				kvmap[kv.Key()] = reducef(kv, kvmap[kv.Key()]);
+			    if(kvmap.find(kv.Key()) != kvmap.end())
+			        kvmap[kv.Key()] = reducef(kv, kvmap[kv.Key()]);
+			    else
+			        kvmap[kv.Key()] = kv;
 			}
 			delete in_microbatch;
 		} else if(task == PICO_EOS){
