@@ -66,7 +66,7 @@ private:
 				    kernel(in.get_data(), *collector);
 				}
 				delete in_microbatch;
-				return collector->microbatch();
+				ff_send_out(reinterpret_cast<void*>(collector->microbatch()));
 			} else {
 	#ifdef DEBUG
 			fprintf(stderr, "[UNARYFLATMAP-MB-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);

@@ -36,9 +36,8 @@ public:
 
 	void* svc(void* task) {
 		if (task != PICO_EOS && task != PICO_SYNC) {
+
 			in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
-
-
 			for (TokenType &mb_item : *in_microbatch) { // reduce on microbatch
 				In &kv(mb_item.get_data());
 				if (kvmap.find(kv.Key()) != kvmap.end()) {
@@ -48,18 +47,26 @@ public:
 				}
 			}
 			delete in_microbatch;
-		} else {
-			for (auto it=kvmap.begin(); it!=kvmap.end(); ++it){
-				out_microbatch->push_back(std::move(it->second));
-				if(out_microbatch->full()) {
-					ff_send_out(reinterpret_cast<void*>(out_microbatch));
-					out_microbatch = new Microbatch<TokenType>(MICROBATCH_SIZE);
+		} else if(task == PICO_EOS){
+#ifdef DEBUG
+		fprintf(stderr, "[P-REDUCE-FFNODE-SEQ-%p] In SVC RECEIVED PICO_EOS %p \n", this, task);
+#endif
+				ff_send_out(PICO_SYNC);
+				for (auto it=kvmap.begin(); it!=kvmap.end(); ++it){
+//					std::cout << "val " << it->second;
+					out_microbatch->push_back(std::move(it->second));
+
+					if(out_microbatch->full()) {
+						ff_send_out(reinterpret_cast<void*>(out_microbatch));
+						out_microbatch = new Microbatch<TokenType>(MICROBATCH_SIZE);
+					}
 				}
-			}
-			if (!out_microbatch->empty()){
-				ff_send_out(reinterpret_cast<void*>(out_microbatch));
-			}
+				if (!out_microbatch->empty()){
+					ff_send_out(reinterpret_cast<void*>(out_microbatch));
+				}
+
 			return task;
+
 		}
 		return GO_ON;
 	}
