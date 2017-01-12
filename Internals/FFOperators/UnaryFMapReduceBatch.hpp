@@ -69,7 +69,7 @@ private:
 				for(TokenTypeIn &in : *in_microbatch){
 				    kernel(in.get_data(), *collector);
 				}
-				delete in_microbatch;
+
 				// partial reduce on collector->microbatch
 				for (TokenTypeOut &mb_item : *collector->microbatch()) { // reduce on microbatch
 					Out &kv(mb_item.get_data());
@@ -77,7 +77,7 @@ private:
 						kvmap[kv.Key()] = reducef_kernel(kv, kvmap[kv.Key()]);
 //						std::cout << "kv "<< kvmap[kv.Key()] << std::endl;
 					} else {
-						kvmap[kv.Key()] = Out(kv);
+						kvmap[kv.Key()] = kv;
 					}
 				}
 				out_microbatch = new Microbatch<TokenTypeOut>(MICROBATCH_SIZE);
@@ -88,6 +88,10 @@ private:
 				ff_send_out(reinterpret_cast<void*>(out_microbatch));
 				kvmap.clear();
 //				ff_send_out(reinterpret_cast<void*>(collector->microbatch()));
+
+				//clean up
+				delete in_microbatch;
+				delete collector->microbatch();
 			} else {
 	#ifdef DEBUG
 			fprintf(stderr, "[UNARYFLATMAP-PREDUCE-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
