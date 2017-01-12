@@ -62,8 +62,8 @@ private:
 				in_microbatch = reinterpret_cast<Microbatch<TokenTypeIn>*>(task);
 				collector->new_microbatch();
 				// iterate over microbatch
-				for(TokenTypeIn in : *in_microbatch){
-				    kernel(in->get_data(), collector);
+				for(TokenTypeIn &in : *in_microbatch){
+				    kernel(in.get_data(), *collector);
 				}
 				delete in_microbatch;
 				return collector->microbatch();
