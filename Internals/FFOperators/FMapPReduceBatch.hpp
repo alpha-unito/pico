@@ -12,14 +12,14 @@
  along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * UnaryFMapReduceBatch.hpp
+ * FMapPReduceBatch.hpp
  *
  *  Created on: Jan 12, 2017
  *      Author: misale
  */
 
-#ifndef INTERNALS_FFOPERATORS_UNARYFMAPREDUCEBATCH_HPP_
-#define INTERNALS_FFOPERATORS_UNARYFMAPREDUCEBATCH_HPP_
+#ifndef INTERNALS_FFOPERATORS_FMAPPREDUCEBATCH_HPP_
+#define INTERNALS_FFOPERATORS_FMAPPREDUCEBATCH_HPP_
 
 
 #include <ff/farm.hpp>
@@ -28,20 +28,22 @@
 #include "SupportFFNodes/FarmCollector.hpp"
 #include "SupportFFNodes/FarmEmitter.hpp"
 #include <Internals/Types/TimedToken.hpp>
+#include <Internals/Types/Microbatch.hpp>
 #include <Internals/WindowPolicy.hpp>
 #include <Internals/Types/FlatMapCollector.hpp>
+
 #include <unordered_map>
 
 using namespace ff;
 
-
 template<typename In, typename Out, typename Farm, typename TokenTypeIn, typename TokenTypeOut>
-class UnaryFMapReduceBatch: public Farm {
+class FMapPReduceBatch: public Farm {
 public:
 
-	UnaryFMapReduceBatch(int parallelism, std::function<void(In&, FlatMapCollector<Out> &)> flatmapf,
-			std::function<Out(Out&, Out&)> reducef, WindowPolicy* win) {
-        this->setEmitterF(win->window_farm(parallelism, this->getlb()));
+	FMapPReduceBatch(int parallelism, std::function<void(In&, FlatMapCollector<Out> &)>& flatmapf,
+			std::function<Out(Out&, Out&)>& reducef, WindowPolicy* win) {
+
+		this->setEmitterF(win->window_farm(parallelism, this->getlb()));
         this->setCollectorF(new FarmCollector(parallelism));
         delete win;
         std::vector<ff_node *> w;
@@ -56,8 +58,9 @@ private:
 
 	class Worker : public ff_node{
 	public:
-		Worker(std::function<void(In&, FlatMapCollector<Out> &)> kernel_, std::function<Out(Out&, Out&)> reducef_kernel_):
-		in_microbatch(nullptr), out_microbatch(new Microbatch<TokenTypeOut>(MICROBATCH_SIZE)), kernel(kernel_), reducef_kernel(reducef_kernel_) {
+		Worker(std::function<void(In&, FlatMapCollector<Out> &)>& kernel_, std::function<Out(Out&, Out&)>& reducef_kernel_):
+		in_microbatch(nullptr), out_microbatch(new Microbatch<TokenTypeOut>(MICROBATCH_SIZE)), kernel(kernel_),
+		reducef_kernel(reducef_kernel_) {
 		    collector = new TokenCollector<TokenTypeOut>();
 		    collector->new_microbatch();
 		}
@@ -80,20 +83,18 @@ private:
 					Out &kv(mb_item.get_data());
 					if (kvmap.find(kv.Key()) != kvmap.end()) {
 						kvmap[kv.Key()] = reducef_kernel(kv, kvmap[kv.Key()]);
-//						std::cout << "kv "<< kvmap[kv.Key()] << std::endl;
 					} else {
 						kvmap[kv.Key()] = kv;
 					}
 				}
 #if 0
+				// stateless variant
 				out_microbatch = new Microbatch<TokenTypeOut>(MICROBATCH_SIZE);
 				for (auto it=kvmap.begin(); it!=kvmap.end(); ++it){
 					out_microbatch->push_back(std::move(it->second));
 				}
-//				std::cout << "partial reduce map size " << kvmap.size() << std::endl;
 				ff_send_out(reinterpret_cast<void*>(out_microbatch));
 				kvmap.clear();
-//				ff_send_out(reinterpret_cast<void*>(collector->microbatch()));
 #endif
 
 				//clean up
@@ -136,4 +137,4 @@ private:
 
 
 
-#endif /* INTERNALS_FFOPERATORS_UNARYFMAPREDUCEBATCH_HPP_ */
+#endif /* INTERNALS_FFOPERATORS_FMAPPREDUCEBATCH_HPP_ */

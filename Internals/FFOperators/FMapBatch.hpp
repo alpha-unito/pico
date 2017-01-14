@@ -12,14 +12,14 @@
  along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * UnaryFMapBatch.hpp
+ * FMapBatch.hpp.hpp
  *
  *  Created on: Jan 2, 2017
  *      Author: misale
  */
 
-#ifndef INTERNALS_FFOPERATORS_UNARYFMAPBATCH_HPP_
-#define INTERNALS_FFOPERATORS_UNARYFMAPBATCH_HPP_
+#ifndef INTERNALS_FFOPERATORS_FMAPBATCH_HPP_
+#define INTERNALS_FFOPERATORS_FMAPBATCH_HPP_
 
 #include <ff/farm.hpp>
 
@@ -34,10 +34,10 @@ using namespace ff;
 
 
 template<typename In, typename Out, typename Farm, typename TokenTypeIn, typename TokenTypeOut>
-class UnaryFMapBatch: public Farm {
+class FMapBatch: public Farm {
 public:
 
-    UnaryFMapBatch(int parallelism, std::function<void(In&, FlatMapCollector<Out> &)> flatmapf, WindowPolicy* win) {
+    FMapBatch(int parallelism, std::function<void(In&, FlatMapCollector<Out> &)> flatmapf, WindowPolicy* win) {
         this->setEmitterF(win->window_farm(parallelism, this->getlb()));
         this->setCollectorF(new FarmCollector(parallelism));
         delete win;
@@ -86,4 +86,4 @@ private:
 
 
 
-#endif /* INTERNALS_FFOPERATORS_UNARYFMAPBATCH_HPP_ */
+#endif /* INTERNALS_FFOPERATORS_FMAPBATCH_HPP_ */

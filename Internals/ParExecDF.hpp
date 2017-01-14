@@ -35,8 +35,6 @@
 using namespace ff;
 using adjList = std::map<SemDAGNode*, std::vector<SemDAGNode*>>;
 
-
-
 class ParExecDF {
 public:
 
@@ -117,13 +115,11 @@ private:
 		case UMAP: //same as unary flatmap
 			(*iterator)->op->set_data_stype(pipe_st);
 			if (DAG->at(*iterator).at(0)->op->operator_class() == OperatorClass::COMBINE) {
-				pipe.add_stage((*iterator)->node_operator(PARALLELISM,DAG->at(*iterator).at(0)->op));
+				pipe.add_stage((*iterator)->node_operator(PARALLELISM, DAG->at(*iterator).at(0)->op));
 			} else {
 				pipe.add_stage((*iterator)->node_operator(PARALLELISM));
 			}
-
 			*iterator = (DAG->at(*iterator).at(0));
-
 			build_ffnode(iterator, pipe);
 			break;
 		case BMAP: //same as binary flatmap

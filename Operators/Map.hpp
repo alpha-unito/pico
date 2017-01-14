@@ -21,13 +21,15 @@
 #ifndef MAPACTORNODE_HPP_
 #define MAPACTORNODE_HPP_
 
-#include "../Internals/FFOperators/UnaryMapBatch.hpp"
-#include "../Internals/FFOperators/UnaryMapFFNode.hpp"
-#include "../Internals/WindowPolicy.hpp"
+#include <Internals/FFOperators/MapBatch.hpp>
+#include <Internals/FFOperators/MapPReduceBatch.hpp>
+#include <Internals/FFOperators/UnaryMapFFNode.hpp>
+#include <Internals/WindowPolicy.hpp>
 #include "UnaryOperator.hpp"
-#include "../Internals/Types/TimedToken.hpp"
-#include "../Internals/Types/Token.hpp"
-#include "../Internals/FFOperators/SupportFFNodes/FarmWrapper.hpp"
+#include "PReduce.hpp"
+#include <Internals/Types/TimedToken.hpp>
+#include <Internals/Types/Token.hpp>
+#include <Internals/FFOperators/SupportFFNodes/FarmWrapper.hpp>
 
 /**
  * Defines an operator performing a Map function, taking in input one element from
@@ -48,7 +50,7 @@ public:
 	 * Constructor. Creates a new Map operator by defining its kernel function  mapf: In->Out
 	 * @param mapf std::function<Out(In)> Map kernel function with input type In producing an element of type Out
 	 */
-	Map(std::function<Out(In)> mapf_){
+	Map(std::function<Out(In&)> mapf_){
 		mapf = mapf_;
 		win = nullptr;
 		this->set_input_degree(1);
@@ -103,21 +105,29 @@ protected:
 	}
 
 
-	ff::ff_node* node_operator(int parallelism, Operator* nextop=nullptr){
-		if(parallelism == 1){
-			return new UnaryMapFFNode<In, Out>(&mapf);
-		}
+	ff::ff_node* node_operator(int parallelism, Operator* nextop){
+//		if(parallelism == 1){
+//			return new UnaryMapFFNode<In, Out>(&mapf);
+//		}
 		if (this->data_stype() == (StructureType::STREAM)){
 			win = new BatchWindow<TimedToken<In>>(MICROBATCH_SIZE);
-			return new UnaryMapBatch<In, Out, ff_ofarm, TimedToken<In>, TimedToken<Out>>(parallelism, &mapf, win);
+			if(nextop != nullptr){
+				return new MapPReduceBatch<In, Out, ff_ofarm, TimedToken<In>, TimedToken<Out>>(parallelism, mapf,
+					(dynamic_cast<PReduce<Out>*>(nextop))->kernel(), win);
+			} else {
+				return new MapBatch<In, Out, ff_ofarm, TimedToken<In>, TimedToken<Out>>(parallelism, mapf, win);
+			}
 		}
 		win = new noWindow<Token<In>>();
-		return new UnaryMapBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, &mapf, win);
-//		return new UnaryMapFFNodeMB_OLD<In, Out>(parallelism, &mapf);
+		if(nextop != nullptr){
+			return new MapPReduceBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, mapf,
+					(dynamic_cast<PReduce<Out>*>(nextop))->kernel(), win);
+		}
+		return new MapBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, mapf, win);
 	}
 
 private:
-	std::function<Out(In)> mapf;
+	std::function<Out(In&)> mapf;
 	WindowPolicy* win;
 };
 

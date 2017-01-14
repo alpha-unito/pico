@@ -22,12 +22,12 @@
 #define OPERATORS_FLATMAP_HPP_
 
 
+#include <Internals/FFOperators/FMapBatch.hpp>
+#include <Internals/FFOperators/FMapPReduceBatch.hpp>
 #include <Internals/WindowPolicy.hpp>
 #include <Internals/Types/TimedToken.hpp>
 #include <Internals/Types/Token.hpp>
 #include <Internals/FFOperators/SupportFFNodes/FarmWrapper.hpp>
-#include <Internals/FFOperators/UnaryFMapBatch.hpp>
-#include <Internals/FFOperators/UnaryFMapReduceBatch.hpp>
 #include "PReduce.hpp"
 #include "UnaryOperator.hpp"
 /**
@@ -90,12 +90,10 @@ protected:
 //		}
 		win = new noWindow<Token<In>>();
 		if(nextop != nullptr){
-
-			return new UnaryFMapReduceBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, flatmapf,
+			return new FMapPReduceBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, flatmapf,
 					(dynamic_cast<PReduce<Out>*>(nextop))->kernel(), win);
-
 		}
-		return new UnaryFMapBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, flatmapf, win);
+		return new FMapBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, flatmapf, win);
 	}
 
 
