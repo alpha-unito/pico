@@ -39,9 +39,9 @@ public:
 		data(std::move(item)), timestamp(0){};
 
 //	template <typename U>
-//	TimedToken (T&& item_, const TimedToken<U> &tt):
-//		data(std::move(item_)), timestamp(tt.get_timestamp()) {
-//	}
+	TimedToken (T&& item_, const TimedToken<T> &tt):
+		data(std::move(item_)), timestamp(tt.get_timestamp()) {
+	}
 ////
 //	TimedToken(const TimedToken &tt) :
 //			data(tt.data), timestamp(tt.timestamp) {

@@ -22,8 +22,8 @@
 #define INTERNALS_WINDOWPOLICY_HPP_
 
 #include <Internals/FFOperators/WindowFFNodes/WinBatchEmitter.hpp>
-#include <Internals/FFOperators/WindowFFNodes/KeyWinEmitter.hpp>
 #include <Internals/FFOperators/SupportFFNodes/FarmEmitter.hpp>
+#include <Internals/FFOperators/WindowFFNodes/ByKeyEmitter.hpp>
 
 class WindowPolicy {
 public:
@@ -41,6 +41,12 @@ public:
 			w_size = w.w_size;
 			return *this;
 		}
+	size_t slide_factor(){
+		return w_slide;
+	}
+	size_t win_size(){
+		return w_size;
+	}
 
 	virtual	ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const lb_)=0;
 
@@ -71,7 +77,7 @@ public:
 	ByKeyWindow (size_t w_size_) : WindowPolicy(w_size_, w_size_){};
 
 	 ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const lb_) {
-		return new KeyWinEmitter<TokenType>(nworkers_, lb_, w_size);
+		return new ByKeyEmitter<TokenType>(nworkers_, lb_, w_size);
 	}
 };
 

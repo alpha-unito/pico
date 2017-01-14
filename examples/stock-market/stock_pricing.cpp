@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
 	 * stock options by applying the Black-Scholes formula
 	 */
 	Pipe blackScholes(Map<StockAndOption, StockAndPrice>([]
-	(const StockAndOption in) {
+	(const StockAndOption& in) {
 		return StockAndPrice(in.Key(), black_scholes(in.Value()));
 	}));
 

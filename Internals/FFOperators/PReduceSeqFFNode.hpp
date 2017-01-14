@@ -12,29 +12,40 @@
  along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * PReduceSeq.hpp
+ * PReduceSeqFFNode.hpp
  *
  *  Created on: Jan 11, 2017
  *      Author: misale
  */
 
-#ifndef INTERNALS_FFOPERATORS_PREDUCESEQ_HPP_
-#define INTERNALS_FFOPERATORS_PREDUCESEQ_HPP_
+#ifndef INTERNALS_FFOPERATORS_PREDUCESEQFFNODE_HPP_
+#define INTERNALS_FFOPERATORS_PREDUCESEQFFNODE_HPP_
 
 #include <ff/node.hpp>
 #include <Internals/utils.hpp>
 #include <Internals/Types/Token.hpp>
 #include <Internals/Types/Microbatch.hpp>
+#include <Internals/WindowPolicy.hpp>
 
 #include <unordered_map>
 
 using namespace ff;
 
 template<typename In, typename TokenType>
-class PReduceSeq: public ff_node {
+class PReduceSeqFFNode: public ff_node {
 public:
-	PReduceSeq(std::function<In(In&, In&)>& reducef_) :
-			reducef(reducef_), in_microbatch(nullptr), out_microbatch(new Microbatch<TokenType>(MICROBATCH_SIZE)){}
+	PReduceSeqFFNode(std::function<In(In&, In&)>& reducef_, WindowPolicy* win=nullptr) :
+			reducef(reducef_), in_microbatch(nullptr){
+		if(win){
+#ifdef DEBUG
+           fprintf(stderr, "[P-REDUCE-FFNODE-%p] Window size %lu \n", this, win->win_size());
+#endif
+			outmb_size = win->win_size();
+		} else {
+			outmb_size = MICROBATCH_SIZE;
+		}
+		out_microbatch = new Microbatch<TokenType>(outmb_size);
+	}
 
     void* svc(void* task)
     {
@@ -66,7 +77,7 @@ public:
                 if (out_microbatch->full())
                 {
                     ff_send_out(reinterpret_cast<void*>(out_microbatch));
-                    out_microbatch = new Microbatch<TokenType>(MICROBATCH_SIZE);
+                    out_microbatch = new Microbatch<TokenType>(outmb_size);
                 }
             }
             if (!out_microbatch->empty())
@@ -85,6 +96,7 @@ private:
 	std::unordered_map<typename In::keytype, In> kvmap;
 	Microbatch<TokenType>* in_microbatch;
 	Microbatch<TokenType>* out_microbatch;
+	size_t outmb_size;
 };
 
-#endif /* INTERNALS_FFOPERATORS_PREDUCESEQ_HPP_ */
+#endif /* INTERNALS_FFOPERATORS_PREDUCESEQFFNODE_HPP_ */
