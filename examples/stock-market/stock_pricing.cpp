@@ -39,76 +39,76 @@
 #include "defs.h"
 #include "black_scholes.hpp"
 
-/* read stock name and option data from a single text line */
-StockAndOption parse_option(const std::string in) {
-	std::string name;
-	OptionData opt;
-	char otype;
-	std::stringstream ins(in);
-
-	/* read stock name */
-	ins >> name;
-
-	/* read stock option data */
-	ins >> opt.s >> opt.strike >> opt.r >> opt.divq;
-	ins >> opt.v >> opt.t >> otype >> opt.divs >> opt.DGrefval;
-	opt.OptionType = (otype == 'P');
-
-	return StockAndOption(name, opt);
-}
-
 /* write stock name and price to a single text line */
-std::string pricing_to_string(const StockAndPrice stock_and_price) {
-	std::stringstream out;
-	out << stock_and_price.Key();
-	out << " ";
-	out << stock_and_price.Value();
-	return out.str();
+std::string pricing_to_string(const StockAndPrice stock_and_price)
+{
+    std::stringstream out;
+    out << stock_and_price.Key();
+    out << " ";
+    out << stock_and_price.Value();
+    return out.str();
 }
 
-int main(int argc, char** argv) {
-	/* parse command line */
-	if (argc < 3) {
-		std::cerr << "Usage: " << argv[0];
-		std::cerr << " <input-file> <output-file>\n";
-		return -1;
-	}
-	std::string in_fname = argv[1], out_fname = argv[2];
+int main(int argc, char** argv)
+{
+    /* parse command line */
+    if (argc < 3)
+    {
+        std::cerr << "Usage: " << argv[0];
+        std::cerr << " <input-file> <output-file>\n";
+        return -1;
+    }
+    std::string in_fname = argv[1], out_fname = argv[2];
 
-	/*
-	 * define a generic pipeline that computes the price of a bunch of
-	 * stock options by applying the Black-Scholes formula
-	 */
-	Pipe blackScholes(Map<StockAndOption, StockAndPrice>([]
-	(const StockAndOption& in) {
-		return StockAndPrice(in.Key(), black_scholes(in.Value()));
-	}));
+    /*
+     * define a generic pipeline that computes the price of a bunch of
+     * stock options by applying the Black-Scholes formula
+     */
+    Pipe blackScholes(Map<std::string, StockAndPrice>([]
+    (const std::string& in)
+    {
+        std::string name;
+        OptionData opt;
+        char otype;
+        std::stringstream ins(in);
 
-	// blackScholes can now be used to build both batch and streaming pipelines.
+        /* read stock name */
+        ins >> name;
 
-	/*
-	 * define a batch pipeline that:
-	 * 1. read options from file
-	 * 2. computes prices by means of the blackScholes pipeline
-	 * 3. extracts the maximum price for each stock name
-	 * 4. write prices to file
-	 */
-	Pipe stockPricing(ReadFromFile<StockAndOption>(in_fname, parse_option)); //1
-	stockPricing //
-	.to(blackScholes) //2
-//	.add(PReduce<StockAndPrice>(std::max<StockAndPrice>))
-	.add(PReduce<StockAndPrice>([]
-	(StockAndPrice p1, StockAndPrice p2) {return std::max(p1,p2);})) //3
-	.add(WriteToDisk<StockAndPrice>(out_fname, pricing_to_string)); //4
+        /* read stock option data */
+        ins >> opt.s >> opt.strike >> opt.r >> opt.divq;
+        ins >> opt.v >> opt.t >> otype >> opt.divs >> opt.DGrefval;
+        opt.OptionType = (otype == 'P');
 
-	/* generate dot file with the semantic DAG */
-	stockPricing.to_dotfile("stock_pricing.dot");
+        return StockAndPrice(name, black_scholes(opt));
+    }));
 
-	/* execute the pipeline */
-	stockPricing.run();
+    // blackScholes can now be used to build both batch and streaming pipelines.
 
-	/* print execution time */
-	std::cout << "done in " << stockPricing.pipe_time() << " ms\n";
+    /*
+     * define a batch pipeline that:
+     * 1. read options from file
+     * 2. computes prices by means of the blackScholes pipeline
+     * 3. extracts the maximum price for each stock name
+     * 4. write prices to file
+     */
+    Pipe stockPricing(ReadFromFile<std::string>(in_fname, [](std::string in)
+    {   return in;}));
+    stockPricing //
+    .to(blackScholes)
+    .add(PReduce<StockAndPrice>([]
+    (StockAndPrice p1, StockAndPrice p2)
+    {   return std::max(p1,p2);}))
+    .add(WriteToDisk<StockAndPrice>(out_fname, pricing_to_string)); //4
 
-	return 0;
+    /* generate dot file with the semantic DAG */
+    stockPricing.to_dotfile("stock_pricing.dot");
+
+    /* execute the pipeline */
+    stockPricing.run();
+
+    /* print execution time */
+    std::cout << "done in " << stockPricing.pipe_time() << " ms\n";
+
+    return 0;
 }
