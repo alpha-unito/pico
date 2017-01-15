@@ -31,7 +31,7 @@ using namespace ff;
 template <typename Out>
 class ReadFromFileFFNode: public ff_node {
 public:
-	ReadFromFileFFNode(std::function<Out(std::string)> kernel_, std::string filename_):
+	ReadFromFileFFNode(std::function<Out(std::string&)> kernel_, std::string filename_):
 		kernel(kernel_), filename(filename_), microbatch(new mb_t(MICROBATCH_SIZE)){};
 
 	void* svc(void* in){
@@ -61,7 +61,7 @@ public:
 
 private:
 	typedef Microbatch<Token<Out>> mb_t;
-    std::function<Out(std::string)> kernel;
+    std::function<Out(std::string&)> kernel;
     std::string filename;
     mb_t* microbatch;
 };
