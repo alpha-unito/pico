@@ -48,23 +48,13 @@ public:
 	* Constructor. Creates a new ReadFromSocket operator by defining its kernel function: std::string -> Out
     * operating on each token of the stream, delimited by the delimiter value.
 	*/
-	ReadFromSocket(std::string server_name_, int port_, std::function<Out(std::string)> func_, char delimiter_)
+	ReadFromSocket(std::string server_name_, int port_, std::function<Out(std::string&)> func_, char delimiter_)
 			: InputOperator<Out>(StructureType::STREAM) {
 		server_name = server_name_;
 		port = port_;
 		func = func_;
 		delimiter = delimiter_;
 	}
-
-	/**
-		* Constructor. Creates a new ReadFromSocket operator by defining its kernel function: std::string -> Out
-	    * operating on each token of the stream, delimited by the delimiter value.
-		*/
-		ReadFromSocket(std::string filename_, std::function<Out(std::string)> func_)
-		: InputOperator<Out>(StructureType::STREAM) {
-			func = func_;
-			filename = filename_;
-		}
 
 	/**
 	 * Copy constructor.
@@ -106,14 +96,14 @@ protected:
 
 	ff::ff_node* node_operator(int parallelism, Operator* nextop=nullptr) {
 //		return new ReadFromFakeSocket<Out>(func, filename);
-		return new ReadFromSocketFFNode<Out>(func, server_name, port, delimiter);
+		return new ReadFromSocketFFNode<Out, Token<Out>>(func, server_name, port, delimiter);
 	}
 
 
 private:
 	std::string server_name;
 	int port;
-	std::function<Out(std::string)> func;
+	std::function<Out(std::string&)> func;
 	char delimiter;
 	std::string filename;
 

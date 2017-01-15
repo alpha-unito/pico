@@ -35,17 +35,19 @@
 
 using namespace ff;
 
-template<typename Out>
+template<typename Out, typename TokenType>
 class ReadFromSocketFFNode: public ff_node {
 public:
-	ReadFromSocketFFNode(std::function<Out(std::string)> kernel_,
+	ReadFromSocketFFNode(std::function<Out(std::string&)> kernel_,
 			std::string& server_name_, int port_, char delimiter_) :
 			kernel(kernel_), server_name(server_name_), port(port_),
-			delimiter(delimiter_), counter(0), microbatch(new Microbatch<Token<Out>>(MICROBATCH_SIZE)) {
+			delimiter(delimiter_), counter(0), microbatch(new Microbatch<TokenType>(MICROBATCH_SIZE)) {
 	}
 
 	int svc_init() {
+		int option = 1;
 		sockfd = socket(AF_INET, SOCK_STREAM, 0);
+		setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
 		if (sockfd < 0)
 			error("ERROR opening socket");
 		server = gethostbyname(server_name.c_str());
@@ -77,13 +79,10 @@ public:
 				std::istringstream f(tail);
 				while (std::getline(f, line, delimiter)) {
 					if(!f.eof()) {// line contains another delimiter
-						microbatch->push_back(Token<Out>(kernel(line)));
+						microbatch->push_back(TokenType(kernel(line)));
 						if (microbatch->full()) {
 							ff_send_out(reinterpret_cast<void*>(microbatch));
-							microbatch = new Microbatch<Token<Out>>(MICROBATCH_SIZE);
-							for (Token<Out>& tt: *microbatch) {
-//								std::cout << " mb item " << tt.get_data() << std::endl;
-							}
+							microbatch = new Microbatch<TokenType>(MICROBATCH_SIZE);
  						}
 						tail.clear();
 					} else { // trunked line, store for next parsing
@@ -98,8 +97,9 @@ public:
 		close(sockfd);
 		if (!microbatch->empty()) {
 			if(tail.size() > 0) {
-				microbatch->push_back(Token<Out>(kernel(tail)));
+				microbatch->push_back(TokenType(kernel(tail)));
 			}
+			std::cout << " mb size tail " << microbatch->size() << std::endl;
 			ff_send_out(reinterpret_cast<void*>(microbatch));
 		}
 
@@ -119,7 +119,7 @@ private:
 	struct hostent *server;
 	char delimiter;
 	size_t counter;
-	Microbatch<Token<Out>>* microbatch;
+	Microbatch<TokenType>* microbatch;
 	void error(const char *msg) {
 		perror(msg);
 		exit(0);

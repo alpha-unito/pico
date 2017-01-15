@@ -34,8 +34,27 @@ public:
 template<typename TokenType>
 class TokenCollector : public FlatMapCollector<typename TokenType::datatype> {
 public:
+	TokenCollector() {
+		size = 0;
+		mb = nullptr;
+	}
+
+	TokenCollector(size_t size_){
+		mb = new Microbatch<TokenType>(size_);
+		size = size_;
+	}
+
+    void new_microbatch(size_t size) {
+        mb = new Microbatch<TokenType>(size);
+    }
+
     void new_microbatch() {
-        mb = new Microbatch<TokenType>(MICROBATCH_SIZE);
+    	if(size > 0) {
+    		mb = new Microbatch<TokenType>(size);
+    	} else {
+    		mb = new Microbatch<TokenType>(MICROBATCH_SIZE);
+    		size = MICROBATCH_SIZE;
+    	}
     }
 
     void delete_microbatch() {
@@ -56,6 +75,7 @@ public:
 
 private:
     Microbatch<TokenType> *mb;
+    size_t size;
 };
 
 

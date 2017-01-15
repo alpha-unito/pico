@@ -111,6 +111,7 @@ int main(int argc, char** argv)
 
                 /* tokenize the tweet */
                 std::istringstream f(tweet);
+//                std::cout << "tweet in lambda " << tweet << std::endl;
                 std::string s;
                 while (std::getline(f, s, ' '))
                 {
@@ -156,7 +157,7 @@ int main(int argc, char** argv)
 #else
     /* define i/o operators from/to standard input/output */
     ReadFromSocket<std::string> readTweets(tweet_host, tweet_port, //
-            [](std::string s)
+            [](std::string& s)
             {
                 return s;
             }, //

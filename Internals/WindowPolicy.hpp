@@ -21,9 +21,9 @@
 #ifndef INTERNALS_WINDOWPOLICY_HPP_
 #define INTERNALS_WINDOWPOLICY_HPP_
 
-#include <Internals/FFOperators/WindowFFNodes/WinBatchEmitter.hpp>
 #include <Internals/FFOperators/SupportFFNodes/FarmEmitter.hpp>
 #include <Internals/FFOperators/WindowFFNodes/ByKeyEmitter.hpp>
+#include <Internals/FFOperators/WindowFFNodes/OFarmEmitter.hpp>
 
 class WindowPolicy {
 public:
@@ -65,7 +65,7 @@ public:
 	BatchWindow (size_t w_size_) : WindowPolicy(w_size_, w_size_){};
 
 	 ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const lb_) {
-		return new WinBatchEmitter<TokenType>(nworkers_, lb_, w_size);
+		return new OFarmEmitter<TokenType>(nworkers_, lb_);
 	}
 };
 

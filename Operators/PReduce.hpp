@@ -66,7 +66,7 @@ public:
 	 * Windowing is applied on partitioning basis: each window contains only items belonging to a single partition.
 	 */
 	PReduce& window(size_t size) {
-		win = new ByKeyWindow<TimedToken<In>>(size);
+		win = new ByKeyWindow<Token<In>>(size);
 		return *this;
 	}
 
@@ -88,7 +88,7 @@ protected:
 		//if(parallelism == 1)
 //			return new PReduceFFNode<In>(&reducef);
 		if(this->data_stype() == (StructureType::STREAM)){
-			return new PReduceWin<In, TimedToken<In>, FarmWrapper/*ff_ofarm not needed*/>(parallelism, reducef, win);
+			return new PReduceWin<In, Token<In>, FarmWrapper/*ff_ofarm not needed*/>(parallelism, reducef, win);
 		} // else preducemb with regular farm and window NoWindow
 //		win =  new ByKeyWindow<Token<In>>(MICROBATCH_SIZE);
 //		return new PReduceBatch<In, Token<In>, FarmWrapper>(parallelism, reducef, win);
