@@ -84,10 +84,15 @@ protected:
 //			return new UnaryFlatMapFFNode<In, Out>(&flatmapf);
 //		}
 //
-//		if(this->data_stype()  == StructureType::STREAM){
-//			win = new BatchWindow<TimedToken<In>>(MICROBATCH_SIZE);
-//			return new UnaryFMapBatch<In, Out, ff_ofarm, TimedToken<In>, TimedToken<Out>>(parallelism, flatmapf, win);
-//		}
+		if(this->data_stype()  == StructureType::STREAM){
+			win = new BatchWindow<TimedToken<In>>(MICROBATCH_SIZE);
+			if(nextop != nullptr){
+				return new FMapPReduceBatch<In, Out, ff_ofarm, Token<In>, Token<Out>>(parallelism, flatmapf,
+					(dynamic_cast<PReduce<Out>*>(nextop))->kernel(), win);
+			} else {
+				return new FMapBatch<In, Out, ff_ofarm, Token<In>, Token<Out>>(parallelism, flatmapf, win);
+			}
+		}
 		win = new noWindow<Token<In>>();
 		if(nextop != nullptr){
 			return new FMapPReduceBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, flatmapf,

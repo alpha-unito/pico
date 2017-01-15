@@ -63,7 +63,7 @@ public:
 			reducef_kernel(reducef_kernel_){}
 
     ~Worker() {
-            /* delete the dandling empty microbatch, if present */
+            /* delete the dangling empty microbatch, if present */
     	if (out_microbatch->size() == 0) {
            delete out_microbatch;
         }
@@ -80,7 +80,6 @@ public:
 //					std::cout << "kv "<< kvmap[kv.Key()] << std::endl;
 				} else {
 					kvmap[kv.Key()] = kv;
-//					std::cout << "kv " << kv << std::endl;
 				}
 			}
 

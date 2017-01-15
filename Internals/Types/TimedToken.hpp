@@ -31,9 +31,14 @@ public:
 			data(nullptr), timestamp(0) {
 	}
 
-//	TimedToken(T item_, size_t timestamp_) :
-//			data(item_), timestamp(timestamp_) {
-//	}
+	/*
+     * constructor from T l-value ref
+     */
+    TimedToken(const T &item_) : data(item_), timestamp(0){}
+
+	TimedToken(T&& item_, size_t timestamp_) :
+			data(std::move(item_)), timestamp(timestamp_) {
+	}
 
 	TimedToken(T&& item):
 		data(std::move(item)), timestamp(0){};

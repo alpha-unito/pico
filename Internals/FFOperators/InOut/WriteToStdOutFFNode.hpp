@@ -25,14 +25,15 @@
 #include <Internals/utils.hpp>
 #include <Internals/Types/TimedToken.hpp>
 #include <Internals/Types/Token.hpp>
+#include <Internals/Types/Microbatch.hpp>
 
 using namespace ff;
 
 template<typename In, typename TokenType>
 class WriteToStdOutFFNode: public ff_node {
 public:
-	WriteToStdOutFFNode(std::function<std::string(In)> kernel_) :
-			kernel(kernel_), recv_sync(false), tt(nullptr) {};
+	WriteToStdOutFFNode(std::function<std::string(In&)> kernel_) :
+			kernel(kernel_), recv_sync(false), in_microbatch(nullptr) {};
 
 	void* svc(void* task) {
 		if(task == PICO_SYNC) {
@@ -43,19 +44,20 @@ public:
 			return GO_ON;
 		}
 
-		if(recv_sync || task != PICO_EOS){
-			tt = reinterpret_cast<TokenType*>(task);
-			std::cout <<  kernel((tt->get_data()))<< std::endl;
-			delete tt;
+		if(recv_sync && task != PICO_EOS){
+			in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
+			for(TokenType& tt: *in_microbatch) {
+//				std::cout <<  kernel((tt.get_data()))<< std::endl;
+			}
 		}
 		return GO_ON;
 	}
 
 
 private:
-	std::function<std::string(In)> kernel;
+	std::function<std::string(In&)> kernel;
     bool recv_sync;
-    TokenType* tt;
+    Microbatch<TokenType>* in_microbatch;
 
 };
 

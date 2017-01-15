@@ -41,7 +41,7 @@ class FMapPReduceBatch: public Farm {
 public:
 
 	FMapPReduceBatch(int parallelism, std::function<void(In&, FlatMapCollector<Out> &)>& flatmapf,
-			std::function<Out(Out&, Out&)>& reducef, WindowPolicy* win) {
+			std::function<Out(Out&, Out&)> reducef, WindowPolicy* win) {
 
 		this->setEmitterF(win->window_farm(parallelism, this->getlb()));
         this->setCollectorF(new FarmCollector(parallelism));
@@ -77,7 +77,6 @@ private:
 				for(TokenTypeIn &in : *in_microbatch){
 				    kernel(in.get_data(), *collector);
 				}
-
 				// partial reduce on collector->microbatch
 				for (TokenTypeOut &mb_item : *collector->microbatch()) { // reduce on microbatch
 					Out &kv(mb_item.get_data());
@@ -85,6 +84,7 @@ private:
 						kvmap[kv.Key()] = reducef_kernel(kv, kvmap[kv.Key()]);
 					} else {
 						kvmap[kv.Key()] = kv;
+//						std::cout << "kv " << kv << std::endl;
 					}
 				}
 #if 0
@@ -115,7 +115,7 @@ private:
                 }
 
                 if(!out_microbatch->empty())  {
-                ff_send_out(reinterpret_cast<void*>(out_microbatch));
+                	ff_send_out(reinterpret_cast<void*>(out_microbatch));
                 }
 
                 ff_send_out(task);
