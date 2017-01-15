@@ -43,11 +43,10 @@ public:
 			recv_sync = true;
 			return GO_ON;
 		}
-
-		if(recv_sync && task != PICO_EOS){
+		if(recv_sync || task != PICO_EOS){
 			in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
 			for(TokenType& tt: *in_microbatch) {
-//				std::cout <<  kernel((tt.get_data()))<< std::endl;
+				std::cout <<  kernel((tt.get_data()))<< std::endl;
 			}
 		}
 		return GO_ON;

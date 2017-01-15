@@ -85,7 +85,7 @@ protected:
 //		}
 //
 		if(this->data_stype()  == StructureType::STREAM){
-			win = new BatchWindow<TimedToken<In>>(MICROBATCH_SIZE);
+			win = new BatchWindow<Token<In>>();
 			if(nextop != nullptr){
 				return new FMapPReduceBatch<In, Out, ff_ofarm, Token<In>, Token<Out>>(parallelism, flatmapf,
 					(dynamic_cast<PReduce<Out>*>(nextop))->kernel(), win);

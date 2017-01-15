@@ -55,20 +55,27 @@ private:
 	public:
 		Worker(std::function<void(In&, FlatMapCollector<Out> &)> kernel_): in_microbatch(nullptr), kernel(kernel_) {
 		    collector = new TokenCollector<TokenTypeOut>();
+		    collector->new_microbatch();
 		}
+
+		~Worker() {
+		    collector->delete_microbatch();
+		    delete collector;
+		}
+
 
 		void* svc(void* task) {
 			if(task != PICO_EOS && task != PICO_SYNC){
 				in_microbatch = reinterpret_cast<Microbatch<TokenTypeIn>*>(task);
-				collector->new_microbatch();
 				// iterate over microbatch
-				for(TokenTypeIn &in : *in_microbatch){
-//					std::cout << "???? " << in.get_data()<< std::endl;
-				    kernel((in.get_data()), *collector);
+				for(TokenTypeIn &tt : *in_microbatch){
+				    kernel(tt.get_data(), *collector);
 				}
-
-				delete in_microbatch;
 				ff_send_out(reinterpret_cast<void*>(collector->microbatch()));
+				//clean up
+				delete in_microbatch;
+//				collector->clear();
+				collector->new_microbatch();
 			} else {
 	#ifdef DEBUG
 			fprintf(stderr, "[UNARYFLATMAP-MB-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);

@@ -65,10 +65,7 @@ private:
 		    collector->new_microbatch();
 		}
 
-		~Worker() {
-		    collector->delete_microbatch();
-		    delete collector;
-		}
+
 
 		void* svc(void* task) {
 			if(task != PICO_EOS && task != PICO_SYNC){
