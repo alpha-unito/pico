@@ -103,9 +103,8 @@ int main(int argc, char** argv)
      * - count the number of words for each remaining tweet
      */
     auto filterTweets = FlatMap<std::string, StockAndCount>( //
-            [] (std::string tweet)
+            [] (std::string& tweet, FlatMapCollector<StockAndCount>& collector)
             {
-                std::vector<StockAndCount> res;
                 StockName stock;
                 bool single_stock = false;
                 unsigned long long count = 0;
@@ -140,10 +139,9 @@ int main(int argc, char** argv)
                 /* emit result if valid record  */
 
                 if(single_stock){
-                	res.push_back(StockAndCount(stock, count));
-                }
 
-                return res;
+                	collector.add(StockAndCount(stock, count));
+                }
             });
 
 #ifdef BATCH

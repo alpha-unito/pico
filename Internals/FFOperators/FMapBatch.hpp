@@ -63,8 +63,10 @@ private:
 				collector->new_microbatch();
 				// iterate over microbatch
 				for(TokenTypeIn &in : *in_microbatch){
-				    kernel(in.get_data(), *collector);
+//					std::cout << "???? " << in.get_data()<< std::endl;
+				    kernel((in.get_data()), *collector);
 				}
+
 				delete in_microbatch;
 				ff_send_out(reinterpret_cast<void*>(collector->microbatch()));
 			} else {

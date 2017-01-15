@@ -30,6 +30,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <Internals/Types/TimedToken.hpp>
+#include <Internals/Types/Microbatch.hpp>
 #include <Internals/utils.hpp>
 
 using namespace ff;
@@ -39,10 +40,9 @@ class ReadFromSocketFFNode: public ff_node {
 public:
 	ReadFromSocketFFNode(std::function<Out(std::string)> kernel_,
 			std::string& server_name_, int port_, char delimiter_) :
-			kernel(kernel_), server_name(server_name_), port(port_), delimiter(
-					delimiter_), counter(0), microbatch(nullptr) {
+			kernel(kernel_), server_name(server_name_), port(port_),
+			delimiter(delimiter_), counter(0), microbatch(new Microbatch<Token<Out>>(MICROBATCH_SIZE)) {
 	}
-	;
 
 	int svc_init() {
 		sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -77,14 +77,14 @@ public:
 				std::istringstream f(tail);
 				while (std::getline(f, line, delimiter)) {
 					if(!f.eof()) {// line contains another delimiter
-//						auto tt = new TimedToken<Out>(Out(kernel(line)), counter++);
-//						ff_send_out(reinterpret_cast<void*>(tt));
-
-						microbatch->push_back(std::move(TimedToken<Out>(Out(kernel(line)), counter++)));
-						if (microbatch->size() == MICROBATCH_SIZE) {
+						microbatch->push_back(Token<Out>(kernel(line)));
+						if (microbatch->full()) {
 							ff_send_out(reinterpret_cast<void*>(microbatch));
-							microbatch = new std::vector<TimedToken<Out>>();
-						}
+							microbatch = new Microbatch<Token<Out>>(MICROBATCH_SIZE);
+							for (Token<Out>& tt: *microbatch) {
+//								std::cout << " mb item " << tt.get_data() << std::endl;
+							}
+ 						}
 						tail.clear();
 					} else { // trunked line, store for next parsing
 						tail.clear();
@@ -96,11 +96,9 @@ public:
 		}
 
 		close(sockfd);
-		if (microbatch->size() < MICROBATCH_SIZE && microbatch->size() > 0) {
+		if (!microbatch->empty()) {
 			if(tail.size() > 0) {
-				microbatch->push_back(std::move(TimedToken<Out>(Out(kernel(tail)), counter++)));
-//						auto tt = new TimedToken<Out>(Out(kernel(tail)), counter++);
-//						ff_send_out(reinterpret_cast<void*>(tt));
+				microbatch->push_back(Token<Out>(kernel(tail)));
 			}
 			ff_send_out(reinterpret_cast<void*>(microbatch));
 		}
@@ -113,16 +111,15 @@ public:
 	}
 
 private:
-	std::function<Out(std::string)> kernel;
+	std::function<Out(std::string&)> kernel;
 	std::string server_name;
 	int port;
 	int sockfd, n;
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
 	char delimiter;
-	Out item;
 	size_t counter;
-	std::vector<TimedToken<Out>>* microbatch;
+	Microbatch<Token<Out>>* microbatch;
 	void error(const char *msg) {
 		perror(msg);
 		exit(0);

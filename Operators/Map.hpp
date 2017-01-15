@@ -106,9 +106,6 @@ protected:
 
 
 	ff::ff_node* node_operator(int parallelism, Operator* nextop){
-//		if(parallelism == 1){
-//			return new UnaryMapFFNode<In, Out>(&mapf);
-//		}
 		if (this->data_stype() == (StructureType::STREAM)){
 			win = new BatchWindow<TimedToken<In>>(MICROBATCH_SIZE);
 			if(nextop != nullptr){
