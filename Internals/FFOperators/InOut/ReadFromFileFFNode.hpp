@@ -32,13 +32,14 @@ template <typename Out>
 class ReadFromFileFFNode: public ff_node {
 public:
     ReadFromFileFFNode(std::string filename_) :
-            filename(filename_), microbatch(new mb_t(MICROBATCH_SIZE))
+            filename(filename_)
     {}
 
 
 	void* svc(void* in){
 	    std::ifstream infile(filename);
 	    std::string line;
+	    mb_t *microbatch = new mb_t(MICROBATCH_SIZE);
 	    if (infile.is_open()) {
 
 	        /* get a line */
@@ -57,6 +58,9 @@ public:
             if (!microbatch->empty()) {
                 ff_send_out(reinterpret_cast<void*>(microbatch));
             }
+            else {
+                delete microbatch;
+            }
         }
         else
         {
@@ -72,7 +76,6 @@ public:
 private:
 	typedef Microbatch<Token<Out>> mb_t;
     std::string filename;
-    mb_t* microbatch;
 };
 
 

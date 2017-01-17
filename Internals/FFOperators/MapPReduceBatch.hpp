@@ -50,6 +50,7 @@ public:
 			w.push_back(new Worker(mapf, reducef));
 		}
 		this->add_workers(w);
+		this->cleanup_all();
 	}
 	;
 
