@@ -59,23 +59,24 @@ private:
 	class Worker : public ff_node{
 	public:
 		Worker(std::function<void(In&, FlatMapCollector<Out> &)>& kernel_, std::function<Out(Out&, Out&)>& reducef_kernel_):
-		in_microbatch(nullptr), out_microbatch(new Microbatch<TokenTypeOut>(MICROBATCH_SIZE)), kernel(kernel_),
+		in_microbatch(nullptr), kernel(kernel_),
 		reducef_kernel(reducef_kernel_) {
-		    collector = new TokenCollector<TokenTypeOut>();
-		    collector->new_microbatch();
+		    collector.new_microbatch();
 		}
 
-
+		~Worker() {
+		    collector.delete_microbatch(); //spurious collector microbatch
+		}
 
 		void* svc(void* task) {
 			if(task != PICO_EOS && task != PICO_SYNC){
 				in_microbatch = reinterpret_cast<Microbatch<TokenTypeIn>*>(task);
 				// iterate over microbatch
 				for(TokenTypeIn &in : *in_microbatch){
-				    kernel(in.get_data(), *collector);
+				    kernel(in.get_data(), collector);
 				}
 				// partial reduce on collector->microbatch
-				for (TokenTypeOut &mb_item : *collector->microbatch()) { // reduce on microbatch
+				for (TokenTypeOut &mb_item : *collector.microbatch()) { // reduce on microbatch
 					Out &kv(mb_item.get_data());
 					if (kvmap.find(kv.Key()) != kvmap.end()) {
 						kvmap[kv.Key()] = reducef_kernel(kv, kvmap[kv.Key()]);
@@ -96,12 +97,12 @@ private:
 
 				//clean up
 				delete in_microbatch;
-				collector->clear();
+				collector.clear();
 			} else {
 	#ifdef DEBUG
 			fprintf(stderr, "[UNARYFLATMAP-PREDUCE-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
 	#endif
-                out_microbatch = new Microbatch<TokenTypeOut>(MICROBATCH_SIZE);
+                auto out_microbatch = new Microbatch<TokenTypeOut>(MICROBATCH_SIZE);
                 for (auto it = kvmap.begin(); it != kvmap.end(); ++it)
                 {
                     out_microbatch->push_back(std::move(it->second));
@@ -114,6 +115,10 @@ private:
                 if(!out_microbatch->empty())  {
                 	ff_send_out(reinterpret_cast<void*>(out_microbatch));
                 }
+                else {
+                    /* spurious empty microbatch */
+                    delete out_microbatch;
+                }
 
                 ff_send_out(task);
 			}
@@ -123,8 +128,7 @@ private:
 
 	private:
 		Microbatch<TokenTypeIn>* in_microbatch;
-		Microbatch<TokenTypeOut>* out_microbatch;
-		TokenCollector<TokenTypeOut> *collector;
+		TokenCollector<TokenTypeOut> collector;
 		std::function<void(In&, FlatMapCollector<Out> &)> kernel;
 		std::function<Out(Out&, Out&)> reducef_kernel;
 		std::unordered_map<typename Out::keytype, Out> kvmap;
