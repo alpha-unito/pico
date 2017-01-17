@@ -31,27 +31,37 @@ using namespace ff;
 template <typename Out>
 class ReadFromFileFFNode: public ff_node {
 public:
-	ReadFromFileFFNode(std::function<Out(std::string&)> kernel_, std::string filename_):
-		kernel(kernel_), filename(filename_), microbatch(new mb_t(MICROBATCH_SIZE)){};
+    ReadFromFileFFNode(std::string filename_) :
+            filename(filename_), microbatch(new mb_t(MICROBATCH_SIZE))
+    {}
+
 
 	void* svc(void* in){
-		std::string line;
-		std::ifstream infile(filename);
-		if (infile.is_open()) {
-			while (getline(infile, line)) {
-				microbatch->push_back(Token<Out>(kernel(line)));
-				if(microbatch->full()) {
-					ff_send_out(reinterpret_cast<void*>(microbatch));
-					microbatch = new mb_t(MICROBATCH_SIZE);
-				}
-			}
-			if(infile.eof() && !microbatch->empty()){
-				ff_send_out(reinterpret_cast<void*>(microbatch));
-			}
-			infile.close();
-		} else {
-			fprintf(stderr, "Unable to open file %s\n", filename.c_str());
-		}
+	    std::ifstream infile(filename);
+	    std::string line;
+	    if (infile.is_open()) {
+
+	        /* get a line */
+            while (getline(infile, line)) {
+                microbatch->push_back(Token<Out>(line));
+
+                /* send out micro-batch if complete */
+                if (microbatch->full()) {
+                    ff_send_out(reinterpret_cast<void*>(microbatch));
+                    microbatch = new mb_t(MICROBATCH_SIZE);
+                }
+            }
+            infile.close();
+
+            /* send out the remainder micro-batch */
+            if (!microbatch->empty()) {
+                ff_send_out(reinterpret_cast<void*>(microbatch));
+            }
+        }
+        else
+        {
+            fprintf(stderr, "Unable to open file %s\n", filename.c_str());
+        }
 #ifdef DEBUG
 		fprintf(stderr, "[READ FROM FILE MB-%p] In SVC: SEND OUT PICO_EOS\n", this);
 #endif
@@ -61,7 +71,6 @@ public:
 
 private:
 	typedef Microbatch<Token<Out>> mb_t;
-    std::function<Out(std::string&)> kernel;
     std::string filename;
     mb_t* microbatch;
 };
