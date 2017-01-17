@@ -65,22 +65,15 @@ int main(int argc, char** argv)
      * stock options by applying the Black-Scholes formula
      */
     Pipe blackScholes(Map<std::string, StockAndPrice>([]
-    (const std::string& in)
-    {
-        std::string name;
+    (const std::string& in) {
         OptionData opt;
-        char otype;
-        std::stringstream ins(in);
-
-        /* read stock name */
-        ins >> name;
-
-        /* read stock option data */
-        ins >> opt.s >> opt.strike >> opt.r >> opt.divq;
-        ins >> opt.v >> opt.t >> otype >> opt.divs >> opt.DGrefval;
+        char otype, name[128];
+        sscanf(in.c_str(), "%s %lf %lf %lf %lf %lf %lf %c %lf %lf", name, //
+            &opt.s, &opt.strike, &opt.r, &opt.divq, &opt.v, &opt.t,//
+            &otype, &opt.divs, &opt.DGrefval);
         opt.OptionType = (otype == 'P');
 
-        return StockAndPrice(name, black_scholes(opt));
+        return StockAndPrice(std::string(name), black_scholes(opt));
     }));
 
     // blackScholes can now be used to build both batch and streaming pipelines.
@@ -95,11 +88,10 @@ int main(int argc, char** argv)
     Pipe stockPricing(ReadFromFile<std::string>(in_fname, [](std::string in)
     {   return in;}));
     stockPricing //
-    .to(blackScholes)
-    .add(PReduce<StockAndPrice>([]
+    .to(blackScholes).add(PReduce<StockAndPrice>([]
     (StockAndPrice p1, StockAndPrice p2)
-    {   return std::max(p1,p2);}))
-    .add(WriteToDisk<StockAndPrice>(out_fname, pricing_to_string)); //4
+    {   return std::max(p1,p2);})).add(
+            WriteToDisk<StockAndPrice>(out_fname, pricing_to_string));
 
     /* generate dot file with the semantic DAG */
     stockPricing.to_dotfile("stock_pricing.dot");

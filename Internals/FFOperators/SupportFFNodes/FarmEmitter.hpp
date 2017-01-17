@@ -23,7 +23,6 @@
 
 #include "Emitter.hpp"
 #include <Internals/utils.hpp>
-#include <Internals/Types/Microbatch.hpp>
 
 template<typename TokenType>
 class FarmEmitter: public Emitter {
@@ -44,7 +43,6 @@ public:
 	}
 
 private:
-	typedef Microbatch<TokenType> mb_t;
 	int nworkers;
 	ff_loadbalancer * const lb;
 };
