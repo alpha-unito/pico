@@ -29,18 +29,21 @@
 template<typename TokenType>
 class ByKeyEmitter: public Emitter {
 public:
-	ByKeyEmitter(int nworkers_, ff_loadbalancer * const lb_) :
-			nworkers(nworkers_), lb(lb_), in_microbatch(nullptr), curr_worker(0){
+	ByKeyEmitter(int nworkers_, ff_loadbalancer * const lb_, size_t w_size_) :
+			nworkers(nworkers_), lb(lb_), in_microbatch(nullptr), w_size(w_size_){
+		for(int i = 0; i < nworkers; ++i){
+			w_win_map[i] = new Microbatch<TokenType>(MICROBATCH_SIZE);
+		}
 	}
 
 	~ByKeyEmitter() {
 	    /* delete dangling empty windows */
-//	    for (auto it=k_win_map.begin(); it!=k_win_map.end(); ++it){
-//	        auto kv = it->first;
-//	        if(it->second->size() == 0) {
-//	            delete it->second;
-//            }
-//	    }
+	    for (auto it=w_win_map.begin(); it!=w_win_map.end(); ++it){
+	        auto mb = it->first;
+	        if(it->second->size() == 0) {
+	            delete it->second;
+            }
+	    }
 	}
 
 	void* svc(void* task) {
@@ -50,37 +53,25 @@ public:
 			for(TokenType& tt: in_microbatch){
 				typename TokenType::datatype::keytype &key(tt->get_data().Key());
 				dst = key_to_worker(key);
-				lb->ff_send_out_to(reinterpret_cast<void*>(std::move(TokenType(tt))), dst);
-			}
-			/*tt = reinterpret_cast<TokenType*>(task);
-			typename TokenType::datatype::keytype &key(tt->get_data().Key());
-			size_t dst = key_to_worker(key);
-			std::vector<TokenType*>** mb_ptr;
-
-			if (k_win_map.find(key) != k_win_map.end()) { // key already present
-			    mb_ptr = &k_win_map[key];
-                (*mb_ptr)->push_back(tt);
-
-                if ((*mb_ptr)->size() == w_size) {
-                    lb->ff_send_out_to(reinterpret_cast<void*>(*mb_ptr), dst);
-                    *mb_ptr = new std::vector<TokenType *>();
-                }
-            } else {
-                k_win_map[key] = new std::vector<TokenType *>();
-                mb_ptr = &k_win_map[key];
-                (*mb_ptr)->push_back(tt);
-            }
-		} else {
-			typename std::map<keytype, std::vector<TokenType*>*>::iterator it;
-			for (it=k_win_map.begin(); it!=k_win_map.end(); ++it){
-				auto kv = it->first;
-				if(it->second->size() > 0){
-					lb->ff_send_out_to(reinterpret_cast<void*>(it->second), key_to_worker(it->first));
+				// add token to dst's microbatch
+				w_win_map[dst]->push_back(tt);
+				if(w_win_map[dst]->full()){
+					lb->ff_send_out_to(reinterpret_cast<void*>(w_win_map[dst]), dst);
+					w_win_map = new Microbatch(MICROBATCH_SIZE);
 				}
 			}
-*/
-			for (int i = 0; i < nworkers; ++i) {
-				lb->ff_send_out_to(task, i);
+		} else {
+			if(task == PICO_EOS){
+				for (int i = 0; i < nworkers; ++i) {
+					if(!w_win_map[i]->empty()){
+						lb->ff_send_out_to(reinterpret_cast<void*>(w_win_map[i]), i);
+					}
+					lb->ff_send_out_to(task, i);
+				}
+			} else {
+				for (int i = 0; i < nworkers; ++i) {
+					lb->ff_send_out_to(task, i);
+				}
 			}
 		}
 		return GO_ON;
@@ -91,9 +82,8 @@ private:
 	int nworkers;
 	ff_loadbalancer * const lb;
 	Microbatch<TokenType>* in_microbatch;
-//	std::map<keytype, std::vector<TokenType*>*> k_win_map;
-	int curr_worker;
-//	size_t w_size;
+	std::unordered_map<size_t, Microbatch<TokenType>*> w_win_map;
+	size_t w_size;
 
 	inline size_t key_to_worker( const keytype& k) {
 	    return std::hash<keytype>{}(k) % nworkers;

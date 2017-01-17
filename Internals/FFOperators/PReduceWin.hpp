@@ -22,7 +22,7 @@
 #define INTERNALS_FFOPERATORS_PREDUCEWIN_HPP_
 
 #include <ff/farm.hpp>
-#include <Internals/FFOperators/PReduceSeqFFNode.hpp>
+#include <Internals/FFOperators/PReduceFFNode.hpp>
 #include <Internals/Types/KeyValue.hpp>
 #include <Internals/utils.hpp>
 #include <Internals/FFOperators/SupportFFNodes/Emitter.hpp>
@@ -41,7 +41,7 @@ public:
 		this->setCollectorF(new FarmCollector(parallelism)); // collects and emits single items
 		std::vector<ff_node *> w;
 		for (int i = 0; i < parallelism; ++i) {
-			w.push_back(new PReduceSeqFFNode<In,TokenType>(preducef, win_));
+			w.push_back(new PReduceFFNode<In, TokenType>(preducef, win->win_size()));
 		}
 		this->add_workers(w);
 		win = win_;

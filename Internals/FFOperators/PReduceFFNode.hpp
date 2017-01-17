@@ -29,21 +29,24 @@
 using namespace ff;
 
 
-template<typename In>
+template<typename In, typename TokenType>
 class PReduceFFNode: public ff_node {
 public:
-	PReduceFFNode(std::function<In(In, In)>* preducef) :
-			kernel(*preducef), kv(nullptr){};
+	PReduceFFNode(std::function<In(In&, In&)>& reducef_, size_t mb_size_ = MICROBATCH_SIZE) :
+			kernel(reducef_), in_microbatch(mb_size), mb_size(mb_size_){};
 
 	void* svc(void* task) {
 		if(task != PICO_EOS && task != PICO_SYNC){
-			kv = reinterpret_cast<In*>(task);
-			if(kvmap.find(kv->Key()) != kvmap.end()){
-				kvmap[kv->Key()] = kernel(kvmap[kv->Key()], *kv);
-			} else {
-				kvmap[kv->Key()] = *kv;
+			in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
+			for(TokenType& item : in_microbatch){
+				In::key_type*& kv = item.get_data();
+				if(kvmap.find(kv->Key()) != kvmap.end()){
+					kvmap[kv->Key()] = kernel(kvmap[kv->Key()], *kv);
+				} else {
+					kvmap[kv->Key()] = *kv;
+				}
+				delete kv;
 			}
-			delete kv;
 		} else if (task == PICO_EOS) {
 #ifdef DEBUG
 		fprintf(stderr, "[P-REDUCE-FFNODE-%p] In SVC RECEIVED PICO_EOS \n", this);
@@ -59,9 +62,10 @@ public:
 	}
 
 private:
-	std::function<In(In, In)> kernel;
-	In* kv;
-	std::map<typename In::keytype, In> kvmap;
+	std::function<In(In&, In&)> kernel;
+	std::unordered_map<typename In::keytype, Microbatch<TokenType>*> kvmap;
+	Microbatch<TokenType>* in_microbatch;
+	size_t mb_size;
 };
 
 #endif /* INTERNALS_FFOPERATORS_PREDUCEFFNODE_HPP_ */

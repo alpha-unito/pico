@@ -108,12 +108,7 @@ protected:
 	ff::ff_node* node_operator(int parallelism, Operator* nextop){
 		if (this->data_stype() == (StructureType::STREAM)){
 			win = new BatchWindow<Token<In>>(MICROBATCH_SIZE);
-			if(nextop != nullptr){
-				return new MapPReduceBatch<In, Out, ff_ofarm, Token<In>, Token<Out>>(parallelism, mapf,
-					(dynamic_cast<PReduce<Out>*>(nextop))->kernel(), win);
-			} else {
-				return new MapBatch<In, Out, ff_ofarm, Token<In>, Token<Out>>(parallelism, mapf, win);
-			}
+			return new MapBatch<In, Out, ff_ofarm, Token<In>, Token<Out>>(parallelism, mapf, win);
 		}
 		win = new noWindow<Token<In>>();
 		if(nextop != nullptr){
