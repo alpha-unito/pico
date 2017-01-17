@@ -156,6 +156,10 @@ int main(int argc, char** argv)
     Pipe stockTweets(readTweets);
     stockTweets //
     .add(filterTweets) //
+	.add(PReduce<StockAndCount>([] (StockAndCount p1, StockAndCount p2)
+    {
+    	return std::max(p1,p2);
+    }))
     .add(writeCounts);
 
     /* generate dot file with the semantic DAG */

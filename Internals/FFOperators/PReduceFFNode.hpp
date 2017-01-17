@@ -22,9 +22,9 @@
 #define INTERNALS_FFOPERATORS_PREDUCEFFNODE_HPP_
 
 #include <ff/node.hpp>
-#include "../Types/KeyValue.hpp"
-#include "../utils.hpp"
-#include <map>
+#include <Internals/Types/KeyValue.hpp>
+#include <Internals/utils.hpp>
+#include <unordered_map>
 
 using namespace ff;
 
@@ -33,28 +33,39 @@ template<typename In, typename TokenType>
 class PReduceFFNode: public ff_node {
 public:
 	PReduceFFNode(std::function<In(In&, In&)>& reducef_, size_t mb_size_ = MICROBATCH_SIZE) :
-			kernel(reducef_), in_microbatch(mb_size), mb_size(mb_size_){};
+			kernel(reducef_), in_microbatch(nullptr), out_microbatch(nullptr), mb_size(mb_size_){};
 
 	void* svc(void* task) {
 		if(task != PICO_EOS && task != PICO_SYNC){
 			in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
-			for(TokenType& item : in_microbatch){
-				In::key_type*& kv = item.get_data();
-				if(kvmap.find(kv->Key()) != kvmap.end()){
-					kvmap[kv->Key()] = kernel(kvmap[kv->Key()], *kv);
+			for(TokenType& item : *in_microbatch){
+				In& kv = item.get_data();
+				if(kvmap.find(kv.Key()) != kvmap.end()){
+					kvmap[kv.Key()].first = kernel(kvmap[kv.Key()].first, kv);
+					if(++(kvmap[kv.Key()].second) == mb_size){
+						out_microbatch = new Microbatch<TokenType>();
+						out_microbatch->push_back(TokenType(std::move(kvmap[kv.Key()].first)));
+						ff_send_out(reinterpret_cast<void*>(out_microbatch));
+						kvmap[kv.Key()] = std::pair<In, size_t>();
+						kvmap[kv.Key()].second = 0;
+					}
 				} else {
-					kvmap[kv->Key()] = *kv;
+					kvmap[kv.Key()] = std::make_pair(kv, 1);
 				}
-				delete kv;
 			}
 		} else if (task == PICO_EOS) {
 #ifdef DEBUG
 		fprintf(stderr, "[P-REDUCE-FFNODE-%p] In SVC RECEIVED PICO_EOS \n", this);
 #endif
 			ff_send_out(PICO_SYNC);
-			typename std::map<typename In::keytype, In>::iterator it;
+			typename std::unordered_map<typename In::keytype, std::pair<In, size_t>>::iterator it;
 			for (it=kvmap.begin(); it!=kvmap.end(); ++it){
-				ff_send_out(reinterpret_cast<void*>(new In(it->second)));
+//				ff_send_out(reinterpret_cast<void*>(new In(it->second)));
+				if((it->second).second > 0){
+					out_microbatch = new Microbatch<TokenType>();
+					out_microbatch->push_back(TokenType(std::move((it->second).first)));
+					ff_send_out(reinterpret_cast<void*>(out_microbatch));
+				}
 			}
 
 		}
@@ -63,8 +74,9 @@ public:
 
 private:
 	std::function<In(In&, In&)> kernel;
-	std::unordered_map<typename In::keytype, Microbatch<TokenType>*> kvmap;
+	std::unordered_map<typename In::keytype, std::pair<In, size_t>> kvmap;
 	Microbatch<TokenType>* in_microbatch;
+	Microbatch<TokenType>* out_microbatch;
 	size_t mb_size;
 };
 

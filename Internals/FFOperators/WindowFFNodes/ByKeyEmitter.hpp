@@ -24,7 +24,7 @@
 #include <Internals/FFOperators/SupportFFNodes/Emitter.hpp>
 #include <Internals/utils.hpp>
 #include <Internals/Types/Microbatch.hpp>
-#include <map>
+#include <unordered_map>
 
 template<typename TokenType>
 class ByKeyEmitter: public Emitter {
@@ -57,7 +57,7 @@ public:
 				w_win_map[dst]->push_back(tt);
 				if(w_win_map[dst]->full()){
 					lb->ff_send_out_to(reinterpret_cast<void*>(w_win_map[dst]), dst);
-					w_win_map = new Microbatch(MICROBATCH_SIZE);
+					w_win_map = new Microbatch<TokenType>(MICROBATCH_SIZE);
 				}
 			}
 		} else {

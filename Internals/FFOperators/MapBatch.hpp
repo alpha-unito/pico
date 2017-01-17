@@ -59,10 +59,9 @@ private:
 			kernel(kernel_){}
 
         ~Worker() {
-            /* delete the dangling empty microbatch, if present */
-            if (!out_microbatch->empty()) {
+            /* delete the spurious empty microbatch, if present */
+            if (out_microbatch->empty())
                 delete out_microbatch;
-            }
         }
 
 		void* svc(void* task) {

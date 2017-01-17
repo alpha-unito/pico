@@ -24,6 +24,10 @@
 template<typename T>
 class Microbatch {
 public:
+	Microbatch(){
+		mb_size = 0;
+		mb.reserve(1);
+	}
 	Microbatch(unsigned int size) {
 		mb_size = size;
 		mb.reserve(mb_size);
