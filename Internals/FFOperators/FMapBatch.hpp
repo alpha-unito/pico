@@ -74,7 +74,6 @@ private:
 				ff_send_out(reinterpret_cast<void*>(collector->microbatch()));
 				//clean up
 				delete in_microbatch;
-//				collector->clear();
 				collector->new_microbatch();
 			} else {
 	#ifdef DEBUG

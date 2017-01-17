@@ -34,24 +34,15 @@ using namespace ff;
 template<typename In, typename TokenType>
 class PReduceSeqFFNode: public ff_node {
 public:
-	PReduceSeqFFNode(std::function<In(In&, In&)>& reducef_, WindowPolicy* win=nullptr) :
+	PReduceSeqFFNode(std::function<In(In&, In&)>& reducef_) :
 			reducef(reducef_), in_microbatch(nullptr){
-		if(win){
-#ifdef DEBUG
-           fprintf(stderr, "[P-REDUCE-FFNODE-%p] Window size %lu \n", this, win->win_size());
-#endif
-			outmb_size = win->win_size();
-		} else {
-			outmb_size = MICROBATCH_SIZE;
-		}
-		out_microbatch = new Microbatch<TokenType>(outmb_size);
+			out_microbatch = new Microbatch<TokenType>(MICROBATCH_SIZE);
 	}
 
     void* svc(void* task)
     {
         if (task != PICO_EOS && task != PICO_SYNC)
         {
-
             in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
             for (TokenType &mb_item : *in_microbatch)
             { // reduce on microbatch
@@ -71,13 +62,12 @@ public:
             ff_send_out(PICO_SYNC);
             for (auto it = kvmap.begin(); it != kvmap.end(); ++it)
             {
-//					std::cout << "val " << it->second;
                 out_microbatch->push_back(std::move(it->second));
 
                 if (out_microbatch->full())
                 {
                     ff_send_out(reinterpret_cast<void*>(out_microbatch));
-                    out_microbatch = new Microbatch<TokenType>(outmb_size);
+                    out_microbatch = new Microbatch<TokenType>(MICROBATCH_SIZE);
                 }
             }
             if (!out_microbatch->empty())
@@ -96,7 +86,6 @@ private:
 	std::unordered_map<typename In::keytype, In> kvmap;
 	Microbatch<TokenType>* in_microbatch;
 	Microbatch<TokenType>* out_microbatch;
-	size_t outmb_size;
 };
 
 #endif /* INTERNALS_FFOPERATORS_PREDUCESEQFFNODE_HPP_ */

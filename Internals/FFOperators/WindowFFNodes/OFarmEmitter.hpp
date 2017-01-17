@@ -36,9 +36,7 @@ public:
 		if (task != PICO_EOS && task != PICO_SYNC) {
 			return task;
 		} else {
-			for (int i = 0; i < nworkers; ++i) {
-				lb->broadcast_task(task);
-			}
+			lb->broadcast_task(task);
 		}
 		return GO_ON;
 	}
