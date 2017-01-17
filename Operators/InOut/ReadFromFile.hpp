@@ -37,27 +37,23 @@
  * The operator is global and unique for the Pipe it refers to.
  */
 
-
-template<typename Out>
-class ReadFromFile : public InputOperator<Out>{
+class ReadFromFile : public InputOperator<std::string>{
 public:
 
 	/**
 	* Constructor. Creates a new ReadFromFile operator by defining its kernel function: std::string -> Out
     * operating on each line of the textfile specified.
 	*/
-	ReadFromFile(std::string filename_, std::function<Out(std::string)> func_)
-			: InputOperator<Out>(StructureType::BAG) {
+	ReadFromFile(std::string filename_)
+			: InputOperator<std::string>(StructureType::BAG) {
 		filename = filename_;
-		func = func_;
 	}
 
 	/**
 	 * Copy constructor.
 	 */
-	ReadFromFile(const ReadFromFile &copy) : InputOperator<Out>(copy) {
+	ReadFromFile(const ReadFromFile &copy) : InputOperator<std::string>(copy) {
 		filename = copy.filename;
-		func = copy.func;
 	}
 
 	/**
@@ -84,14 +80,12 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism, Operator* nextop=nullptr) {
-//		return new ReadFromFileFFNode<Out>(func, filename);
-		return new ReadFromFileFFNode<Out>(func, filename);
+		return new ReadFromFileFFNode<std::string>(filename);
 	}
 
 
 private:
 	std::string filename;
-	std::function<Out(std::string)> func;
 };
 
 

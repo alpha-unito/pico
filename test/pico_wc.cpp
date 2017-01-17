@@ -42,15 +42,13 @@
 typedef KeyValue<std::string, int> KV;
 
 /* static tokenizer function */
-static auto tokenizer = [](std::string in) {
+static auto tokenizer = [](std::string &in, FlatMapCollector<KV> &collector) {
 	std::istringstream f(in);
-	std::vector<std::string> tokens;
 	std::string s;
 
 	while (std::getline(f, s, ' ')) {
-		tokens.push_back(s);
+		collector.add(KV(s,1));
 	}
-	return tokens;
 };
 
 int main(int argc, char** argv) {
@@ -62,14 +60,11 @@ int main(int argc, char** argv) {
 	std::string filename = argv[1];
 	std::string outputfilename = argv[2];
 
-
-
 	/* define a generic word-count pipeline */
 	Pipe countWords;
 	countWords
-	.add(FlatMap<std::string, std::string>(tokenizer)) //
-	.add(Map<std::string, KV>([&](std::string in) {return KV(in,1);}))
-	.add(PReduce<KV>([&](KV v1, KV v2) {return v1+v2;}));
+	.add(FlatMap<std::string, KV>(tokenizer)) //
+	.add(PReduce<KV>([&](KV &v1, KV &v2) {return v1+v2;}));
 
 	// countWords can now be used to build batch pipelines.
 	// If we enrich the last combine operator with a windowing policy (i.e.,
@@ -77,12 +72,9 @@ int main(int argc, char** argv) {
 	// and streaming pipelines.
 
 	/* define i/o operators from/to file */
-	ReadFromFile<std::string> reader(filename, [](std::string s) {return s;});
+	ReadFromFile reader(filename);
 	WriteToDisk<KV> writer(outputfilename, [&](KV in) {
-		std::string value= "<";
-			value.append(in.Key()).append(", ").append(std::to_string(in.Value()));
-			value.append(">");
-			return value;
+		return in.to_string();
 	});
 
 	/* compose the pipeline */

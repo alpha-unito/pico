@@ -15,9 +15,9 @@ TARGET               = pico_wc pico_merge pico_wc_socket
 .PHONY: all clean cleanall distclean
 .SUFFIXES: .c .cpp .o
 
-default: tests # WIP
+default: tests
 
-tests: test1 test2
+tests: test1 #test2
 
 all: $(TARGET) 
 

@@ -43,16 +43,12 @@ int main(int argc, char** argv) {
 	std::string outputfilename = argv[2];
 
 	/* define the operators */
-	auto map1 = Map<std::string, KV>([&](std::string in) {return KV(in,1);});
-	auto map2 = Map<std::string, KV>([&](std::string in) {return KV(in,2);});
+	auto map1 = Map<std::string, KV>([&](std::string &in) {return KV(in,1);});
+	auto map2 = Map<std::string, KV>([&](std::string &in) {return KV(in,2);});
 
-	auto reader = ReadFromFile<std::string>(filename,
-			[](std::string s) {return s;});
-	auto wtd = WriteToDisk<KV>(outputfilename, [&](KV in) {
-		std::string value= "<";
-		value.append(in.Key()).append(", ").append(std::to_string(in.Value()));
-		value.append(">");
-		return value;
+	auto reader = ReadFromFile<std::string>(filename);
+	auto wtd = WriteToDisk<KV>(outputfilename, [](KV in) {
+		return in.to_string();
 	});
 
 	/* p1m read from file and process it by map1 */
