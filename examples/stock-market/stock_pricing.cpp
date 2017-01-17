@@ -85,8 +85,7 @@ int main(int argc, char** argv)
      * 3. extracts the maximum price for each stock name
      * 4. write prices to file
      */
-    Pipe stockPricing(ReadFromFile<std::string>(in_fname, [](std::string in)
-    {   return in;}));
+    Pipe stockPricing((ReadFromFile(in_fname)));
     stockPricing //
     .to(blackScholes).add(PReduce<StockAndPrice>([]
     (StockAndPrice p1, StockAndPrice p2)

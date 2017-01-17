@@ -31,9 +31,8 @@ using namespace ff;
 template <typename Out>
 class ReadFromFileFFNode: public ff_node {
 public:
-    ReadFromFileFFNode(std::function<Out(std::string)> kernel_,
-            std::string filename_) :
-            kernel(kernel_), filename(filename_), microbatch(new mb_t(MICROBATCH_SIZE))
+    ReadFromFileFFNode(std::string filename_) :
+            filename(filename_), microbatch(new mb_t(MICROBATCH_SIZE))
     {}
 
 
@@ -44,7 +43,7 @@ public:
 
 	        /* get a line */
             while (getline(infile, line)) {
-                microbatch->push_back(Token<Out>(kernel(line)));
+                microbatch->push_back(Token<Out>(line));
 
                 /* send out micro-batch if complete */
                 if (microbatch->full()) {
@@ -72,7 +71,6 @@ public:
 
 private:
 	typedef Microbatch<Token<Out>> mb_t;
-    std::function<Out(std::string)> kernel;
     std::string filename;
     mb_t* microbatch;
 };

@@ -39,30 +39,26 @@
  * The operator is global and unique for the Pipe it refers to.
  */
 
-
-template<typename Out>
-class ReadFromSocket : public InputOperator<Out>{
+class ReadFromSocket : public InputOperator<std::string>{
 public:
 
 	/**
 	* Constructor. Creates a new ReadFromSocket operator by defining its kernel function: std::string -> Out
     * operating on each token of the stream, delimited by the delimiter value.
 	*/
-	ReadFromSocket(std::string server_name_, int port_, std::function<Out(std::string&)> func_, char delimiter_)
-			: InputOperator<Out>(StructureType::STREAM) {
+	ReadFromSocket(std::string server_name_, int port_, char delimiter_)
+			: InputOperator<std::string>(StructureType::STREAM) {
 		server_name = server_name_;
 		port = port_;
-		func = func_;
 		delimiter = delimiter_;
 	}
 
 	/**
 	 * Copy constructor.
 	 */
-	ReadFromSocket(const ReadFromSocket &copy) : InputOperator<Out>(copy) {
+	ReadFromSocket(const ReadFromSocket &copy) : InputOperator<std::string>(copy) {
 		server_name = copy.server_name;
 		port = copy.port;
-		func = copy.func;
 		delimiter = copy.delimiter;
 		filename = copy.filename;
 	}
@@ -95,15 +91,13 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism, Operator* nextop=nullptr) {
-//		return new ReadFromFakeSocket<Out>(func, filename);
-		return new ReadFromSocketFFNode<Out, Token<Out>>(func, server_name, port, delimiter);
+		return new ReadFromSocketFFNode<Token<std::string>>(server_name, port, delimiter);
 	}
 
 
 private:
 	std::string server_name;
 	int port;
-	std::function<Out(std::string&)> func;
 	char delimiter;
 	std::string filename;
 

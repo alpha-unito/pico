@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
 	// and streaming pipelines.
 
 	/* define i/o operators from/to file */
-	ReadFromFile<std::string> reader(filename, [](std::string s) {return s;});
+	ReadFromFile reader(filename);
 	WriteToDisk<KV> writer(outputfilename, [&](KV in) {
 			return in.to_string();
 	});
