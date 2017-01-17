@@ -35,12 +35,12 @@
 
 using namespace ff;
 
-template<typename Out, typename TokenType>
+template<typename TokenType>
 class ReadFromSocketFFNode: public ff_node {
 public:
-	ReadFromSocketFFNode(std::function<Out(std::string&)> kernel_,
+	ReadFromSocketFFNode(
 			std::string& server_name_, int port_, char delimiter_) :
-			kernel(kernel_), server_name(server_name_), port(port_),
+			server_name(server_name_), port(port_),
 			delimiter(delimiter_), counter(0), microbatch(new Microbatch<TokenType>(MICROBATCH_SIZE)) {
 	}
 
@@ -79,7 +79,7 @@ public:
 				std::istringstream f(tail);
 				while (std::getline(f, line, delimiter)) {
 					if(!f.eof()) {// line contains another delimiter
-						microbatch->push_back(TokenType(kernel(line)));
+						microbatch->push_back(TokenType(line));
 						if (microbatch->full()) {
 							ff_send_out(reinterpret_cast<void*>(microbatch));
 							microbatch = new Microbatch<TokenType>(MICROBATCH_SIZE);
@@ -97,7 +97,7 @@ public:
 		close(sockfd);
 		if (!microbatch->empty()) {
 			if(tail.size() > 0) {
-				microbatch->push_back(TokenType(kernel(tail)));
+				microbatch->push_back(TokenType(tail));
 			}
 			std::cout << " mb size tail " << microbatch->size() << std::endl;
 			ff_send_out(reinterpret_cast<void*>(microbatch));
@@ -111,15 +111,15 @@ public:
 	}
 
 private:
-	std::function<Out(std::string&)> kernel;
 	std::string server_name;
 	int port;
-	int sockfd, n;
+	int sockfd = 0, n = 0;
 	struct sockaddr_in serv_addr;
-	struct hostent *server;
+	struct hostent *server = nullptr;
 	char delimiter;
 	size_t counter;
 	Microbatch<TokenType>* microbatch;
+
 	void error(const char *msg) {
 		perror(msg);
 		exit(0);

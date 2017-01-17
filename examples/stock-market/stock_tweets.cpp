@@ -51,16 +51,6 @@
 
 #include "defs.h"
 
-/* write stock name and word count to a single text line */
-std::string count_to_string(const StockAndCount stock_and_count)
-{
-//    std::stringstream out;
-//    out << stock_and_count.Key();
-//    out << "\t";
-//    out << stock_and_count.Value();
-    return stock_and_count.to_string(); //out.str();
-}
-
 /* the set of stock names to match tweets against */
 static std::set<std::string> stock_names;
 
@@ -156,14 +146,9 @@ int main(int argc, char** argv)
     WriteToDisk<StockAndCount> writeCounts(out_fname, count_to_string);
 #else
     /* define i/o operators from/to standard input/output */
-    ReadFromSocket<std::string> readTweets(tweet_host, tweet_port, //
-            [](std::string& s)
-            {
-                return s;
-            }, //
-            '-');
+    ReadFromSocket readTweets(tweet_host, tweet_port, '-');
 
-    WriteToStdOut<StockAndCount> writeCounts(count_to_string);
+    WriteToStdOut<StockAndCount> writeCounts([](StockAndCount c) {return c.to_string();});
 
 #endif
 
