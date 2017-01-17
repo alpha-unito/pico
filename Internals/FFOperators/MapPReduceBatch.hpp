@@ -59,17 +59,10 @@ class Worker: public ff_node {
 public:
 	Worker(std::function<Out(In&)>& kernel_,
 			std::function<Out(Out&, Out&)>& reducef_kernel_) :
-			in_microbatch(nullptr), out_microbatch(new Microbatch<TokenTypeOut>(MICROBATCH_SIZE)), kernel(kernel_),
+			in_microbatch(nullptr), kernel(kernel_),
 			reducef_kernel(reducef_kernel_){}
 
-    ~Worker() {
-            /* delete the dangling empty microbatch, if present */
-    	if (out_microbatch->size() == 0) {
-           delete out_microbatch;
-        }
-    }
-
-	void* svc(void* task) {
+ 	void* svc(void* task) {
 		if(task != PICO_EOS && task != PICO_SYNC){
 			in_microbatch = reinterpret_cast<Microbatch<TokenTypeIn>*>(task);
 			// iterate over microbatch
@@ -98,7 +91,7 @@ public:
 #ifdef DEBUG
 	fprintf(stderr, "[MAP-PREDUCE-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
 #endif
-			out_microbatch = new Microbatch<TokenTypeOut>(MICROBATCH_SIZE);
+	        auto out_microbatch = new Microbatch<TokenTypeOut>(MICROBATCH_SIZE);
 			for (auto it = kvmap.begin(); it != kvmap.end(); ++it){
 				out_microbatch->push_back(std::move(it->second));
 			    if(out_microbatch->full()) {
@@ -109,6 +102,9 @@ public:
 			if(!out_microbatch->empty())  {
 			   ff_send_out(reinterpret_cast<void*>(out_microbatch));
 			}
+			else {
+			    delete out_microbatch; //spurious microbatch
+			}
 
 			ff_send_out(task);
 		}
@@ -117,7 +113,6 @@ public:
 
 	private:
 		Microbatch<TokenTypeIn>* in_microbatch;
-		Microbatch<TokenTypeOut>* out_microbatch;
 		std::function<Out(In&)> kernel;
 		std::function<Out(Out&, Out&)> reducef_kernel;
 		std::unordered_map<typename Out::keytype, Out> kvmap;

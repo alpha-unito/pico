@@ -44,7 +44,6 @@ public:
 		} else {
 			outmb_size = MICROBATCH_SIZE;
 		}
-		out_microbatch = new Microbatch<TokenType>(outmb_size);
 	}
 
     void* svc(void* task)
@@ -69,9 +68,9 @@ public:
             fprintf(stderr, "[P-REDUCE-FFNODE-SEQ-%p] In SVC RECEIVED PICO_EOS %p \n", this, task);
 #endif
             ff_send_out(PICO_SYNC);
+            auto out_microbatch = new Microbatch<TokenType>(outmb_size);
             for (auto it = kvmap.begin(); it != kvmap.end(); ++it)
             {
-//					std::cout << "val " << it->second;
                 out_microbatch->push_back(std::move(it->second));
 
                 if (out_microbatch->full())
@@ -80,10 +79,11 @@ public:
                     out_microbatch = new Microbatch<TokenType>(outmb_size);
                 }
             }
+
             if (!out_microbatch->empty())
-            {
                 ff_send_out(reinterpret_cast<void*>(out_microbatch));
-            }
+            else
+                delete out_microbatch;
 
             return task;
 
@@ -95,7 +95,6 @@ private:
 	std::function<In(In&, In&)> reducef;
 	std::unordered_map<typename In::keytype, In> kvmap;
 	Microbatch<TokenType>* in_microbatch;
-	Microbatch<TokenType>* out_microbatch;
 	size_t outmb_size;
 };
 
