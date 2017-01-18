@@ -39,15 +39,9 @@
 
 #include <Pipe.hpp>
 #include <Operators/FlatMap.hpp>
-#ifdef BATCH
-#include <Operators/InOut/ReadFromFile.hpp>
-#include <Operators/InOut/WriteToDisk.hpp>
-#define REQ_ARGS 4
-#else
 #include <Operators/InOut/ReadFromSocket.hpp>
 #include <Operators/InOut/WriteToStdOut.hpp>
 #define REQ_ARGS 4
-#endif
 
 #include "defs.h"
 
@@ -61,22 +55,13 @@ int main(int argc, char** argv)
     {
         std::cerr << "Usage: " << argv[0];
         std::cerr << " <stock names file>"
-#ifdef BATCH
-                << " <tweets file> <output file>\n";
-#else
                 << " <tweet socket host> <tweet socket port>\n";
-#endif
         return -1;
     }
     unsigned arg_i = 1;
     std::string stock_fname = argv[arg_i++];
-#ifdef BATCH
-    std::string in_fname = argv[arg_i++];
-    std::string out_fname = argv[arg_i++];
-#else
     std::string tweet_host = argv[arg_i++];
     int tweet_port = atoi(argv[arg_i++]);
-#endif
 
     /* bring tags to memory */
     std::ifstream stocks_file(stock_fname);
@@ -101,7 +86,6 @@ int main(int argc, char** argv)
 
                 /* tokenize the tweet */
                 std::istringstream f(tweet);
-//                std::cout << "tweet in lambda " << tweet << std::endl;
                 std::string s;
                 while (std::getline(f, s, ' '))
                 {
@@ -134,23 +118,10 @@ int main(int argc, char** argv)
                 	collector.add(StockAndCount(stock, count));
                 }
             });
-
-#ifdef BATCH
-    /* define i/o operators from/to standard input/output */
-    ReadFromFile<std::string> readTweets(in_fname, //
-            [](std::string s)
-            {
-                return s;
-            });
-
-    WriteToDisk<StockAndCount> writeCounts(out_fname, count_to_string);
-#else
     /* define i/o operators from/to standard input/output */
     ReadFromSocket readTweets(tweet_host, tweet_port, '-');
 
     WriteToStdOut<StockAndCount> writeCounts([](StockAndCount c) {return c.to_string();});
-
-#endif
 
     /* compose the main pipeline */
     Pipe stockTweets(readTweets);
@@ -159,7 +130,7 @@ int main(int argc, char** argv)
 	.add(PReduce<StockAndCount>([] (StockAndCount p1, StockAndCount p2)
     {
     	return std::max(p1,p2);
-    }))
+    }).window(MICROBATCH_SIZE))
     .add(writeCounts);
 
     /* generate dot file with the semantic DAG */

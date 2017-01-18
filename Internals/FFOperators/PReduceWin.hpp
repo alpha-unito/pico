@@ -37,6 +37,7 @@ class PReduceWin: public FarmType {
 public:
 	PReduceWin(int parallelism, std::function<In(In&, In&)>& preducef,
 			WindowPolicy* win_) {
+		win = win_;
 		this->setEmitterF(win->window_farm(parallelism, this->getlb()));
 		this->setCollectorF(new FarmCollector(parallelism)); // collects and emits single items
 		std::vector<ff_node *> w;
@@ -44,7 +45,7 @@ public:
 			w.push_back(new PReduceFFNode<In, TokenType>(preducef, win->win_size()));
 		}
 		this->add_workers(w);
-		win = win_;
+
 	}
 
 	~PReduceWin(){
