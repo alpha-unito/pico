@@ -52,6 +52,7 @@ public:
             w.push_back(new Worker(flatmapf, reducef));
         }
         this->add_workers(w);
+        this->cleanup_all();
     }
 
 private:
