@@ -14,7 +14,7 @@
 
 /* define some types */
 typedef std::string StockName;
-typedef float StockPrice;
+typedef double StockPrice;
 
 typedef KeyValue<StockName, OptionData> StockAndOption;
 typedef KeyValue<StockName, std::string> StockAndTweet;

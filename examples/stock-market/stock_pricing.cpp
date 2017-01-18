@@ -39,16 +39,6 @@
 #include "defs.h"
 #include "black_scholes.hpp"
 
-/* write stock name and price to a single text line */
-std::string pricing_to_string(const StockAndPrice stock_and_price)
-{
-    std::stringstream out;
-    out << stock_and_price.Key();
-    out << " ";
-    out << stock_and_price.Value();
-    return out.str();
-}
-
 int main(int argc, char** argv)
 {
     /* parse command line */
@@ -90,7 +80,8 @@ int main(int argc, char** argv)
     .to(blackScholes).add(PReduce<StockAndPrice>([]
     (StockAndPrice p1, StockAndPrice p2)
     {   return std::max(p1,p2);})).add(
-            WriteToDisk<StockAndPrice>(out_fname, pricing_to_string));
+            WriteToDisk<StockAndPrice>(out_fname, [](StockAndPrice kv)
+            {   return kv.to_string();}));
 
     /* generate dot file with the semantic DAG */
     stockPricing.to_dotfile("stock_pricing.dot");
