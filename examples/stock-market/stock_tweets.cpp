@@ -34,14 +34,11 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-//#define BATCH
-
 
 #include <Pipe.hpp>
 #include <Operators/FlatMap.hpp>
 #include <Operators/InOut/ReadFromSocket.hpp>
 #include <Operators/InOut/WriteToStdOut.hpp>
-#define REQ_ARGS 4
 
 #include "defs.h"
 
@@ -51,17 +48,16 @@ static std::set<std::string> stock_names;
 int main(int argc, char** argv)
 {
     /* parse command line */
-    if (argc < REQ_ARGS)
+    if (argc < 4)
     {
         std::cerr << "Usage: " << argv[0];
         std::cerr << " <stock names file>"
                 << " <tweet socket host> <tweet socket port>\n";
         return -1;
     }
-    unsigned arg_i = 1;
-    std::string stock_fname = argv[arg_i++];
-    std::string tweet_host = argv[arg_i++];
-    int tweet_port = atoi(argv[arg_i++]);
+    std::string stock_fname = argv[1];
+    std::string tweet_host = argv[2];
+    int tweet_port = atoi(argv[3]);
 
     /* bring tags to memory */
     std::ifstream stocks_file(stock_fname);
