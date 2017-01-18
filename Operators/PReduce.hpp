@@ -25,7 +25,6 @@
 #include <Internals/FFOperators/PReduceWin.hpp>
 #include <Internals/FFOperators/SupportFFNodes/FarmWrapper.hpp>
 #include "UnaryOperator.hpp"
-//#include <Internals/FFOperators/PReduceFFNode.hpp>
 #include <Internals/Types/TimedToken.hpp>
 #include <Internals/Types/Token.hpp>
 
@@ -52,6 +51,10 @@ public:
 		this->set_stype(UNBOUNDED, false);
 		this->set_stype(ORDERED, true);
 		this->set_stype(UNORDERED, true);
+		this->enable_struct_type(BAG);
+        this->enable_struct_type(LIST);
+        this->enable_struct_type(UBAG);
+        this->disable_struct_type(STREAM);
 	}
 
 	/**
@@ -88,6 +91,7 @@ protected:
 		//if(parallelism == 1)
 //			return new PReduceFFNode<In>(&reducef);
 		if(this->data_stype() == (StructureType::STREAM)){
+			assert(win != nullptr);
 			return new PReduceWin<In, Token<In>, FarmWrapper/*ff_ofarm not needed*/>(parallelism, reducef, win);
 		} // else preducemb with regular farm and window NoWindow
 //		win =  new ByKeyWindow<Token<In>>(MICROBATCH_SIZE);

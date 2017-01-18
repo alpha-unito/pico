@@ -105,9 +105,18 @@ protected:
    		st = st_;
    	}
 
+   	 void enable_struct_type(enum StructureType){
+   		 struct_type[st] = true;
+   	 }
+
+   	 void disable_struct_type(enum StructureType){
+   		 struct_type[st] = false;
+   	 }
+
 private:
 	size_t iDegree, oDegree;
 	bool raw_struct_type[4];
+	bool struct_type[4];
 	StructureType st;
 };
 

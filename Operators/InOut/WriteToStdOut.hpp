@@ -50,6 +50,10 @@ public:
 	WriteToStdOut(std::function<std::string(In)> func_)
 			: OutputOperator<In>(StructureType::STREAM) {
 		func = func_;
+		this->enable_struct_type(BAG);
+        this->enable_struct_type(LIST);
+        this->enable_struct_type(UBAG);
+        this->enable_struct_type(STREAM);
 	}
 
 	/**

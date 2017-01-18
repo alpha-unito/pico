@@ -97,6 +97,7 @@ public:
 	Pipe():i_deg(1), o_deg(1){
 		for(int i = 0; i < 4; ++i){
 			raw_struct_type[i] = true;
+			struct_type[i] = true;
 		}
 #ifdef DEBUG
 		std::cerr << "[PIPE] Empty Pipe created\n";
@@ -176,7 +177,7 @@ public:
             // can not append pipes with I-Degree zero if Pipe is not empty
             assert(pipe.DAG.firstOp()->i_degree() == 1);
             // can not append pipes without compatibility on structure types
-            assert(struct_type_check(pipe.raw_struct_type));
+            assert(struct_type_check(pipe.raw_struct_type/*, pipe.raw_struct_type*/));
             struct_type_intersection(pipe.raw_struct_type);
             infotypes.back() = pipe.getTailTypeInfo();
         }
@@ -302,7 +303,7 @@ public:
 			// can not append pipes with I-Degree zero if Pipe is not empty
 		assert(pipe.DAG.firstOp()->i_degree() == 0);
 			// can not append pipes without compatibility on structure types
-		assert(struct_type_check(pipe.raw_struct_type));
+		assert(struct_type_check(pipe.raw_struct_type/*, pipe.struct_type*/));
 		struct_type_intersection(pipe.raw_struct_type);
 		infotypes.back() = pipe.getTailTypeInfo();
 		// create and add merge node to the pipe iff the last node is not already a merge node
@@ -403,11 +404,15 @@ private:
 		return infotypes.back();
 	}
 
-	inline bool struct_type_check(const bool raw_st[4]){
+	inline bool struct_type_check(const bool raw_st[4]/*, const bool st[4]*/){
 		bool ret = (raw_struct_type[0] && raw_st[0]);
 		for(int i = 1; i < 4; ++i){
 			ret = ret || (raw_struct_type[i] && raw_st[i]);
 		}
+//		ret = ret && (struct_type[0] && st[0]);
+//		for(int i = 1; i < 4; ++i){
+//			ret = ret || (struct_type[i] && raw_st[i]);
+//		}
 		return ret;
 	}
 
@@ -426,6 +431,7 @@ private:
 	std::vector<TypeInfoRef> infotypes;
 	size_t i_deg, o_deg;
 	bool raw_struct_type[4];
+	bool struct_type[4];
 	SemanticDAG DAG;
 };
 

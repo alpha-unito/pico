@@ -39,7 +39,6 @@ public:
 	~ByKeyEmitter() {
 	    /* delete dangling empty windows */
 	    for (auto it=w_win_map.begin(); it!=w_win_map.end(); ++it){
-	        auto mb = it->first;
 	        if(it->second->size() == 0) {
 	            delete it->second;
             }
@@ -50,14 +49,14 @@ public:
 		if (task != PICO_EOS && task != PICO_SYNC) {
 			in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
 			size_t dst;
-			for(TokenType& tt: in_microbatch){
-				typename TokenType::datatype::keytype &key(tt->get_data().Key());
+			for(TokenType& tt: *in_microbatch){
+				typename TokenType::datatype::keytype &key(tt.get_data().Key());
 				dst = key_to_worker(key);
 				// add token to dst's microbatch
 				w_win_map[dst]->push_back(tt);
 				if(w_win_map[dst]->full()){
 					lb->ff_send_out_to(reinterpret_cast<void*>(w_win_map[dst]), dst);
-					w_win_map = new Microbatch<TokenType>(MICROBATCH_SIZE);
+					w_win_map[dst] = new Microbatch<TokenType>(MICROBATCH_SIZE);
 				}
 			}
 		} else {

@@ -51,6 +51,10 @@ public:
 			: OutputOperator<In>(StructureType::BAG) {
 		filename = filename_;
 		func = func_;
+		this->enable_struct_type(BAG);
+        this->enable_struct_type(LIST);
+        this->enable_struct_type(UBAG);
+        this->disable_struct_type(STREAM);
 	}
 
 	/**
