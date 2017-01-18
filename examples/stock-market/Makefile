@@ -1,7 +1,7 @@
 CXX                  = g++
 LINK_OPT             = 
 VERSION              = 
-OPTIMIZE_FLAGS       = -O3 -g0
+OPTIMIZE_FLAGS       = -O3 -g3
 CCFLAGS             = -std=c++11 -Wall #-DTRACE_FASTFLOW # -DDEBUG
 CFLAGS               =
 LDFLAGS              = 
@@ -10,13 +10,17 @@ LIBS                 = -lpthread
 ROOT                 = ../..
 FF                   = $(ROOT)/ff
 
-INCLUDES             = -I$(ROOT) -I$(FF)
+INCLUDES             = -I$(ROOT) -I$(FF) -I$(ROOT)/examples/include
+
 TARGET               = stock_pricing stock_tweets
+TARGET_SEQ           = seq_stock_pricing seq_stock_tweets
 
 .PHONY: all clean cleanall
 .SUFFIXES: .c .cpp .o
 
-all: $(TARGET) 
+all: $(TARGET)
+
+seq: $(TARGET_SEQ)
 
 #objects
 %.o: %.cpp
@@ -29,10 +33,12 @@ all: $(TARGET)
 #dependencies
 stock_pricing: stock_pricing.o
 stock_tweets: stock_tweets.o
+seq_stock_pricing: seq_stock_pricing.o
+seq_stock_tweets: seq_stock_tweets.o
 
 clean: 
 	rm -rf *.o *~
 
 cleanall: clean
-	rm -fr $(TARGET) *.d
+	rm -fr $(TARGET) $(SEQ_TARGET) *.d
 	rm -rf *.dSYM *.dot *.png
