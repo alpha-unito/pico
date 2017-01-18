@@ -51,10 +51,6 @@ public:
 		this->set_stype(UNBOUNDED, false);
 		this->set_stype(ORDERED, true);
 		this->set_stype(UNORDERED, true);
-		this->enable_struct_type(BAG);
-        this->enable_struct_type(LIST);
-        this->enable_struct_type(UBAG);
-        this->disable_struct_type(STREAM);
 	}
 
 	/**

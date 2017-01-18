@@ -51,10 +51,6 @@ public:
 		server_name = server_name_;
 		port = port_;
 		delimiter = delimiter_;
-		this->disable_struct_type(BAG);
-        this->disable_struct_type(LIST);
-        this->disable_struct_type(UBAG);
-        this->enable_struct_type(STREAM);
 	}
 
 	/**
