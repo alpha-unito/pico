@@ -11,13 +11,14 @@
  *******************************************************************************
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <cstring>
 
 #include <fstream>
 #include <iostream>
@@ -25,6 +26,8 @@
 #include <string>
 #include <set>
 #include <unordered_map>
+
+#include <timers.hpp>
 
 class TweetProcessor {
 public:
@@ -156,6 +159,11 @@ int sock_init(std::string server_name, int port)
     return sockfd;
 }
 
+void sock_fini(int sockfd)
+{
+    close(sockfd);
+}
+
 void core_loop(int sockfd, TweetProcessor &proc)
 {
     std::string line;
@@ -210,6 +218,10 @@ int main(int argc, char** argv)
     std::string server_name = argv[2];
     int server_port = atoi(argv[3]);
 
+    /* start timer */
+    time_point_t t0, t1;
+    hires_timer_ull(t0);
+
     /* initialize the socket */
     int sockfd = sock_init(server_name, server_port);
 
@@ -220,6 +232,13 @@ int main(int argc, char** argv)
     core_loop(sockfd, proc);
 
     /* finalize the socket */
+    sock_fini(sockfd);
+
+    /* stop timer */
+    hires_timer_ull(t1);
+
+    duration_t elapsed = get_duration(t0, t1);
+    std::cout << "done in " << time_count(elapsed) << " s\n";
 
     return 0;
 }
