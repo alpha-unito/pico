@@ -96,11 +96,10 @@ public:
 
 		close(sockfd);
 		if (!microbatch->empty()) {
-			if(tail.size() > 0) {
-				microbatch->push_back(TokenType(tail));
-			}
-			std::cout << " mb size tail " << microbatch->size() << std::endl;
 			ff_send_out(reinterpret_cast<void*>(microbatch));
+		}
+		else {
+		    delete microbatch;
 		}
 
 #ifdef DEBUG
