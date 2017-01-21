@@ -46,7 +46,6 @@ static inline void generate_line( //
     static std::uniform_int_distribution<unsigned> ll(MIN_WPL, MAX_WPL);
     unsigned line_len = ll(rng);
 
-    int stock_cnt = 0;
     for (; line_len > 1; --line_len)
     {
         std::cout << dictionary[ds(rng)] << " ";
@@ -105,7 +104,7 @@ int main(int argc, char** argv)
 
     /* generate and emit random lines */
     std::uniform_int_distribution<unsigned> ds(0, dictionary.size() - 1);
-    for (unsigned line_i; line_i < n_lines; ++line_i)
+    for (unsigned line_i=0; line_i < n_lines; ++line_i)
     {
         generate_line(ds);
         print_progress((float) (line_i + 1) / n_lines);
