@@ -1,5 +1,0 @@
-In computing plain text is the data that represent only characters of readable material
-but not its graphical representation nor other objects .
-It may also include a limited number of characters that control simple arrangement of text , such as line breaks or
-tabulation characters . Plain text is different from formatted text , where style information is included ,
-and from binary files in which some portions must be interpreted as binary objects .
