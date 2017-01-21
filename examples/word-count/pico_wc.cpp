@@ -42,18 +42,20 @@ typedef KeyValue<std::string, int> KV;
 
 /* static tokenizer function */
 static auto tokenizer = [](std::string& in, FlatMapCollector<KV>& collector) {
-	//std::istringstream f(in);
-	//std::string s;
-
+//	std::istringstream f(in);
+//	std::string s;
+//
 //	while (std::getline(f, s, ' ')) {
 //		collector.add(KV(s,1));
 //	}
 
 	std::string::size_type i = 0, j;
 	while((j = in.find_first_of(' ', i)) != std::string::npos) {
-	    collector.add(KV(in.substr(i, j-i),1));
+	    collector.add(KV(in.substr(i, j - i), 1));
 	    i = j + 1;
 	}
+	if(i < in.size())
+	    collector.add(KV(in.substr(i, in.size() - i), 1));
 
 };
 
