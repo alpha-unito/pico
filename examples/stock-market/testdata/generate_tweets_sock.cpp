@@ -90,7 +90,7 @@ static inline bool generate_tweet( //
     while (tweet_len>1);
     tweet.append("-");
 
-    int n = send(newsockfd, tweet.c_str(), tweet.size(), 0);
+    send(newsockfd, tweet.c_str(), tweet.size(), 0);
     return (stock_cnt == 1);
 }
 
@@ -126,9 +126,7 @@ int main(int argc, char** argv)
 {
 	int sockfd, portno;
 	socklen_t clilen;
-	char buffer[256];
 	struct sockaddr_in serv_addr, cli_addr;
-	int n;
 	if (argc < 2) {
 		fprintf(stderr, "ERROR, no port provided\n");
 		exit(1);
