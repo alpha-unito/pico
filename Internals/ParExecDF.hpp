@@ -58,7 +58,7 @@ public:
 
 	double pipe_time(){
 #ifdef TRACE_FASTFLOW
-		picoDAG.ffStats(std::cout);
+		picoDAG.ffStats(std::cerr);
 #endif
 		return picoDAG.ffTime();
 	}
