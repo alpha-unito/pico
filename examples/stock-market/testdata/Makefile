@@ -8,7 +8,7 @@ LDFLAGS              =
 LIBS                 =
 
 INCLUDES             = #-I../../include
-TARGET               = generate_tweets_sock
+TARGET               = generate_tweets
 
 
 .PHONY: all clean cleanall
@@ -25,7 +25,7 @@ all: $(TARGET)
 	$(CXX) $^ -o $@ $(LDFLAGS) $(LIBS)
 
 #dependencies
-generate_tweets_sock : generate_tweets_sock.o
+generate_tweets : generate_tweets.o
 
 clean:
 	rm -rf *.o *~
