@@ -23,7 +23,7 @@
 
 
 
-#define PARALLELISM 8
+#define PARALLELISM 1
 #define MICROBATCH_SIZE 8
 
 

@@ -615,7 +615,7 @@ public:
      * \return 0 if successful, otherwise -1 is returned.
      */
     int run(bool=false) {  
-        if (this->spawn(filter?filter->getCPUId():-1)== -2) {
+        if ((CPUId = this->spawn(filter?filter->getCPUId():-1)) == -2) {
             error("GT, spawning GT thread\n");
             return -1; 
         }
@@ -741,7 +741,7 @@ public:
             << "  n. push lost  : " << pushwait  << " (ticks=" << lostpushticks << ")" << "\n"
             << "  n. pop lost   : " << popwait   << " (ticks=" << lostpopticks  << ")" << "\n";
         assert(filter!=nullptr);
-		out	<< "  [Processor ID]    : " << filter->getCPUId() << "\n";
+		out	<< "  [Processor ID]    : " << CPUId << "\n";
     }
 
     virtual double getworktime() const { return wttime; }
@@ -772,6 +772,8 @@ private:
     struct timeval wtstart;
     struct timeval wtstop;
     double wttime;
+
+    ssize_t CPUId = -1;
 
 protected:
 
