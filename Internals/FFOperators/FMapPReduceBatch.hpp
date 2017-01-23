@@ -61,7 +61,11 @@ private:
 	public:
 		Worker(std::function<void(In&, FlatMapCollector<Out> &)>& kernel_, std::function<Out(Out&, Out&)>& reducef_kernel_):
 		in_microbatch(nullptr), kernel(kernel_),
-		reducef_kernel(reducef_kernel_) {
+		reducef_kernel(reducef_kernel_)
+#ifdef TRACE_FASTFLOW
+	, user_svc(0)
+#endif
+	{
 		    collector.new_microbatch();
 		}
 
@@ -70,6 +74,10 @@ private:
 		}
 
 		void* svc(void* task) {
+#ifdef TRACE_FASTFLOW
+		    time_point_t t0, t1;
+		    hires_timer_ull(t0);
+#endif
 			if(task != PICO_EOS && task != PICO_SYNC){
 				in_microbatch = reinterpret_cast<Microbatch<TokenTypeIn>*>(task);
 				// iterate over microbatch
@@ -83,18 +91,8 @@ private:
 						kvmap[kv.Key()] = reducef_kernel(kv, kvmap[kv.Key()]);
 					} else {
 						kvmap[kv.Key()] = kv;
-//						std::cout << "kv " << kv << std::endl;
 					}
 				}
-#if 0
-				// stateless variant
-				out_microbatch = new Microbatch<TokenTypeOut>(MICROBATCH_SIZE);
-				for (auto it=kvmap.begin(); it!=kvmap.end(); ++it){
-					out_microbatch->push_back(std::move(it->second));
-				}
-				ff_send_out(reinterpret_cast<void*>(out_microbatch));
-				kvmap.clear();
-#endif
 
 				//clean up
 				delete in_microbatch;
@@ -123,6 +121,10 @@ private:
 
                 ff_send_out(task);
 			}
+#ifdef TRACE_FASTFLOW
+			hires_timer_ull(t1);
+			user_svc += get_duration(t0, t1);
+#endif
 			return GO_ON;
 		}
 
@@ -133,6 +135,14 @@ private:
 		std::function<void(In&, FlatMapCollector<Out> &)> kernel;
 		std::function<Out(Out&, Out&)> reducef_kernel;
 		std::unordered_map<typename Out::keytype, Out> kvmap;
+
+#ifdef TRACE_FASTFLOW
+		duration_t user_svc;
+		virtual void print_pico_stats(std::ostream & out) {
+            out << "*** PiCo stats ***\n";
+            out << "user svc (ms) : " << time_count(user_svc) * 1000 << std::endl;
+        }
+#endif
 	};
 };
 

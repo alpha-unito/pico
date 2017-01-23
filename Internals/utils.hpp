@@ -63,6 +63,8 @@ static void *PICO_EOS = (void*)P_EOS;
 static const size_t P_SYNC = (ff::FF_EOS-0x9);
 static void *PICO_SYNC = (void*)P_SYNC;
 
+#include <examples/include/timers.hpp>
+
 
 
 #endif /* INTERNALS_UTILS_HPP_ */
