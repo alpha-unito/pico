@@ -1068,7 +1068,7 @@ public:
      */
     int runlb(bool=false, ssize_t nw=-1) {
         running = (nw<=0)?workers.size():nw;
-        if (this->spawn(filter?filter->getCPUId():-1) == -2) {
+        if ((CPUId = this->spawn(filter?filter->getCPUId():-1)) == -2) {
             error("LB, spawning LB thread\n");
             running = -1;
             return -1;
@@ -1132,8 +1132,7 @@ public:
      */
     virtual int run(bool=false) {
         running = workers.size();
-        fprintf(stderr,"****** -1 %d\n",filter->getCPUId() );
-        if (this->spawn(filter?filter->getCPUId():-1) == -2) {
+        if ((CPUId = this->spawn(filter?filter->getCPUId():-1)) == -2) {
             error("LB, spawning LB thread\n");
             return -1;
         }        
@@ -1347,7 +1346,7 @@ public:
             << "  n. push lost  : " << pushwait  << " (ticks=" << lostpushticks << ")" << "\n"
             << "  n. pop lost   : " << popwait   << " (ticks=" << lostpopticks  << ")" << "\n";
         assert(filter!=nullptr);
-		out	<< "  [Processor ID]    : " << filter->getCPUId() << "\n";
+		out	<< "  [Processor ID]    : " << CPUId << "\n";
     }
 
     virtual double getworktime() const { return wttime; }
@@ -1379,6 +1378,8 @@ private:
     struct timeval wtstart;
     struct timeval wtstop;
     double wttime;
+
+    ssize_t CPUId = -1;
 
  protected:
 
