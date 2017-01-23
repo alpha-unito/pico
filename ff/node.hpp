@@ -814,6 +814,9 @@ protected:
         return diffmsec(wtstop,wtstart);
     }
 
+    virtual void print_pico_stats(std::ostream & out) {
+    }
+
 public:
     /*
      * \brief Default retry delay in nonblocking get/put on channels
@@ -1019,7 +1022,8 @@ public:
             << "  svc ticks     : " << tickstot  << " (min= " << ticksmin << " max= " << ticksmax << ")\n"
             << "  n. push lost  : " << pushwait  << " (ticks=" << lostpushticks << ")" << "\n"
             << "  n. pop lost   : " << popwait   << " (ticks=" << lostpopticks  << ")" << "\n"
-            << "  [Processor ID]   : " << getCPUId() << "\n";
+            << "  [Processor ID]: " << getCPUId() << "\n";
+        print_pico_stats(out);
     }
 
     virtual double getworktime() const { return wttime; }

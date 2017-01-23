@@ -37,6 +37,10 @@ public:
 
 
 	void* svc(void* in){
+#ifdef TRACE_FASTFLOW
+	    time_point_t t0, t1;
+	    hires_timer_ull(t0);
+#endif
 	    std::ifstream infile(filename);
 	    std::string line;
 	    mb_t *microbatch = new mb_t(MICROBATCH_SIZE);
@@ -69,6 +73,10 @@ public:
 #ifdef DEBUG
 		fprintf(stderr, "[READ FROM FILE MB-%p] In SVC: SEND OUT PICO_EOS\n", this);
 #endif
+#ifdef TRACE_FASTFLOW
+		hires_timer_ull(t1);
+		user_svc = get_duration(t0, t1);
+#endif
 		ff_send_out(PICO_EOS);
 		return EOS;
 	}
@@ -76,6 +84,15 @@ public:
 private:
 	typedef Microbatch<Token<Out>> mb_t;
     std::string filename;
+
+#ifdef TRACE_FASTFLOW
+    duration_t user_svc;
+
+    virtual void print_pico_stats(std::ostream & out) {
+        out << "*** PiCo stats ***\n";
+        out << "user svc (ms) : " << time_count(user_svc) * 1000 << std::endl;
+    }
+#endif
 };
 
 

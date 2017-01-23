@@ -741,7 +741,8 @@ public:
             << "  n. push lost  : " << pushwait  << " (ticks=" << lostpushticks << ")" << "\n"
             << "  n. pop lost   : " << popwait   << " (ticks=" << lostpopticks  << ")" << "\n";
         assert(filter!=nullptr);
-		out	<< "  [Processor ID]    : " << CPUId << "\n";
+		out	<< "  [Processor ID]: " << CPUId << "\n";
+		filter->print_pico_stats(out);
     }
 
     virtual double getworktime() const { return wttime; }
