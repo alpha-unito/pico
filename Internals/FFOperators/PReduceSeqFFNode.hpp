@@ -95,7 +95,7 @@ private:
 	std::function<In(In&, In&)> reducef;
 	std::unordered_map<typename In::keytype, In> kvmap;
 	Microbatch<TokenType>* in_microbatch;
-	size_t outmb_size;
+	unsigned int outmb_size;
 };
 
 #endif /* INTERNALS_FFOPERATORS_PREDUCESEQFFNODE_HPP_ */

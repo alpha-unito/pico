@@ -26,12 +26,7 @@ class Microbatch {
 public:
     typedef typename std::vector<T>::iterator iterator;
 
-	Microbatch(){
-		mb_size = 0;
-		mb.reserve(1);
-	}
-	Microbatch(unsigned int size) {
-		mb_size = size;
+	Microbatch(unsigned int size) : mb_size(size) {
 		mb.reserve(mb_size);
 	}
 
@@ -47,11 +42,11 @@ public:
 	    mb.clear();
 	}
 
-	bool full(){
+	bool full() {
 		return mb.size() == mb_size;
 	}
 
-	bool empty(){
+	bool empty() {
 		return mb.empty();
 	}
 
@@ -69,7 +64,7 @@ public:
 
 private:
 	std::vector<T> mb;
-	unsigned int mb_size;
+	const unsigned int mb_size;
 };
 
 #endif /* INTERNALS_TYPES_MICROBATCH_HPP_ */
