@@ -32,25 +32,27 @@ public:
 
 	void push_back(T&& t){
 		mb.push_back(std::move(t));
+		assert(mb.size() <= mb_size);
 	}
 
 	void push_back(const T& t) {
 	    mb.push_back(t);
+	    assert(mb.size() <= mb_size);
 	}
 
 	void clear() {
 	    mb.clear();
 	}
 
-	bool full() {
+	bool full() const {
 		return mb.size() == mb_size;
 	}
 
-	bool empty() {
+	bool empty() const {
 		return mb.empty();
 	}
 
-	unsigned int size() {
+	unsigned int size() const {
 		return mb.size();
 	}
 
