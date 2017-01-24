@@ -52,8 +52,8 @@ public:
     	if(size > 0) {
     		mb = new Microbatch<TokenType>(size);
     	} else {
-    		mb = new Microbatch<TokenType>(MICROBATCH_SIZE);
-    		size = MICROBATCH_SIZE;
+    		mb = new Microbatch<TokenType>(Constants::MICROBATCH_SIZE);
+    		size = Constants::MICROBATCH_SIZE;
     	}
     }
 

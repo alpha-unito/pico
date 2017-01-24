@@ -42,7 +42,7 @@ public:
 #endif
 			outmb_size = win->win_size();
 		} else {
-			outmb_size = MICROBATCH_SIZE;
+			outmb_size = Constants::MICROBATCH_SIZE;
 		}
 	}
 
