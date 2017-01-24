@@ -41,7 +41,7 @@ public:
 	ReadFromSocketFFNode(
 			std::string& server_name_, int port_, char delimiter_) :
 			server_name(server_name_), port(port_),
-			delimiter(delimiter_), counter(0), microbatch(new Microbatch<TokenType>(MICROBATCH_SIZE)) {
+			delimiter(delimiter_), counter(0), microbatch(new Microbatch<TokenType>(Constants::MICROBATCH_SIZE)) {
 	}
 
 	int svc_init() {
@@ -82,7 +82,7 @@ public:
 						microbatch->push_back(TokenType(line));
 						if (microbatch->full()) {
 							ff_send_out(reinterpret_cast<void*>(microbatch));
-							microbatch = new Microbatch<TokenType>(MICROBATCH_SIZE);
+							microbatch = new Microbatch<TokenType>(Constants::MICROBATCH_SIZE);
  						}
 						tail.clear();
 					} else { // trunked line, store for next parsing

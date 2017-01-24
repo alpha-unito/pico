@@ -32,7 +32,7 @@ public:
 	ByKeyEmitter(int nworkers_, ff_loadbalancer * const lb_, size_t w_size_) :
 			nworkers(nworkers_), lb(lb_), in_microbatch(nullptr), w_size(w_size_){
 		for(int i = 0; i < nworkers; ++i){
-			w_win_map[i] = new Microbatch<TokenType>(MICROBATCH_SIZE);
+			w_win_map[i] = new Microbatch<TokenType>(Constants::MICROBATCH_SIZE);
 		}
 	}
 
@@ -56,7 +56,7 @@ public:
 				w_win_map[dst]->push_back(tt);
 				if(w_win_map[dst]->full()){
 					lb->ff_send_out_to(reinterpret_cast<void*>(w_win_map[dst]), dst);
-					w_win_map[dst] = new Microbatch<TokenType>(MICROBATCH_SIZE);
+					w_win_map[dst] = new Microbatch<TokenType>(Constants::MICROBATCH_SIZE);
 				}
 			}
 		} else {

@@ -32,7 +32,7 @@ using namespace ff;
 template<typename In, typename TokenType>
 class PReduceFFNode: public ff_node {
 public:
-	PReduceFFNode(std::function<In(In&, In&)>& reducef_, size_t mb_size_ = MICROBATCH_SIZE) :
+	PReduceFFNode(std::function<In(In&, In&)>& reducef_, size_t mb_size_ = Constants::MICROBATCH_SIZE) :
 			kernel(reducef_), in_microbatch(nullptr), out_microbatch(nullptr), mb_size(mb_size_){};
 
 	void* svc(void* task) {

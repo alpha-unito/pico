@@ -44,16 +44,14 @@ public:
 	* Constructor. Creates a new ReadFromFile operator by defining its kernel function: std::string -> Out
     * operating on each line of the textfile specified.
 	*/
-	ReadFromFile(std::string filename_)
+	ReadFromFile()
 			: InputOperator<std::string>(StructureType::BAG) {
-		filename = filename_;
 	}
 
 	/**
 	 * Copy constructor.
 	 */
 	ReadFromFile(const ReadFromFile &copy) : InputOperator<std::string>(copy) {
-		filename = copy.filename;
 	}
 
 	/**
@@ -71,7 +69,7 @@ public:
 	 */
 	std::string name_short(){
 		return "ReadFromFile\n["
-				+filename+"]";
+				+Constants::INPUT_FILE+"]";
 	}
 
 protected:
@@ -80,12 +78,9 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism, Operator* nextop=nullptr) {
-		return new ReadFromFileFFNode<std::string>(filename);
+		return new ReadFromFileFFNode<std::string>();
 	}
 
-
-private:
-	std::string filename;
 };
 
 
