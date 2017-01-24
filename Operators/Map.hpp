@@ -107,7 +107,7 @@ protected:
 
 	ff::ff_node* node_operator(int parallelism, Operator* nextop){
 		if (this->data_stype() == (StructureType::STREAM)){
-			win = new BatchWindow<Token<In>>(MICROBATCH_SIZE);
+			win = new BatchWindow<Token<In>>(Constants::MICROBATCH_SIZE);
 			return new MapBatch<In, Out, ff_ofarm, Token<In>, Token<Out>>(parallelism, mapf, win);
 		}
 		win = new noWindow<Token<In>>();

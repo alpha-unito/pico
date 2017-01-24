@@ -52,6 +52,15 @@ public:
 
 
 	void run() {
+		// mapped on one socket
+//		const char* occam = "0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92,"
+//		"1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41, 45, 49, 53, 57, 61, 65, 69, 73, 77, 81, 85, 89, 93,"
+//		"2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62, 66, 70, 74, 78, 82, 86, 90, 94,"
+//		"3, 7, 11, 15, 19, 23, 27, 31, 35, 39, 43, 47, 51, 55, 59, 63, 67, 71, 75, 79, 83, 87, 91, 95";
+//		const char* paracool = "0,8,16,24,1,9,17,25,2,10,18,26,3,11,19,27,4,12,20,28,5,13,21,29,6,14,22,30,7,15,23,31,32,40,48,56,33,41,49,57,34,42,50,58,35,43,51,59,36,44,52,60,37,45,53,61,38,46,54,62,39,47,55,63";
+
+//		ff::threadMapper::instance()->setMappingList(paracool);
+
 		picoDAG.run_and_wait_end();
 //		picoDAG.run_then_freeze();
 	}
@@ -62,6 +71,7 @@ public:
 #endif
 		return picoDAG.ffTime();
 	}
+
 private:
 
 	SemDAGNode** create_ffpipe(ff_pipeline*& pipe, SemDAGNode** iterator, const size_t& farmid) {
@@ -75,7 +85,7 @@ private:
 #endif
 			return iterator;
 		}
-		pipe->add_stage((*iterator)->node_operator(PARALLELISM));
+		pipe->add_stage((*iterator)->node_operator(Constants::PARALLELISM));
 		return create_ffpipe(pipe, &(DAG->at((*iterator)).at(0)), farmid);
 	}
 
@@ -115,9 +125,9 @@ private:
 		case UMAP: //same as unary flatmap
 			(*iterator)->op->set_data_stype(pipe_st);
 			if (DAG->at(*iterator).at(0)->op->operator_class() == OperatorClass::COMBINE) {
-				pipe.add_stage((*iterator)->node_operator(PARALLELISM, DAG->at(*iterator).at(0)->op));
+				pipe.add_stage((*iterator)->node_operator(Constants::PARALLELISM, DAG->at(*iterator).at(0)->op));
 			} else {
-				pipe.add_stage((*iterator)->node_operator(PARALLELISM));
+				pipe.add_stage((*iterator)->node_operator(Constants::PARALLELISM));
 			}
 			*iterator = (DAG->at(*iterator).at(0));
 			build_ffnode(iterator, pipe);
@@ -127,13 +137,13 @@ private:
 			break;
 		case COMBINE:
 			(*iterator)->op->set_data_stype(pipe_st);
-			pipe.add_stage((*iterator)->node_operator(PARALLELISM));
+			pipe.add_stage((*iterator)->node_operator(Constants::PARALLELISM));
 			*iterator = (DAG->at(*iterator).at(0));
 			build_ffnode(iterator, pipe);
 			break;
 		case INPUT:
 			pipe_st = (*iterator)->op->data_stype();
-			pipe.add_stage((*iterator)->node_operator(PARALLELISM));
+			pipe.add_stage((*iterator)->node_operator(Constants::PARALLELISM));
 			*iterator = (DAG->at(*iterator).at(0));
 			build_ffnode(iterator, pipe);
 			break;
@@ -150,7 +160,7 @@ private:
 			}
 			break;
 		case OUTPUT:
-			pipe.add_stage((*iterator)->node_operator(PARALLELISM));
+			pipe.add_stage((*iterator)->node_operator(Constants::PARALLELISM));
 //			(*iterator)->op->data_stype(pipe_st);
 			return;
 		default:

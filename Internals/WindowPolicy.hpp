@@ -85,7 +85,7 @@ public:
 template <typename TokenType>
 class noWindow : public WindowPolicy {
 public:
-	noWindow() : WindowPolicy(MICROBATCH_SIZE, 1){};
+	noWindow() : WindowPolicy(Constants::MICROBATCH_SIZE, 1){};
 
 	 ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const lb_) {
 			return new FarmEmitter<TokenType>(nworkers_, lb_);

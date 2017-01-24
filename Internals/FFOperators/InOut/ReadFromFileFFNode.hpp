@@ -31,9 +31,7 @@ using namespace ff;
 template <typename Out>
 class ReadFromFileFFNode: public ff_node {
 public:
-    ReadFromFileFFNode(std::string filename_) :
-            filename(filename_)
-    {}
+    ReadFromFileFFNode(){}
 
 
 	void* svc(void* in){
@@ -41,9 +39,9 @@ public:
 	    time_point_t t0, t1;
 	    hires_timer_ull(t0);
 #endif
-	    std::ifstream infile(filename);
+	    std::ifstream infile(Constants::INPUT_FILE);
 	    std::string line;
-	    mb_t *microbatch = new mb_t(MICROBATCH_SIZE);
+	    mb_t *microbatch = new mb_t(Constants::MICROBATCH_SIZE);
 	    if (infile.is_open()) {
 
 	        /* get a line */
@@ -53,7 +51,7 @@ public:
                 /* send out micro-batch if complete */
                 if (microbatch->full()) {
                     ff_send_out(reinterpret_cast<void*>(microbatch));
-                    microbatch = new mb_t(MICROBATCH_SIZE);
+                    microbatch = new mb_t(Constants::MICROBATCH_SIZE);
                 }
             }
             infile.close();

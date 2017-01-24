@@ -105,13 +105,13 @@ private:
 	#ifdef DEBUG
 			fprintf(stderr, "[UNARYFLATMAP-PREDUCE-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
 	#endif
-                auto out_microbatch = new Microbatch<TokenTypeOut>(MICROBATCH_SIZE);
+                auto out_microbatch = new Microbatch<TokenTypeOut>(Constants::MICROBATCH_SIZE);
                 for (auto it = kvmap.begin(); it != kvmap.end(); ++it)
                 {
                     out_microbatch->push_back(std::move(it->second));
                     if(out_microbatch->full()) {
                         ff_send_out(reinterpret_cast<void*>(out_microbatch));
-                        out_microbatch = new Microbatch<TokenTypeOut>(MICROBATCH_SIZE);
+                        out_microbatch = new Microbatch<TokenTypeOut>(Constants::MICROBATCH_SIZE);
                     }
                 }
 
