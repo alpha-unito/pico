@@ -60,17 +60,11 @@ private:
 	class Worker : public ff_node{
 	public:
 		Worker(std::function<void(In&, FlatMapCollector<Out> &)>& kernel_, std::function<Out(Out&, Out&)>& reducef_kernel_):
-		in_microbatch(nullptr), kernel(kernel_),
-		reducef_kernel(reducef_kernel_)
+		in_microbatch(nullptr), kernel(kernel_), reducef_kernel(reducef_kernel_)
 #ifdef TRACE_FASTFLOW
 	, user_svc(0)
 #endif
 	{
-		    collector.new_microbatch();
-		}
-
-		~Worker() {
-		    collector.delete_microbatch(); //spurious collector microbatch
 		}
 
 		void* svc(void* task) {
@@ -84,14 +78,24 @@ private:
 				for(TokenTypeIn &in : *in_microbatch){
 				    kernel(in.get_data(), collector);
 				}
-				// partial reduce on collector->microbatch
-				for (TokenTypeOut &mb_item : *collector.microbatch()) { // reduce on microbatch
-					Out &kv(mb_item.get_data());
-					if (kvmap.find(kv.Key()) != kvmap.end()) {
-						kvmap[kv.Key()] = reducef_kernel(kv, kvmap[kv.Key()]);
-					} else {
-						kvmap[kv.Key()] = kv;
-					}
+				// partial reduce on all output micro-batches
+				auto it = collector.begin();
+				while (it) {
+                    /* reduce the micro-batch */
+                    for (auto token : *it->mb) {
+                        Out &kv(token.get_data());
+                        if (kvmap.find(kv.Key()) != kvmap.end()) {
+                            kvmap[kv.Key()] = reducef_kernel(kv, kvmap[kv.Key()]);
+                        }
+                        else
+                            kvmap[kv.Key()] = kv;
+                    }
+
+                    /* clean up and skip to the next micro-batch */
+                    auto it_ = it;
+                    it = it->next;
+                    delete it_->mb;
+                    free(it_);
 				}
 
 				//clean up

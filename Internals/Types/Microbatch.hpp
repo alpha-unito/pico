@@ -24,6 +24,8 @@
 template<typename T>
 class Microbatch {
 public:
+    typedef typename std::vector<T>::iterator iterator;
+
 	Microbatch(){
 		mb_size = 0;
 		mb.reserve(1);
@@ -57,11 +59,11 @@ public:
 		return mb.size();
 	}
 
-	typename std::vector<T>::iterator begin() {
+	iterator begin() {
 	    return mb.begin();
 	}
 
-	typename std::vector<T>::iterator end() {
+	iterator end() {
 	    return mb.end();
 	}
 

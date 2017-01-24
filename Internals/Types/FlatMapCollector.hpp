@@ -35,47 +35,52 @@ template<typename TokenType>
 class TokenCollector : public FlatMapCollector<typename TokenType::datatype> {
 public:
 	TokenCollector() {
-		size = 0;
-		mb = nullptr;
+	    clear();
 	}
 
-	TokenCollector(size_t size_){
-		mb = new Microbatch<TokenType>(size_);
-		size = size_;
-	}
+	struct cnode {
+        Microbatch<TokenType> *mb;
+        struct cnode *next;
+    };
 
-    void new_microbatch(size_t size) {
-        mb = new Microbatch<TokenType>(size);
+    void add(const typename TokenType::datatype &x)
+    {
+        if (first)
+        {
+            if (head->mb->full())
+            {
+                assert(head->next == nullptr);
+                head->next = (cnode *) malloc(sizeof(cnode));
+                head->next->next = nullptr;
+                head->next->mb = new Microbatch<TokenType>(MICROBATCH_SIZE);
+                head = head->next;
+            }
+        }
+
+        else
+        {
+            first = (cnode *)malloc(sizeof(cnode));
+            first->next = nullptr;
+            first->mb = new Microbatch<TokenType>(MICROBATCH_SIZE);
+            head = first;
+        }
+
+        /* insert the element */
+        head->mb->push_back(TokenType(x));
     }
 
-    void new_microbatch() {
-    	if(size > 0) {
-    		mb = new Microbatch<TokenType>(size);
-    	} else {
-    		mb = new Microbatch<TokenType>(MICROBATCH_SIZE);
-    		size = MICROBATCH_SIZE;
-    	}
+    void clear()
+    {
+        first = head = nullptr;
     }
 
-    void delete_microbatch() {
-        delete mb;
-    }
-
-    void clear() {
-        mb->clear();
-    }
-
-    void add(const typename TokenType::datatype &x) {
-        mb->push_back(TokenType(x));
-    }
-
-    Microbatch<TokenType> *microbatch() {
-        return mb;
+    cnode* begin()
+    {
+        return first;
     }
 
 private:
-    Microbatch<TokenType> *mb;
-    size_t size;
+    cnode *first, *head;
 };
 
 
