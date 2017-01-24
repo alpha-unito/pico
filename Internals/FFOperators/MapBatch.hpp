@@ -55,7 +55,7 @@ private:
 	class Worker : public ff_node{
 	public:
 		Worker(std::function<Out(In&)> kernel_): in_microbatch(nullptr),
-				out_microbatch(new Microbatch<TokenTypeOut>(MICROBATCH_SIZE)),
+				out_microbatch(new Microbatch<TokenTypeOut>(Constants::MICROBATCH_SIZE)),
 			kernel(kernel_){}
 
         ~Worker() {
@@ -74,7 +74,7 @@ private:
 				}
 
 				ff_send_out(reinterpret_cast<void*>(out_microbatch));
-				out_microbatch = new Microbatch<TokenTypeOut>(MICROBATCH_SIZE);
+				out_microbatch = new Microbatch<TokenTypeOut>(Constants::MICROBATCH_SIZE);
 				delete in_microbatch;
 			} else {
 	#ifdef DEBUG

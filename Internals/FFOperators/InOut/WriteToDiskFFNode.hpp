@@ -30,14 +30,14 @@ using namespace ff;
 template <typename In>
 class WriteToDiskFFNode: public ff_node{
 public:
-	WriteToDiskFFNode(std::function<std::string(In)> kernel_, std::string filename_):
-			kernel(kernel_), filename(filename_), recv_sync(false), in_microbatch(nullptr){};
+	WriteToDiskFFNode(std::function<std::string(In)> kernel_):
+			kernel(kernel_), recv_sync(false), in_microbatch(nullptr){};
 
 	int svc_init(){
 //#ifdef DEBUG
 //		fprintf(stderr, "[WRITE TO DISK] init FFnode\n");
 //#endif
-		outfile.open(filename);
+		outfile.open(Constants::OUTPUT_FILE);
 		return 0;
 	}
 	void* svc(void* task){
@@ -70,7 +70,6 @@ public:
 
 private:
 	std::function<std::string(In)> kernel;
-    std::string filename;
     std::ofstream outfile;
     bool recv_sync;
     Microbatch<Token<In>>* in_microbatch;

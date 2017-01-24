@@ -29,9 +29,6 @@ class Collector: public ff_node {
 public:
 	Collector(){
 	}
-	int svc_init(){
-		return 0;
-	}
 	void* svc(void* task) {
 		 return task;
     }

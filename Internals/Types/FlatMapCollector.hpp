@@ -21,6 +21,7 @@
 #ifndef INTERNALS_TYPES_FLATMAPCOLLECTOR_HPP_
 #define INTERNALS_TYPES_FLATMAPCOLLECTOR_HPP_
 
+#include <defines/Global.hpp>
 #include "Microbatch.hpp"
 
 template<typename Out>
@@ -28,17 +29,21 @@ class FlatMapCollector {
 public:
     virtual void add(const Out &) = 0;
 
-    virtual ~FlatMapCollector() {}
+    virtual ~FlatMapCollector()
+    {
+    }
 };
 
 template<typename TokenType>
-class TokenCollector : public FlatMapCollector<typename TokenType::datatype> {
+class TokenCollector: public FlatMapCollector<typename TokenType::datatype> {
 public:
-	TokenCollector() {
-	    clear();
-	}
+    TokenCollector()
+    {
+        clear();
+    }
 
-	struct cnode {
+    struct cnode
+    {
         Microbatch<TokenType> *mb;
         struct cnode *next;
     };
@@ -52,16 +57,16 @@ public:
                 assert(head->next == nullptr);
                 head->next = (cnode *) malloc(sizeof(cnode));
                 head->next->next = nullptr;
-                head->next->mb = new Microbatch<TokenType>(MICROBATCH_SIZE);
+                head->next->mb = new Microbatch<TokenType>(Constants::MICROBATCH_SIZE);
                 head = head->next;
             }
         }
 
         else
         {
-            first = (cnode *)malloc(sizeof(cnode));
+            first = (cnode *) malloc(sizeof(cnode));
             first->next = nullptr;
-            first->mb = new Microbatch<TokenType>(MICROBATCH_SIZE);
+            first->mb = new Microbatch<TokenType>(Constants::MICROBATCH_SIZE);
             head = first;
         }
 
@@ -82,7 +87,5 @@ public:
 private:
     cnode *first, *head;
 };
-
-
 
 #endif /* INTERNALS_TYPES_FLATMAPCOLLECTOR_HPP_ */

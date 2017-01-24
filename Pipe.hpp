@@ -35,7 +35,7 @@
 #include "Operators/Map.hpp"
 #include "Operators/Operator.hpp"
 #include "Operators/UnaryOperator.hpp"
-
+#include <defines/Global.hpp>
 
 /**
  * A Pipe is a single entity composed by operators.
@@ -357,7 +357,6 @@ public:
 	double pipe_time(){
 		 return DAG.pipe_time();
 	}
-
 
 private:
 	/**
