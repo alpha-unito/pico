@@ -39,7 +39,7 @@ public:
 
     FMapBatch(int parallelism, std::function<void(In&, FlatMapCollector<Out> &)> flatmapf, WindowPolicy* win) {
         this->setEmitterF(win->window_farm(parallelism, this->getlb()));
-        this->setCollectorF(new FarmCollector(parallelism));
+        this->setCollectorF(new FMapBatchCollector(parallelism));
         delete win;
         std::vector<ff_node *> w;
         for (int i = 0; i < parallelism; ++i)
@@ -61,13 +61,15 @@ private:
 			if(task != PICO_EOS && task != PICO_SYNC){
 				in_microbatch = reinterpret_cast<Microbatch<TokenTypeIn>*>(task);
 				// iterate over microbatch
-				collector.new_microbatch();
 				for(TokenTypeIn &tt : *in_microbatch){
 				    kernel(tt.get_data(), collector);
 				}
-				ff_send_out(reinterpret_cast<void*>(collector.microbatch()));
+				if(collector.begin())
+				    ff_send_out(reinterpret_cast<void*>(collector.begin()));
+
 				//clean up
 				delete in_microbatch;
+				collector.clear();
 			} else {
 	#ifdef DEBUG
 			fprintf(stderr, "[UNARYFLATMAP-MB-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
@@ -82,6 +84,39 @@ private:
 		Microbatch<TokenTypeIn>* in_microbatch;
 		TokenCollector<TokenTypeOut> collector;
 		std::function<void(In&, FlatMapCollector<Out> &)> kernel;
+	};
+
+	class FMapBatchCollector : public ff_node {
+	public:
+	    FMapBatchCollector(int nworkers_):nworkers(nworkers_), picoEOSrecv(0) {
+	    }
+
+	    void* svc(void* task) {
+	        if(task != PICO_EOS && task != PICO_SYNC) {
+	            cnode_t *it = reinterpret_cast<cnode_t *>(task), *it_;
+	            /* send out all the micro-batches in the list */
+	            while(it) {
+	                ff_send_out(reinterpret_cast<void *>(it->mb));
+
+                    /* clean up and skip to the next micro-batch */
+                    it_ = it;
+                    it = it->next;
+                    free(it_);
+	            };
+	        }
+
+	        if(task == PICO_EOS) {
+	            if(++picoEOSrecv == nworkers){
+	                return task;
+	            }
+	        }
+	        return GO_ON;
+	    }
+
+	private:
+	    int nworkers;
+	    int picoEOSrecv;
+	    typedef typename TokenCollector<TokenTypeOut>::cnode cnode_t;
 	};
 };
 
