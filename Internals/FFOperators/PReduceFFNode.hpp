@@ -43,7 +43,7 @@ public:
 				if(kvmap.find(kv.Key()) != kvmap.end()){
 					kvmap[kv.Key()].first = kernel(kvmap[kv.Key()].first, kv);
 					if(++(kvmap[kv.Key()].second) == mb_size){
-						out_microbatch = new Microbatch<TokenType>();
+						out_microbatch = new Microbatch<TokenType>(1);
 						out_microbatch->push_back(TokenType(std::move(kvmap[kv.Key()].first)));
 						ff_send_out(reinterpret_cast<void*>(out_microbatch));
 						kvmap.erase(kv.Key());
@@ -52,6 +52,7 @@ public:
 					kvmap[kv.Key()] = std::make_pair(kv, 1);
 				}
 			}
+			delete in_microbatch;
 		} else if (task == PICO_EOS) {
 #ifdef DEBUG
 		fprintf(stderr, "[P-REDUCE-FFNODE-%p] In SVC RECEIVED PICO_EOS \n", this);
@@ -59,9 +60,9 @@ public:
 			typename std::unordered_map<typename In::keytype, std::pair<In, size_t>>::iterator it;
 			for (it=kvmap.begin(); it!=kvmap.end(); ++it){
 				if((it->second).second < mb_size){
-					out_microbatch = new Microbatch<TokenType>();
-					out_microbatch->push_back(TokenType(std::move((it->second).first)));
-					ff_send_out(reinterpret_cast<void*>(out_microbatch));
+//					out_microbatch = new Microbatch<TokenType>();
+//					out_microbatch->push_back(TokenType(std::move((it->second).first)));
+//					ff_send_out(reinterpret_cast<void*>(out_microbatch));
 				}
 			}
 			ff_send_out(task);
