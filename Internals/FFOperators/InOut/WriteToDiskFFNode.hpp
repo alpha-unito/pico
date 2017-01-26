@@ -21,22 +21,23 @@
 #ifndef INTERNALS_FFOPERATORS_INOUT_WRITETODISKFFNODE_HPP_
 #define INTERNALS_FFOPERATORS_INOUT_WRITETODISKFFNODE_HPP_
 
+#include "../../Types/Token.hpp"
 #include "ff/node.hpp"
 #include "../../utils.hpp"
-#include <Internals/Types/Token.hpp>
 
 using namespace ff;
+
+/*
+ * TODO only works with non-decorating token
+ */
 
 template <typename In>
 class WriteToDiskFFNode: public ff_node{
 public:
 	WriteToDiskFFNode(std::function<std::string(In)> kernel_):
-			kernel(kernel_), recv_sync(false), in_microbatch(nullptr){};
+			kernel(kernel_), recv_sync(false) {};
 
 	int svc_init(){
-//#ifdef DEBUG
-//		fprintf(stderr, "[WRITE TO DISK] init FFnode\n");
-//#endif
 		outfile.open(Constants::OUTPUT_FILE);
 		return 0;
 	}
@@ -52,11 +53,11 @@ public:
 
 		if(recv_sync && task != PICO_EOS){
 			if (outfile.is_open()) {
-				in_microbatch = reinterpret_cast<Microbatch<Token<In>>*>(task);
-				for(Token<In>& in: *in_microbatch){
-					outfile << kernel(in.get_data())<< std::endl;
+				auto mb = reinterpret_cast<Microbatch<Token<In>>*>(task);
+				for(In& in: *mb){
+					outfile << kernel(in) << std::endl;
 				}
-				delete in_microbatch;
+				delete mb;
 			} else {
 				std::cerr << "Unable to open file";
 			}
@@ -72,7 +73,6 @@ private:
 	std::function<std::string(In)> kernel;
     std::ofstream outfile;
     bool recv_sync;
-    Microbatch<Token<In>>* in_microbatch;
 };
 
 

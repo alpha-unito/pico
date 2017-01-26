@@ -21,52 +21,156 @@
 #ifndef INTERNALS_TYPES_MICROBATCH_HPP_
 #define INTERNALS_TYPES_MICROBATCH_HPP_
 
-template<typename T>
+#include <cstring>
+
+/**
+ * Microbatch is the atomic storage of PiCo collections.
+ * Each collection item is decorated with a token descriptor of type TokenType,
+ * that also embeds the item type as:
+ * DataType = TokenType::datatype.
+ *
+ * A Microbatch object stores a chunk of consecutive item slots.
+ * Each chunk slot stores a decorated item:
+ * - a TokenType token descriptor (i.e., item meta-data)
+ * - a DataType collection item
+ *
+ * A Microbatch is used as a slot allocator.
+ * Items are not initialized at Microbatch construction, they must be:
+ * 1. allocated (by requesting them to the Microbatch)
+ * 2. built in-place at the allocated locations
+ * 3. committed
+ *
+ * Decorations for an item x must be built at the location:
+ * token_desc(x)
+ * once x has been allocated.
+ *
+ * This way no extra constructor calls are needed and neither DataType nor
+ * TokenType are required to be DefaultConstructible.
+ *
+ * All allocated items must be also initialized (i.e., built) but
+ * only committed items are valid collection items.
+ *
+ * Upon destruction, all the initialized items and descriptors are destroyed
+ * and memory is freed.
+ *
+ * Implementation notes:
+ * The entire chunk is allocated in one shot, with the purpose of reducing
+ * the overall number of allocations for storing PiCo collections.
+ */
+
+template<typename TokenType>
 class Microbatch {
+    typedef typename TokenType::datatype DataType;
+
 public:
-    typedef typename std::vector<T>::iterator iterator;
-
-	Microbatch(unsigned int size) : mb_size(size) {
-		mb.reserve(mb_size);
+    /**
+     * The constructor only allocates the chunk, it does not initialize items.
+     */
+	Microbatch(unsigned int size) : chunk_size(size) {
+		chunk = (char *)malloc(chunk_size * slot_size);
+		allocated = committed = 0;
 	}
 
-	void push_back(T&& t){
-		mb.push_back(std::move(t));
-		assert(mb.size() <= mb_size);
+	/**
+	 * The destructor destroy items and free memory.
+	 */
+	~Microbatch() {
+	    clear();
+	    free(chunk);
 	}
 
-	void push_back(const T& t) {
-	    mb.push_back(t);
-	    assert(mb.size() <= mb_size);
+	/**
+     * destroys all allocated items.
+     */
+    void clear()
+    {
+        for (; allocated > 0; --allocated)
+        {
+            char *slot_ptr = chunk + (allocated - 1) * slot_size;
+            ((DataType *) (slot_ptr + desc_size))->~DataType();
+            ((TokenType *) (slot_ptr))->~TokenType();
+        }
+    }
+
+	/**
+	 * Allocates a slot from the Microbatch.
+	 *
+	 * Returns either:
+	 * - a pointer to the first free slot for a data item
+	 * - nullptr if the chunk is full
+	 */
+	DataType *allocate() {
+	    if(!full())
+	        return (DataType *)(chunk + (allocated++ * slot_size) + desc_size);
+	    return nullptr;
 	}
 
-	void clear() {
-	    mb.clear();
+	/**
+	 * Commits the last allocated item.
+	 */
+	void commit() {
+	    assert(committed < chunk_size);
+	    ++committed;
+	}
+
+	/**
+	 * Return a pointer to the token descriptor for a data slot.
+	 */
+	static TokenType *token_desc(DataType *data_slot) {
+	    return (TokenType *)(((char *)(data_slot)) - desc_size);
 	}
 
 	bool full() const {
-		return mb.size() == mb_size;
+		return allocated == chunk_size;
 	}
 
 	bool empty() const {
-		return mb.empty();
+		return allocated == 0;
 	}
 
-	unsigned int size() const {
-		return mb.size();
-	}
+	/*
+	 * Microbatch iterator over committed items.
+	 */
+    class iterator: public std::iterator<std::input_iterator_tag, DataType> {
+        char* p;
+    public:
+        iterator(char *x)
+                : p(x)
+        {
+        }
+        iterator& operator++()
+        {
+            p += slot_size;
+            return *this;
+        }
+        bool operator==(const iterator& rhs)
+        {
+            return p == rhs.p;
+        }
+        bool operator!=(const iterator& rhs)
+        {
+            return p != rhs.p;
+        }
+        DataType& operator*()
+        {
+            return *(DataType *)(p + desc_size);
+        }
+    };
 
 	iterator begin() {
-	    return mb.begin();
+	    return iterator(chunk);
 	}
 
 	iterator end() {
-	    return mb.end();
+	    return iterator(chunk + committed * slot_size);
 	}
 
 private:
-	std::vector<T> mb;
-	const unsigned int mb_size;
+	static const size_t desc_size = sizeof(TokenType);
+	static const size_t slot_size = desc_size + sizeof(DataType);
+	char *chunk;
+	const unsigned int chunk_size;
+	unsigned int allocated, committed;
 };
 
 #endif /* INTERNALS_TYPES_MICROBATCH_HPP_ */

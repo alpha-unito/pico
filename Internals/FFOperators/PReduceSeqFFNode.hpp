@@ -23,11 +23,11 @@
 
 #include <ff/node.hpp>
 #include <Internals/utils.hpp>
-#include <Internals/Types/Token.hpp>
 #include <Internals/Types/Microbatch.hpp>
 #include <Internals/WindowPolicy.hpp>
 
 #include <unordered_map>
+#include <Internals/Types/Token.hpp>
 
 using namespace ff;
 
@@ -52,9 +52,8 @@ public:
         {
 
             in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
-            for (TokenType &mb_item : *in_microbatch)
+            for (In &kv : *in_microbatch)
             { // reduce on microbatch
-                In &kv(mb_item.get_data());
                 if (kvmap.find(kv.Key()) != kvmap.end())
                     kvmap[kv.Key()] = reducef(kv, kvmap[kv.Key()]);
                 else
@@ -71,7 +70,8 @@ public:
             auto out_microbatch = new Microbatch<TokenType>(outmb_size);
             for (auto it = kvmap.begin(); it != kvmap.end(); ++it)
             {
-                out_microbatch->push_back(std::move(it->second));
+                new (out_microbatch->allocate()) In(std::move(it->second));
+                out_microbatch->commit();
 
                 if (out_microbatch->full())
                 {

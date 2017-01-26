@@ -26,8 +26,8 @@
 #include <Internals/FFOperators/FMapPReduceBatch.hpp>
 #include <Internals/WindowPolicy.hpp>
 #include <Internals/Types/TimedToken.hpp>
-#include <Internals/Types/Token.hpp>
 #include <Internals/FFOperators/SupportFFNodes/FarmWrapper.hpp>
+#include <Internals/Types/Token.hpp>
 #include "PReduce.hpp"
 #include "UnaryOperator.hpp"
 /**

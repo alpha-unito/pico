@@ -21,7 +21,6 @@
 #ifndef INTERNALS_FFOPERATORS_FMAPPREDUCEBATCH_HPP_
 #define INTERNALS_FFOPERATORS_FMAPPREDUCEBATCH_HPP_
 
-
 #include <ff/farm.hpp>
 
 #include <Internals/utils.hpp>
@@ -36,14 +35,17 @@
 
 using namespace ff;
 
-template<typename In, typename Out, typename Farm, typename TokenTypeIn, typename TokenTypeOut>
+template<typename In, typename Out, typename Farm, typename TokenTypeIn,
+        typename TokenTypeOut>
 class FMapPReduceBatch: public Farm {
 public:
 
-	FMapPReduceBatch(int parallelism, std::function<void(In&, FlatMapCollector<Out> &)>& flatmapf,
-			std::function<Out(Out&, Out&)> reducef, WindowPolicy* win) {
+    FMapPReduceBatch(int parallelism,
+            std::function<void(In&, FlatMapCollector<Out> &)>& flatmapf,
+            std::function<Out(Out&, Out&)> reducef, WindowPolicy* win)
+    {
 
-		this->setEmitterF(win->window_farm(parallelism, this->getlb()));
+        this->setEmitterF(win->window_farm(parallelism, this->getlb()));
         this->setCollectorF(new FarmCollector(parallelism));
         delete win;
         std::vector<ff_node *> w;
@@ -57,38 +59,47 @@ public:
 
 private:
 
-	class Worker : public ff_node{
-	public:
-		Worker(std::function<void(In&, FlatMapCollector<Out> &)>& kernel_, std::function<Out(Out&, Out&)>& reducef_kernel_):
-		in_microbatch(nullptr), kernel(kernel_), reducef_kernel(reducef_kernel_)
+    class Worker: public ff_node {
+    public:
+        Worker(std::function<void(In&, FlatMapCollector<Out> &)>& kernel_, //
+                std::function<Out(Out&, Out&)>& reducef_kernel_)
+                : kernel(kernel_), reducef_kernel(reducef_kernel_)
 #ifdef TRACE_FASTFLOW
-	, user_svc(0)
+        , user_svc(0)
 #endif
-	{
-		}
+        {
+        }
 
-		void* svc(void* task) {
+        void* svc(void* task)
+        {
 #ifdef TRACE_FASTFLOW
-		    time_point_t t0, t1;
-		    hires_timer_ull(t0);
+            time_point_t t0, t1;
+            hires_timer_ull(t0);
 #endif
-			if(task != PICO_EOS && task != PICO_SYNC){
-				in_microbatch = reinterpret_cast<Microbatch<TokenTypeIn>*>(task);
-				// iterate over microbatch
-				for(TokenTypeIn &in : *in_microbatch){
-				    kernel(in.get_data(), collector);
-				}
-				// partial reduce on all output micro-batches
-				auto it = collector.begin();
-				while (it) {
+            if (task != PICO_EOS && task != PICO_SYNC)
+            {
+                auto in_microbatch = reinterpret_cast<mb_in*>(task);
+
+                // iterate over microbatch
+                for (In &in : *in_microbatch)
+                {
+                    kernel(in, collector);
+                }
+
+                // partial reduce on all output micro-batches
+                auto it = collector.begin();
+                while (it)
+                {
                     /* reduce the micro-batch */
-                    for (auto token : *it->mb) {
-                        Out &kv(token.get_data());
-                        if (kvmap.find(kv.Key()) != kvmap.end()) {
-                            kvmap[kv.Key()] = reducef_kernel(kv, kvmap[kv.Key()]);
+                    for (Out &kv : *it->mb)
+                    {
+                        const typename Out::keytype & k(kv.Key());
+                        if (kvmap.find(k) != kvmap.end())
+                        {
+                            kvmap[k] = reducef_kernel(kv, kvmap[k]);
                         }
                         else
-                            kvmap[kv.Key()] = kv;
+                            kvmap[k] = kv;
                     }
 
                     /* clean up and skip to the next micro-batch */
@@ -96,61 +107,70 @@ private:
                     it = it->next;
                     delete it_->mb;
                     free(it_);
-				}
+                }
 
-				//clean up
-				delete in_microbatch;
-				collector.clear();
-			} else {
-	#ifdef DEBUG
-			fprintf(stderr, "[UNARYFLATMAP-PREDUCE-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
-	#endif
-                auto out_microbatch = new Microbatch<TokenTypeOut>(Constants::MICROBATCH_SIZE);
+                //clean up
+                delete in_microbatch;
+                collector.clear();
+            }
+            else
+            {
+#ifdef DEBUG
+                fprintf(stderr, "[UNARYFLATMAP-PREDUCE-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
+#endif
+                mb_out *mb = new mb_out(Constants::MICROBATCH_SIZE);
                 for (auto it = kvmap.begin(); it != kvmap.end(); ++it)
                 {
-                    out_microbatch->push_back(std::move(it->second));
-                    if(out_microbatch->full()) {
-                        ff_send_out(reinterpret_cast<void*>(out_microbatch));
-                        out_microbatch = new Microbatch<TokenTypeOut>(Constants::MICROBATCH_SIZE);
+                    new (mb->allocate()) Out(it->second);
+                    mb->commit();
+                    if (mb->full())
+                    {
+                        ff_send_out(reinterpret_cast<void*>(mb));
+                        mb = new mb_out(Constants::MICROBATCH_SIZE);
                     }
                 }
 
-                if(!out_microbatch->empty())  {
-                	ff_send_out(reinterpret_cast<void*>(out_microbatch));
+                /* send out the remainder micro-batch or destroy if spurious */
+                if (!mb->empty())
+                {
+                    ff_send_out(reinterpret_cast<void*>(mb));
                 }
-                else {
-                    /* spurious empty microbatch */
-                    delete out_microbatch;
+                else
+                {
+                    delete mb;
                 }
 
                 ff_send_out(task);
-			}
+            }
 #ifdef TRACE_FASTFLOW
-			hires_timer_ull(t1);
-			user_svc += get_duration(t0, t1);
+            hires_timer_ull(t1);
+            user_svc += get_duration(t0, t1);
 #endif
-			return GO_ON;
-		}
+            return GO_ON;
+        }
 
+    private:
+        /*
+         * ingests and emits Microbatches of non-decorated data items
+         * todo force non-decorated tokens
+         */
+        typedef Microbatch<TokenTypeIn> mb_in;
+        typedef Microbatch<TokenTypeOut> mb_out;
 
-	private:
-		Microbatch<TokenTypeIn>* in_microbatch;
-		TokenCollector<TokenTypeOut> collector;
-		std::function<void(In&, FlatMapCollector<Out> &)> kernel;
-		std::function<Out(Out&, Out&)> reducef_kernel;
-		std::unordered_map<typename Out::keytype, Out> kvmap;
+        TokenCollector<Out> collector;
+        std::function<void(In&, FlatMapCollector<Out> &)> kernel;
+        std::function<Out(Out&, Out&)> reducef_kernel;
+        std::unordered_map<typename Out::keytype, Out> kvmap;
 
 #ifdef TRACE_FASTFLOW
-		duration_t user_svc;
-		virtual void print_pico_stats(std::ostream & out) {
+        duration_t user_svc;
+        virtual void print_pico_stats(std::ostream & out)
+        {
             out << "*** PiCo stats ***\n";
             out << "user svc (ms) : " << time_count(user_svc) * 1000 << std::endl;
         }
 #endif
-	};
+    };
 };
-
-
-
 
 #endif /* INTERNALS_FFOPERATORS_FMAPPREDUCEBATCH_HPP_ */

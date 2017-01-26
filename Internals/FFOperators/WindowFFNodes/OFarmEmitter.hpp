@@ -42,7 +42,6 @@ public:
 	}
 
 private:
-	typedef Microbatch<TokenType> mb_t;
 	int nworkers;
 	ff_loadbalancer * const lb;
 };

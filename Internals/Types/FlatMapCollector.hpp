@@ -23,61 +23,80 @@
 
 #include <defines/Global.hpp>
 #include "Microbatch.hpp"
+#include <Internals/Types/Token.hpp>
 
+/**
+ * Collector for FlatMap user kernels.
+ */
 template<typename Out>
 class FlatMapCollector {
 public:
     virtual void add(const Out &) = 0;
+    virtual void add(Out &&) = 0;
 
     virtual ~FlatMapCollector()
     {
     }
 };
 
-template<typename TokenType>
-class TokenCollector: public FlatMapCollector<typename TokenType::datatype> {
+/**
+ * A FlatMapCollector for non-decorated collection items
+ */
+template<typename DataType>
+class TokenCollector: public FlatMapCollector<DataType> {
+    typedef Microbatch<Token<DataType>> mb_t;
+
 public:
     TokenCollector()
     {
         clear();
     }
 
-    struct cnode
+    /**
+     * Add a token by copying a DataType value
+     */
+    void add(const DataType &x)
     {
-        Microbatch<TokenType> *mb;
-        struct cnode *next;
-    };
+        make_room();
 
-    void add(const typename TokenType::datatype &x)
-    {
-        if (first)
-        {
-            if (head->mb->full())
-            {
-                assert(head->next == nullptr);
-                head->next = (cnode *) malloc(sizeof(cnode));
-                head->next->next = nullptr;
-                head->next->mb = new Microbatch<TokenType>(Constants::MICROBATCH_SIZE);
-                head = head->next;
-            }
-        }
-
-        else
-        {
-            first = (cnode *) malloc(sizeof(cnode));
-            first->next = nullptr;
-            first->mb = new Microbatch<TokenType>(Constants::MICROBATCH_SIZE);
-            head = first;
-        }
-
-        /* insert the element */
-        head->mb->push_back(TokenType(x));
+        /* insert the element and its token decoration */
+        new (head->mb->allocate()) DataType(x);
+        //TokenType *t = new (mb_t::token_desc(item)) TokenType(*item);
+        head->mb->commit();
     }
 
+    /**
+     * Add a token by moving a DataType value
+     */
+    void add(DataType &&x)
+    {
+        make_room();
+
+        /* insert the element and its token decoration */
+        new (head->mb->allocate()) DataType(std::move(x));
+        //TokenType *t = new (mb_t::token_desc(item)) TokenType(*item);
+        head->mb->commit();
+    }
+
+    /**
+     * Clear the list without destroying it.
+     */
     void clear()
     {
         first = head = nullptr;
     }
+
+    /**
+     * A collector is stored as a list of Microbatch objects.
+     * They travel together in order to guarantee the semantics of FlatMap
+     * when processed.
+     *
+     * The list type is exposed since it is freed externally.
+     */
+    struct cnode {
+        mb_t *mb;
+        struct cnode *next;
+    };
 
     cnode* begin()
     {
@@ -86,6 +105,33 @@ public:
 
 private:
     cnode *first, *head;
+
+    /*
+     * ensure there is an available slot in the head node
+     */
+    void make_room()
+    {
+        if (first)
+        {
+            if (head->mb->full())
+            {
+                assert(head->next == nullptr);
+                head->next = (cnode *) malloc(sizeof(cnode));
+                head->next->next = nullptr;
+                head->next->mb = new mb_t(Constants::MICROBATCH_SIZE);
+                head = head->next;
+            }
+        }
+
+        else
+        {
+            /* initializes the list */
+            first = (cnode *) malloc(sizeof(cnode));
+            first->next = nullptr;
+            first->mb = new mb_t(Constants::MICROBATCH_SIZE);
+            head = first;
+        }
+    }
 };
 
 #endif /* INTERNALS_TYPES_FLATMAPCOLLECTOR_HPP_ */

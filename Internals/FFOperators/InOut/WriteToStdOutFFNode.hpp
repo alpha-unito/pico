@@ -24,10 +24,14 @@
 #include <ff/node.hpp>
 #include <Internals/utils.hpp>
 #include <Internals/Types/TimedToken.hpp>
-#include <Internals/Types/Token.hpp>
 #include <Internals/Types/Microbatch.hpp>
+#include <Internals/Types/Token.hpp>
 
 using namespace ff;
+
+/*
+ * TODO only works with non-decorating token
+ */
 
 template<typename In, typename TokenType>
 class WriteToStdOutFFNode: public ff_node {
@@ -45,8 +49,8 @@ public:
 		}
 		if(recv_sync || task != PICO_EOS){
 			in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
-			for(TokenType& tt: *in_microbatch) {
-				std::cout <<  kernel((tt.get_data()))<< std::endl;
+			for(In& tt: *in_microbatch) {
+				std::cout << kernel(tt) << std::endl;
 			}
 		}
 		return GO_ON;

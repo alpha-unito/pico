@@ -21,34 +21,25 @@
 #ifndef INTERNALS_TYPES_TOKEN_HPP_
 #define INTERNALS_TYPES_TOKEN_HPP_
 
+/**
+ * Token descriptor for decorating collection data items with meta-data.
+ */
 template<typename T>
 class Token {
 public:
     typedef T datatype;
 
     /*
-     * constructor from T r-value ref
+     * create Token as decoration of a T value
      */
-    Token(T &&item_) : data(std::move(item_)) {}
+    Token(const T&) {
 
-    /*
-     * constructor from T l-value ref
-     */
-    Token(const T &item_) : data(item_){}
-
-    friend std::ostream& operator<<(std::ostream& os, const Token& tt)
-    {
-        os << "<" << tt.data << ">";
-        return os;
-    }
-
-    T &get_data()
-    {
-        return data;
     }
 
 private:
-    T data;
+    /*
+     * Token meta-data
+     */
 };
 
-#endif /* INTERNALS_TYPES_TOKEN_HPP_ */
+#endif /* INTERNALS_TYPES_TOKENMD_HPP_ */

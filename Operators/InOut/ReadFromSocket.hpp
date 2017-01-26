@@ -91,7 +91,7 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism, Operator* nextop=nullptr) {
-		return new ReadFromSocketFFNode<Token<std::string>>(server_name, port, delimiter);
+		return new ReadFromSocketFFNode<TokenMD<std::string>>(server_name, port, delimiter);
 	}
 
 
