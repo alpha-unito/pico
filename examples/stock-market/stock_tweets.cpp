@@ -58,10 +58,6 @@ int main(int argc, char** argv)
 
     parse_PiCo_args(argc, argv);
 
-    std::string stock_fname = argv[1];
-    std::string tweet_host = argv[2];
-    int tweet_port = atoi(argv[3]);
-
     /* bring tags to memory */
     std::ifstream stocks_file(Constants::INPUT_FILE);
     std::string stock_name;
