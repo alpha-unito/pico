@@ -46,6 +46,4 @@ private:
 	ff_loadbalancer * const lb;
 };
 
-};
-
 #endif /* INTERNALS_FFOPERATORS_SUPPORTFFNODES_MERGEEMITTER_HPP_ */
