@@ -46,6 +46,7 @@ public:
         hires_timer_ull(t0);
 #endif
         std::ifstream infile(Constants::INPUT_FILE);
+        std::cout << "INPUT FILE " << Constants::INPUT_FILE << std::endl;
         std::string line;
         mb_t *mb = new mb_t(Constants::MICROBATCH_SIZE);
         if (infile.is_open())
