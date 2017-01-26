@@ -33,6 +33,9 @@
 
 using namespace ff;
 
+/*
+ * TODO only works with non-decorating token
+ */
 
 template<typename In, typename Out, typename Farm, typename TokenTypeIn, typename TokenTypeOut>
 class MapBatch: public Farm {
@@ -54,26 +57,19 @@ private:
 
 	class Worker : public ff_node{
 	public:
-		Worker(std::function<Out(In&)> kernel_): in_microbatch(nullptr),
-				out_microbatch(new Microbatch<TokenTypeOut>(Constants::MICROBATCH_SIZE)),
-			kernel(kernel_){}
-
-        ~Worker() {
-            /* delete the spurious empty microbatch, if present */
-            if (out_microbatch->empty())
-                delete out_microbatch;
-        }
+		Worker(std::function<Out(In&)> kernel_): kernel(kernel_){}
 
 		void* svc(void* task) {
 			if(task != PICO_EOS && task != PICO_SYNC){
-				in_microbatch = reinterpret_cast<Microbatch<TokenTypeIn>*>(task);
+				auto in_microbatch = reinterpret_cast<mb_in*>(task);
+				auto out_microbatch = new mb_out(Constants::MICROBATCH_SIZE);
 				// iterate over microbatch
-				for(TokenTypeIn &in : *in_microbatch){
-					Out *res = new (out_microbatch->push_ptr()) Out(kernel(in.get_data()));
+				for(In &in : *in_microbatch) {
+				    /* build item and enable copy elision */
+					new (out_microbatch->allocate()) Out(kernel(in));
+					out_microbatch->commit();
 				}
-
 				ff_send_out(reinterpret_cast<void*>(out_microbatch));
-				out_microbatch = new Microbatch<TokenTypeOut>(Constants::MICROBATCH_SIZE);
 				delete in_microbatch;
 			} else {
 	#ifdef DEBUG
@@ -85,8 +81,8 @@ private:
 		}
 
 	private:
-		Microbatch<TokenTypeIn>* in_microbatch;
-		Microbatch<TokenTypeOut>* out_microbatch;
+		typedef Microbatch<TokenTypeIn> mb_in;
+		typedef Microbatch<TokenTypeOut> mb_out;
 		std::function<Out(In&)> kernel;
 	};
 };

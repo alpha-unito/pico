@@ -35,6 +35,10 @@
 
 using namespace ff;
 
+/*
+ * TODO only works with non-decorating token
+ */
+
 template<typename In, typename Out, typename Farm, typename TokenTypeIn,
         typename TokenTypeOut>
 class FMapPReduceBatch: public Farm {

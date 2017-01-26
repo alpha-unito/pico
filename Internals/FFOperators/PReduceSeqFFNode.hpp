@@ -31,6 +31,10 @@
 
 using namespace ff;
 
+/*
+ * TODO only works with non-decorating token
+ */
+
 template<typename In, typename TokenType>
 class PReduceSeqFFNode: public ff_node {
 public:

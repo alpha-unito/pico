@@ -34,6 +34,10 @@
 
 using namespace ff;
 
+/*
+ * TODO only works with non-decorating token
+ */
+
 template<typename In, typename Out, typename Farm, typename TokenTypeIn,
 		typename TokenTypeOut>
 class MapPReduceBatch: public Farm {
@@ -60,8 +64,7 @@ class Worker: public ff_node {
 public:
 	Worker(std::function<Out(In&)>& kernel_,
 			std::function<Out(Out&, Out&)>& reducef_kernel_) :
-			in_microbatch(nullptr), kernel(kernel_),
-			reducef_kernel(reducef_kernel_)
+			kernel(kernel_), reducef_kernel(reducef_kernel_)
 #ifdef TRACE_FASTFLOW
     , user_svc(0)
 #endif
@@ -73,13 +76,12 @@ public:
             hires_timer_ull(t0);
 #endif
 		if(task != PICO_EOS && task != PICO_SYNC){
-			in_microbatch = reinterpret_cast<Microbatch<TokenTypeIn>*>(task);
+			auto in_microbatch = reinterpret_cast<mb_in*>(task);
 			// iterate over microbatch
-			for(TokenTypeIn &in : *in_microbatch){
-			    Out kv = kernel(in.get_data());
+			for(In &x : *in_microbatch) {
+			    Out kv = kernel(x);
 			    if (kvmap.find(kv.Key()) != kvmap.end()) {
 					kvmap[kv.Key()] = reducef_kernel(kv, kvmap[kv.Key()]);
-//					std::cout << "kv "<< kvmap[kv.Key()] << std::endl;
 				} else {
 					kvmap[kv.Key()] = kv;
 				}
@@ -101,14 +103,15 @@ public:
 	fprintf(stderr, "[MAP-PREDUCE-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
 #endif
 	        auto out_microbatch = new Microbatch<TokenTypeOut>(Constants::MICROBATCH_SIZE);
-			for (auto it = kvmap.begin(); it != kvmap.end(); ++it){
-				out_microbatch->push_back(std::move(it->second));
+			for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
+			    new (out_microbatch->allocate()) Out(std::move(it->second));
+			    out_microbatch->commit();
 			    if(out_microbatch->full()) {
 			       ff_send_out(reinterpret_cast<void*>(out_microbatch));
 			       out_microbatch = new Microbatch<TokenTypeOut>(Constants::MICROBATCH_SIZE);
 			    }
 			}
-			if(!out_microbatch->empty())  {
+			if(!out_microbatch->empty()) {
 			   ff_send_out(reinterpret_cast<void*>(out_microbatch));
 			}
 			else {
@@ -124,11 +127,11 @@ public:
 	return GO_ON;
 	}
 
-	private:
-		Microbatch<TokenTypeIn>* in_microbatch;
-		std::function<Out(In&)> kernel;
-		std::function<Out(Out&, Out&)> reducef_kernel;
-		std::unordered_map<typename Out::keytype, Out> kvmap;
+    private:
+        typedef Microbatch<TokenTypeIn> mb_in;
+        std::function<Out(In&)> kernel;
+        std::function<Out(Out&, Out&)> reducef_kernel;
+        std::unordered_map<typename Out::keytype, Out> kvmap;
 
 #ifdef TRACE_FASTFLOW
         duration_t user_svc;
