@@ -42,13 +42,13 @@
 int main(int argc, char** argv)
 {
     /* parse command line */
-    if (argc < 3)
+    if (argc < 2)
     {
         std::cerr << "Usage: " << argv[0];
-        std::cerr << " <input-file> <output-file>\n";
+        std::cerr << " -i <input-file> -o <output-file>\n";
         return -1;
     }
-    std::string in_fname = argv[1], out_fname = argv[2];
+    parse_PiCo_args(argc, argv);
 
     /*
      * define a generic pipeline that computes the price of a bunch of
