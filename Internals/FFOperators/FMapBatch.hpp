@@ -115,7 +115,7 @@ private:
 	private:
 	    int nworkers;
 	    int picoEOSrecv;
-	    typedef typename TokenCollector<TokenTypeOut>::cnode cnode_t;
+	    typedef typename TokenCollector<Out>::cnode cnode_t;
 	};
 };
 

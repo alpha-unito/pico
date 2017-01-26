@@ -35,6 +35,10 @@
 
 using namespace ff;
 
+/*
+ * TODO only works with non-decorating token
+ */
+
 template<typename TokenType>
 class ReadFromSocketFFNode: public ff_node {
 public:

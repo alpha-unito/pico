@@ -75,12 +75,12 @@ int main(int argc, char** argv)
      * 3. extracts the maximum price for each stock name
      * 4. write prices to file
      */
-    Pipe stockPricing((ReadFromFile(in_fname)));
+    Pipe stockPricing((ReadFromFile()));
     stockPricing //
     .to(blackScholes).add(PReduce<StockAndPrice>([]
     (StockAndPrice p1, StockAndPrice p2)
-    {   return std::max(p1,p2);})).add(
-            WriteToDisk<StockAndPrice>(out_fname, [](StockAndPrice kv)
+    {   return std::max(p1,p2);}))
+    .add(WriteToDisk<StockAndPrice>([](StockAndPrice kv)
             {   return kv.to_string();}));
 
     /* generate dot file with the semantic DAG */

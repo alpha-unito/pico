@@ -28,24 +28,28 @@
 
 using namespace ff;
 
+/*
+ * TODO only works with non-decorating token
+ */
 
 template<typename In, typename TokenType>
 class PReduceFFNode: public ff_node {
 public:
 	PReduceFFNode(std::function<In(In&, In&)>& reducef_, size_t mb_size_ = Constants::MICROBATCH_SIZE) :
-			kernel(reducef_), in_microbatch(nullptr), out_microbatch(nullptr), mb_size(mb_size_){};
+			kernel(reducef_), mb_size(mb_size_){};
 
 	void* svc(void* task) {
 		if(task != PICO_EOS && task != PICO_SYNC){
-			in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
+			auto in_microbatch = reinterpret_cast<mb_t*>(task);
 			for(In& kv : *in_microbatch){
 				if(kvmap.find(kv.Key()) != kvmap.end()){
 					kvmap[kv.Key()].first = kernel(kvmap[kv.Key()].first, kv);
 					if(++(kvmap[kv.Key()].second) == mb_size){
-					    //TODO
-//						out_microbatch = new Microbatch<TokenType>(1);
-//						out_microbatch->push_back(TokenType(std::move(kvmap[kv.Key()].first)));
-//						ff_send_out(reinterpret_cast<void*>(out_microbatch));
+					    //TODO check: why not standard size micro-batches?
+						auto out_microbatch = new mb_t(1);
+						new (out_microbatch->allocate()) In(std::move(kvmap[kv.Key()].first));
+						out_microbatch->commit();
+						ff_send_out(reinterpret_cast<void*>(out_microbatch));
 						kvmap.erase(kv.Key());
 					}
 				} else {
@@ -60,7 +64,7 @@ public:
 			typename std::unordered_map<typename In::keytype, std::pair<In, size_t>>::iterator it;
 			for (it=kvmap.begin(); it!=kvmap.end(); ++it){
 				if((it->second).second < mb_size){
-				    //TODO check
+				    //TODO check: manage incomplete windows
 //					out_microbatch = new Microbatch<TokenType>();
 //					out_microbatch->push_back(TokenType(std::move((it->second).first)));
 //					ff_send_out(reinterpret_cast<void*>(out_microbatch));
@@ -72,10 +76,9 @@ public:
 	}
 
 private:
+	typedef Microbatch<TokenType> mb_t;
 	std::function<In(In&, In&)> kernel;
 	std::unordered_map<typename In::keytype, std::pair<In, size_t>> kvmap;
-	Microbatch<TokenType>* in_microbatch;
-	Microbatch<TokenType>* out_microbatch;
 	size_t mb_size;
 };
 
