@@ -64,30 +64,32 @@ public:
 	}
 
 	void* svc(void* in) {
-		std::string line;
 		std::string tail;
 		char buffer[256];
 		if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
 			error("ERROR connecting");
 		}
 		bzero(buffer, sizeof(buffer));
+		std::string *line = new (microbatch->allocate()) std::string();
 		while (read(sockfd, buffer, sizeof(buffer)-1) > 0) {
 			if (n < 0)
 				error("ERROR reading from socket");
 			else {
 				tail.append(buffer);
 				std::istringstream f(tail);
-				while (std::getline(f, line, delimiter)) {
+				/* initialize a new string within the micro-batch */
+				while (std::getline(f, *line, delimiter)) {
 					if(!f.eof()) {// line contains another delimiter
-						microbatch->push_back(TokenType(line));
+						microbatch->commit();
 						if (microbatch->full()) {
 							ff_send_out(reinterpret_cast<void*>(microbatch));
 							microbatch = new Microbatch<TokenType>(Constants::MICROBATCH_SIZE);
  						}
 						tail.clear();
+						line = new (microbatch->allocate()) std::string();
 					} else { // trunked line, store for next parsing
 						tail.clear();
-						tail.append(line);
+						tail.append(*line);
 					}
 				}
 				bzero(buffer, sizeof(buffer));

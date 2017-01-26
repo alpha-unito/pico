@@ -69,8 +69,7 @@ private:
 				in_microbatch = reinterpret_cast<Microbatch<TokenTypeIn>*>(task);
 				// iterate over microbatch
 				for(TokenTypeIn &in : *in_microbatch){
-					Out res = kernel(in.get_data());
-					out_microbatch->push_back(TokenTypeOut(std::move(res)));
+					Out *res = new (out_microbatch->push_ptr()) Out(kernel(in.get_data()));
 				}
 
 				ff_send_out(reinterpret_cast<void*>(out_microbatch));

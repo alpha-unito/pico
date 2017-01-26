@@ -54,15 +54,15 @@ private:
 	class Worker : public ff_node{
 	public:
 		Worker(std::function<void(In&, FlatMapCollector<Out> &)> kernel_):
-		    in_microbatch(nullptr), kernel(kernel_) {}
+		    kernel(kernel_) {}
 
 
 		void* svc(void* task) {
 			if(task != PICO_EOS && task != PICO_SYNC){
-				in_microbatch = reinterpret_cast<Microbatch<TokenTypeIn>*>(task);
+				auto in_microbatch = reinterpret_cast<Microbatch<TokenTypeIn>*>(task);
 				// iterate over microbatch
-				for(TokenTypeIn &tt : *in_microbatch){
-				    kernel(tt.get_data(), collector);
+				for(In &tt : *in_microbatch){
+				    kernel(tt, collector);
 				}
 				if(collector.begin())
 				    ff_send_out(reinterpret_cast<void*>(collector.begin()));
@@ -81,8 +81,7 @@ private:
 
 
 	private:
-		Microbatch<TokenTypeIn>* in_microbatch;
-		TokenCollector<TokenTypeOut> collector;
+		TokenCollector<Out> collector;
 		std::function<void(In&, FlatMapCollector<Out> &)> kernel;
 	};
 
