@@ -46,10 +46,10 @@ public:
 	* Constructor. Creates a new ReadFromSocket operator by defining its kernel function: std::string -> Out
     * operating on each token of the stream, delimited by the delimiter value.
 	*/
-	ReadFromSocket(std::string server_name_, int port_, char delimiter_)
+	ReadFromSocket(char delimiter_)
 			: InputOperator<std::string>(StructureType::STREAM) {
-		server_name = server_name_;
-		port = port_;
+		server_name = Constants::SERVER_NAME;
+		port = Constants::PORT;
 		delimiter = delimiter_;
 	}
 

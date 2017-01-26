@@ -48,19 +48,22 @@ static std::set<std::string> stock_names;
 int main(int argc, char** argv)
 {
     /* parse command line */
-    if (argc < 4)
+    if (argc < 2)
     {
         std::cerr << "Usage: " << argv[0];
-        std::cerr << " <stock names file>"
-                << " <tweet socket host> <tweet socket port>\n";
+        std::cerr << " -i <stock names file>"
+                << " -s <tweet socket host> -p <tweet socket port>\n";
         return -1;
     }
+
+    parse_PiCo_args(argc, argv);
+
     std::string stock_fname = argv[1];
     std::string tweet_host = argv[2];
     int tweet_port = atoi(argv[3]);
 
     /* bring tags to memory */
-    std::ifstream stocks_file(stock_fname);
+    std::ifstream stocks_file(Constants::INPUT_FILE);
     std::string stock_name;
     while (stocks_file.good())
     {
@@ -115,7 +118,7 @@ int main(int argc, char** argv)
                 }
             });
     /* define i/o operators from/to standard input/output */
-    ReadFromSocket readTweets(tweet_host, tweet_port, '-');
+    ReadFromSocket readTweets('-');
 
     WriteToStdOut<StockAndCount> writeCounts([](StockAndCount c) {return c.to_string();});
 
