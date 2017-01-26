@@ -39,7 +39,7 @@ public:
 	~ByKeyEmitter() {
 	    /* delete dangling empty windows */
 	    for (auto it=w_win_map.begin(); it!=w_win_map.end(); ++it){
-	        if(it->second->size() == 0) {
+	        if(it->second->empty()) {
 	            delete it->second;
             }
 	    }
@@ -49,11 +49,12 @@ public:
 		if (task != PICO_EOS && task != PICO_SYNC) {
 			in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
 			size_t dst;
-			for(TokenType& tt: *in_microbatch){
-				typename TokenType::datatype::keytype &key(tt.get_data().Key());
+			for(DataType& tt: *in_microbatch){
+				const keytype &key(tt.Key());
 				dst = key_to_worker(key);
 				// add token to dst's microbatch
-				w_win_map[dst]->push_back(tt);
+				new (w_win_map[dst]->allocate()) DataType(tt);
+				w_win_map[dst]->commit();
 				if(w_win_map[dst]->full()){
 					lb->ff_send_out_to(reinterpret_cast<void*>(w_win_map[dst]), dst);
 					w_win_map[dst] = new Microbatch<TokenType>(Constants::MICROBATCH_SIZE);
@@ -77,7 +78,8 @@ public:
 	}
 
 private:
-	typedef typename TokenType::datatype::keytype keytype;
+	typedef typename TokenType::datatype DataType;
+	typedef typename DataType::keytype keytype;
 	int nworkers;
 	ff_loadbalancer * const lb;
 	Microbatch<TokenType>* in_microbatch;

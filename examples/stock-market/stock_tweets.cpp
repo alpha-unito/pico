@@ -126,7 +126,7 @@ int main(int argc, char** argv)
 	.add(PReduce<StockAndCount>([] (StockAndCount p1, StockAndCount p2)
     {
     	return std::max(p1,p2);
-    }).window(MICROBATCH_SIZE))
+    }).window(Constants::MICROBATCH_SIZE))
     .add(writeCounts);
 
     /* generate dot file with the semantic DAG */
