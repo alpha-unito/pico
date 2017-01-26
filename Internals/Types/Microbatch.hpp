@@ -58,6 +58,8 @@
  * the overall number of allocations for storing PiCo collections.
  */
 
+#include <Internals/FFOperators/ff_config.hpp>
+
 template<typename TokenType>
 class Microbatch {
     typedef typename TokenType::datatype DataType;
@@ -66,8 +68,13 @@ public:
     /**
      * The constructor only allocates the chunk, it does not initialize items.
      */
-	Microbatch(unsigned int size) : chunk_size(size) {
-		chunk = (char *)malloc(chunk_size * slot_size);
+	Microbatch(unsigned int slots_) : slots(slots_) {
+#if 0
+	    void **ptr = (void **)&chunk;
+	    POSIX_MEMALIGN(ptr, 64, slots * slot_size);
+#else
+	    chunk = (char *)MALLOC(slots * slot_size);
+#endif
 		allocated = committed = 0;
 	}
 
@@ -76,7 +83,7 @@ public:
 	 */
 	~Microbatch() {
 	    clear();
-	    free(chunk);
+	    FREE(chunk);
 	}
 
 	/**
@@ -99,7 +106,7 @@ public:
 	 * - a pointer to the first free slot for a data item
 	 * - nullptr if the chunk is full
 	 */
-	DataType *allocate() {
+	inline DataType *allocate() {
 	    if(!full())
 	        return (DataType *)(chunk + (allocated++ * slot_size) + desc_size);
 	    return nullptr;
@@ -108,8 +115,8 @@ public:
 	/**
 	 * Commits the last allocated item.
 	 */
-	void commit() {
-	    assert(committed < chunk_size);
+	inline void commit() {
+	    assert(committed < slots);
 	    ++committed;
 	}
 
@@ -120,11 +127,11 @@ public:
 	    return (TokenType *)(((char *)(data_slot)) - desc_size);
 	}
 
-	bool full() const {
-		return allocated == chunk_size;
+	inline bool full() const {
+		return allocated == slots;
 	}
 
-	bool empty() const {
+	inline bool empty() const {
 		return allocated == 0;
 	}
 
@@ -169,7 +176,7 @@ private:
 	static const size_t desc_size = sizeof(TokenType);
 	static const size_t slot_size = desc_size + sizeof(DataType);
 	char *chunk;
-	const unsigned int chunk_size;
+	const unsigned int slots;
 	unsigned int allocated, committed;
 };
 
