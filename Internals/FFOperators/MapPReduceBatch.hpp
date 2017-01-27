@@ -26,6 +26,7 @@
 #include <Internals/utils.hpp>
 #include <Internals/FFOperators/SupportFFNodes/FarmCollector.hpp>
 #include <Internals/FFOperators/SupportFFNodes/FarmEmitter.hpp>
+#include <Internals/FFOperators/ff_config.hpp>
 #include <Internals/Types/TimedToken.hpp>
 #include <Internals/Types/Microbatch.hpp>
 #include <Internals/WindowPolicy.hpp>
@@ -97,25 +98,26 @@ public:
 	kvmap.clear();
 #endif
 
-			delete in_microbatch;
+			DELETE(in_microbatch, mb_in);
 		} else {
 #ifdef DEBUG
 	fprintf(stderr, "[MAP-PREDUCE-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
 #endif
-	        auto out_microbatch = new Microbatch<TokenTypeOut>(Constants::MICROBATCH_SIZE);
+	        mb_out *out_microbatch;
+	        NEW(out_microbatch, mb_out, Constants::MICROBATCH_SIZE);
 			for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
 			    new (out_microbatch->allocate()) Out(std::move(it->second));
 			    out_microbatch->commit();
 			    if(out_microbatch->full()) {
 			       ff_send_out(reinterpret_cast<void*>(out_microbatch));
-			       out_microbatch = new Microbatch<TokenTypeOut>(Constants::MICROBATCH_SIZE);
+			       NEW(out_microbatch, mb_out, Constants::MICROBATCH_SIZE);
 			    }
 			}
 			if(!out_microbatch->empty()) {
 			   ff_send_out(reinterpret_cast<void*>(out_microbatch));
 			}
 			else {
-			    delete out_microbatch; //spurious microbatch
+			    DELETE(out_microbatch, mb_out); //spurious microbatch
 			}
 
 			ff_send_out(task);
@@ -129,6 +131,7 @@ public:
 
     private:
         typedef Microbatch<TokenTypeIn> mb_in;
+        typedef Microbatch<TokenTypeOut> mb_out;
         std::function<Out(In&)> kernel;
         std::function<Out(Out&, Out&)> reducef_kernel;
         std::unordered_map<typename Out::keytype, Out> kvmap;

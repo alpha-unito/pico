@@ -32,6 +32,7 @@
 #include <Internals/Types/TimedToken.hpp>
 #include <Internals/Types/Microbatch.hpp>
 #include <Internals/utils.hpp>
+#include <Internals/FFOperators/ff_config.hpp>
 
 using namespace ff;
 
@@ -45,7 +46,7 @@ public:
 	ReadFromSocketFFNode(
 			std::string& server_name_, int port_, char delimiter_) :
 			server_name(server_name_), port(port_),
-			delimiter(delimiter_), counter(0), microbatch(new Microbatch<TokenType>(Constants::MICROBATCH_SIZE)) {
+			delimiter(delimiter_), counter(0) {
 	}
 
 	int svc_init() {
@@ -74,6 +75,8 @@ public:
 			error("ERROR connecting");
 		}
 		bzero(buffer, sizeof(buffer));
+		mb_t *microbatch;
+		NEW(microbatch, mb_t, Constants::MICROBATCH_SIZE);
 		std::string *line = new (microbatch->allocate()) std::string();
 		while (read(sockfd, buffer, sizeof(buffer)-1) > 0) {
 			if (n < 0)
@@ -87,7 +90,7 @@ public:
 						microbatch->commit();
 						if (microbatch->full()) {
 							ff_send_out(reinterpret_cast<void*>(microbatch));
-							microbatch = new Microbatch<TokenType>(Constants::MICROBATCH_SIZE);
+							NEW(microbatch, mb_t, Constants::MICROBATCH_SIZE);
  						}
 						tail.clear();
 						line = new (microbatch->allocate()) std::string();
@@ -105,7 +108,7 @@ public:
 			ff_send_out(reinterpret_cast<void*>(microbatch));
 		}
 		else {
-		    delete microbatch;
+		    DELETE (microbatch, mb_t);
 		}
 
 #ifdef DEBUG
@@ -116,6 +119,7 @@ public:
 	}
 
 private:
+	typedef Microbatch<TokenType> mb_t;
 	std::string server_name;
 	int port;
 	int sockfd = 0, n = 0;
@@ -123,7 +127,6 @@ private:
 	struct hostent *server = nullptr;
 	char delimiter;
 	size_t counter;
-	Microbatch<TokenType>* microbatch;
 
 	void error(const char *msg) {
 		perror(msg);

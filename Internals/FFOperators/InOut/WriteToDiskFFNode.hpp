@@ -57,7 +57,7 @@ public:
 				for(In& in: *mb){
 					outfile << kernel(in) << std::endl;
 				}
-				delete mb;
+				DELETE (mb, Microbatch<Token<In>>);
 			} else {
 				std::cerr << "Unable to open file";
 			}

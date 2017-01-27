@@ -30,6 +30,7 @@
 #include <Internals/Types/Microbatch.hpp>
 #include <Internals/WindowPolicy.hpp>
 #include <Internals/Types/FlatMapCollector.hpp>
+#include <Internals/FFOperators/ff_config.hpp>
 
 #include <unordered_map>
 
@@ -109,12 +110,12 @@ private:
                     /* clean up and skip to the next micro-batch */
                     auto it_ = it;
                     it = it->next;
-                    delete it_->mb;
-                    free(it_);
+                    DELETE(it_->mb, mb_out);
+                    FREE(it_);
                 }
 
                 //clean up
-                delete in_microbatch;
+                DELETE(in_microbatch, mb_in);
                 collector.clear();
             }
             else
@@ -122,7 +123,8 @@ private:
 #ifdef DEBUG
                 fprintf(stderr, "[UNARYFLATMAP-PREDUCE-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
 #endif
-                mb_out *mb = new mb_out(Constants::MICROBATCH_SIZE);
+                mb_out *mb;
+                NEW(mb, mb_out, Constants::MICROBATCH_SIZE);
                 for (auto it = kvmap.begin(); it != kvmap.end(); ++it)
                 {
                     new (mb->allocate()) Out(it->second);
@@ -130,7 +132,7 @@ private:
                     if (mb->full())
                     {
                         ff_send_out(reinterpret_cast<void*>(mb));
-                        mb = new mb_out(Constants::MICROBATCH_SIZE);
+                        NEW(mb, mb_out, Constants::MICROBATCH_SIZE);
                     }
                 }
 
@@ -141,7 +143,7 @@ private:
                 }
                 else
                 {
-                    delete mb;
+                    DELETE(mb, mb_out);
                 }
 
                 ff_send_out(task);
