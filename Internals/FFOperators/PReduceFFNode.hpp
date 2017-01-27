@@ -24,6 +24,7 @@
 #include <ff/node.hpp>
 #include <Internals/Types/KeyValue.hpp>
 #include <Internals/utils.hpp>
+#include <Internals/FFOperators/ff_config.hpp>
 #include <unordered_map>
 
 using namespace ff;
@@ -46,7 +47,8 @@ public:
 					kvmap[kv.Key()].first = kernel(kvmap[kv.Key()].first, kv);
 					if(++(kvmap[kv.Key()].second) == mb_size){
 					    //TODO check: why not standard size micro-batches?
-						auto out_microbatch = new mb_t(1);
+						mb_t *out_microbatch;
+						NEW(out_microbatch, mb_t, 1);
 						new (out_microbatch->allocate()) In(std::move(kvmap[kv.Key()].first));
 						out_microbatch->commit();
 						ff_send_out(reinterpret_cast<void*>(out_microbatch));
@@ -56,7 +58,7 @@ public:
 					kvmap[kv.Key()] = std::make_pair(kv, 1);
 				}
 			}
-			delete in_microbatch;
+			DELETE(in_microbatch, mb_t);
 		} else if (task == PICO_EOS) {
 #ifdef DEBUG
 		fprintf(stderr, "[P-REDUCE-FFNODE-%p] In SVC RECEIVED PICO_EOS \n", this);

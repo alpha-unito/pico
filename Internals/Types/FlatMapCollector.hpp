@@ -24,6 +24,7 @@
 #include <defines/Global.hpp>
 #include "Microbatch.hpp"
 #include <Internals/Types/Token.hpp>
+#include <Internals/FFOperators/ff_config.hpp>
 
 /**
  * Collector for FlatMap user kernels.
@@ -55,7 +56,7 @@ public:
     /**
      * Add a token by copying a DataType value
      */
-    void add(const DataType &x)
+    inline void add(const DataType &x)
     {
         make_room();
 
@@ -68,7 +69,7 @@ public:
     /**
      * Add a token by moving a DataType value
      */
-    void add(DataType &&x)
+    inline void add(DataType &&x)
     {
         make_room();
 
@@ -81,7 +82,7 @@ public:
     /**
      * Clear the list without destroying it.
      */
-    void clear()
+    inline void clear()
     {
         first = head = nullptr;
     }
@@ -109,16 +110,14 @@ private:
     /*
      * ensure there is an available slot in the head node
      */
-    void make_room()
+    inline void make_room()
     {
         if (first)
         {
             if (head->mb->full())
             {
                 assert(head->next == nullptr);
-                head->next = (cnode *) malloc(sizeof(cnode));
-                head->next->next = nullptr;
-                head->next->mb = new mb_t(Constants::MICROBATCH_SIZE);
+                head->next = allocate();
                 head = head->next;
             }
         }
@@ -126,11 +125,17 @@ private:
         else
         {
             /* initializes the list */
-            first = (cnode *) malloc(sizeof(cnode));
-            first->next = nullptr;
-            first->mb = new mb_t(Constants::MICROBATCH_SIZE);
+            first = allocate();
             head = first;
         }
+    }
+
+    inline cnode * allocate()
+    {
+        cnode *res = (cnode *)MALLOC(sizeof(cnode));
+        res->next = nullptr;
+        NEW(res->mb, mb_t, Constants::MICROBATCH_SIZE);
+        return res;
     }
 };
 

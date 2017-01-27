@@ -22,6 +22,7 @@
 #define INTERNALS_FFOPERATORS_WINDOWFFNODES_BYKEYEMITTER_HPP_
 
 #include <Internals/FFOperators/SupportFFNodes/Emitter.hpp>
+#include <Internals/FFOperators/ff_config.hpp>
 #include <Internals/utils.hpp>
 #include <Internals/Types/Microbatch.hpp>
 #include <unordered_map>
@@ -30,9 +31,9 @@ template<typename TokenType>
 class ByKeyEmitter: public Emitter {
 public:
 	ByKeyEmitter(int nworkers_, ff_loadbalancer * const lb_, size_t w_size_) :
-			nworkers(nworkers_), lb(lb_), in_microbatch(nullptr), w_size(w_size_){
+			nworkers(nworkers_), lb(lb_), w_size(w_size_){
 		for(int i = 0; i < nworkers; ++i){
-			w_win_map[i] = new Microbatch<TokenType>(Constants::MICROBATCH_SIZE);
+			NEW(w_win_map[i], mb_t, Constants::MICROBATCH_SIZE);
 		}
 	}
 
@@ -40,14 +41,14 @@ public:
 	    /* delete dangling empty windows */
 	    for (auto it=w_win_map.begin(); it!=w_win_map.end(); ++it){
 	        if(it->second->empty()) {
-	            delete it->second;
+	            DELETE(it->second, mb_t);
             }
 	    }
 	}
 
 	void* svc(void* task) {
 		if (task != PICO_EOS && task != PICO_SYNC) {
-			in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
+			mb_t *in_microbatch = reinterpret_cast<mb_t*>(task);
 			size_t dst;
 			for(DataType& tt: *in_microbatch){
 				const keytype &key(tt.Key());
@@ -57,9 +58,10 @@ public:
 				w_win_map[dst]->commit();
 				if(w_win_map[dst]->full()){
 					lb->ff_send_out_to(reinterpret_cast<void*>(w_win_map[dst]), dst);
-					w_win_map[dst] = new Microbatch<TokenType>(Constants::MICROBATCH_SIZE);
+					NEW(w_win_map[dst], mb_t, Constants::MICROBATCH_SIZE);
 				}
 			}
+			DELETE(in_microbatch, mb_t);
 		} else {
 			if(task == PICO_EOS){
 				for (int i = 0; i < nworkers; ++i) {
@@ -80,9 +82,9 @@ public:
 private:
 	typedef typename TokenType::datatype DataType;
 	typedef typename DataType::keytype keytype;
+	typedef Microbatch<TokenType> mb_t;
 	int nworkers;
 	ff_loadbalancer * const lb;
-	Microbatch<TokenType>* in_microbatch;
 	std::unordered_map<size_t, Microbatch<TokenType>*> w_win_map;
 	size_t w_size;
 

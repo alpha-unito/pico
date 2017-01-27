@@ -24,6 +24,7 @@
 #include <ff/node.hpp>
 #include <Internals/utils.hpp>
 #include <Internals/Types/Microbatch.hpp>
+#include <Internals/FFOperators/ff_config.hpp>
 #include "../../Types/Token.hpp"
 
 using namespace ff;
@@ -47,7 +48,8 @@ public:
 #endif
         std::ifstream infile(Constants::INPUT_FILE);
         std::string line;
-        mb_t *mb = new mb_t(Constants::MICROBATCH_SIZE);
+        mb_t *mb;
+        NEW(mb, mb_t, Constants::MICROBATCH_SIZE);
         if (infile.is_open())
         {
             while (true)
@@ -65,7 +67,7 @@ public:
                     if (mb->full())
                     {
                         ff_send_out(reinterpret_cast<void*>(mb));
-                        mb = new mb_t(Constants::MICROBATCH_SIZE);
+                        NEW(mb, mb_t, Constants::MICROBATCH_SIZE);
                     }
                 }
                 else
@@ -80,7 +82,7 @@ public:
             }
             else
             {
-                delete mb;
+                DELETE (mb, mb_t);
             }
         }
         else

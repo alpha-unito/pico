@@ -25,6 +25,7 @@
 #include <Internals/utils.hpp>
 #include <Internals/Types/Microbatch.hpp>
 #include <Internals/WindowPolicy.hpp>
+#include <Internals/FFOperators/ff_config.hpp>
 
 #include <unordered_map>
 #include <Internals/Types/Token.hpp>
@@ -39,7 +40,7 @@ template<typename In, typename TokenType>
 class PReduceSeqFFNode: public ff_node {
 public:
 	PReduceSeqFFNode(std::function<In(In&, In&)>& reducef_, WindowPolicy* win=nullptr) :
-			reducef(reducef_), in_microbatch(nullptr){
+			reducef(reducef_) {
 		if(win){
 #ifdef DEBUG
            fprintf(stderr, "[P-REDUCE-FFNODE-%p] Window size %lu \n", this, win->win_size());
@@ -54,8 +55,7 @@ public:
     {
         if (task != PICO_EOS && task != PICO_SYNC)
         {
-
-            in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
+            mb_t *in_microbatch = reinterpret_cast<mb_t*>(task);
             for (In &kv : *in_microbatch)
             { // reduce on microbatch
                 if (kvmap.find(kv.Key()) != kvmap.end())
@@ -63,7 +63,7 @@ public:
                 else
                     kvmap[kv.Key()] = kv;
             }
-            delete in_microbatch;
+            DELETE(in_microbatch, mb_t);
         }
         else if (task == PICO_EOS)
         {
@@ -71,7 +71,8 @@ public:
             fprintf(stderr, "[P-REDUCE-FFNODE-SEQ-%p] In SVC RECEIVED PICO_EOS %p \n", this, task);
 #endif
             ff_send_out(PICO_SYNC);
-            auto out_microbatch = new Microbatch<TokenType>(outmb_size);
+            mb_t *out_microbatch;
+            NEW(out_microbatch, mb_t, outmb_size);
             for (auto it = kvmap.begin(); it != kvmap.end(); ++it)
             {
                 new (out_microbatch->allocate()) In(std::move(it->second));
@@ -80,14 +81,14 @@ public:
                 if (out_microbatch->full())
                 {
                     ff_send_out(reinterpret_cast<void*>(out_microbatch));
-                    out_microbatch = new Microbatch<TokenType>(outmb_size);
+                    NEW(out_microbatch, mb_t, outmb_size);
                 }
             }
 
             if (!out_microbatch->empty())
                 ff_send_out(reinterpret_cast<void*>(out_microbatch));
             else
-                delete out_microbatch;
+                DELETE(out_microbatch, mb_t);
 
             return task;
 
@@ -96,9 +97,9 @@ public:
 	}
 
 private:
+    typedef Microbatch<TokenType> mb_t;
 	std::function<In(In&, In&)> reducef;
 	std::unordered_map<typename In::keytype, In> kvmap;
-	Microbatch<TokenType>* in_microbatch;
 	unsigned int outmb_size;
 };
 

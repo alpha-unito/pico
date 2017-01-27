@@ -23,7 +23,6 @@
 
 #include <Internals/FFOperators/MapBatch.hpp>
 #include <Internals/FFOperators/MapPReduceBatch.hpp>
-#include <Internals/FFOperators/UnaryMapFFNode.hpp>
 #include <Internals/WindowPolicy.hpp>
 #include "UnaryOperator.hpp"
 #include "PReduce.hpp"

@@ -68,7 +68,7 @@ private:
 				    ff_send_out(reinterpret_cast<void*>(collector.begin()));
 
 				//clean up
-				delete in_microbatch;
+				DELETE(in_microbatch, Microbatch<TokenTypeIn>);
 				collector.clear();
 			} else {
 	#ifdef DEBUG
@@ -100,7 +100,7 @@ private:
                     /* clean up and skip to the next micro-batch */
                     it_ = it;
                     it = it->next;
-                    free(it_);
+                    FREE(it_);
 	            };
 	        }
 

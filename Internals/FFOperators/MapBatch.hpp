@@ -27,6 +27,7 @@
 #include <Internals/utils.hpp>
 #include <Internals/FFOperators/SupportFFNodes/FarmCollector.hpp>
 #include <Internals/FFOperators/SupportFFNodes/FarmEmitter.hpp>
+#include <Internals/FFOperators/ff_config.hpp>
 #include <Internals/Types/TimedToken.hpp>
 #include <Internals/Types/Microbatch.hpp>
 #include <Internals/WindowPolicy.hpp>
@@ -62,7 +63,8 @@ private:
 		void* svc(void* task) {
 			if(task != PICO_EOS && task != PICO_SYNC){
 				auto in_microbatch = reinterpret_cast<mb_in*>(task);
-				auto out_microbatch = new mb_out(Constants::MICROBATCH_SIZE);
+				mb_out *out_microbatch;
+				NEW(out_microbatch, mb_out, Constants::MICROBATCH_SIZE);
 				// iterate over microbatch
 				for(In &in : *in_microbatch) {
 				    /* build item and enable copy elision */
@@ -70,7 +72,7 @@ private:
 					out_microbatch->commit();
 				}
 				ff_send_out(reinterpret_cast<void*>(out_microbatch));
-				delete in_microbatch;
+				DELETE(in_microbatch, mb_in);
 			} else {
 	#ifdef DEBUG
 				fprintf(stderr, "[MAPBATCH-%p] In SVC SENDING PICO_EOS\n", this);

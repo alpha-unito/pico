@@ -37,7 +37,7 @@ template<typename In, typename TokenType>
 class WriteToStdOutFFNode: public ff_node {
 public:
 	WriteToStdOutFFNode(std::function<std::string(In&)> kernel_) :
-			kernel(kernel_), recv_sync(false), in_microbatch(nullptr) {};
+			kernel(kernel_), recv_sync(false) {};
 
 	void* svc(void* task) {
 		if(task == PICO_SYNC) {
@@ -48,10 +48,11 @@ public:
 			return GO_ON;
 		}
 		if(recv_sync || task != PICO_EOS){
-			in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
+			auto in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
 			for(In& tt: *in_microbatch) {
 				std::cout << kernel(tt) << std::endl;
 			}
+			DELETE(in_microbatch, Microbatch<TokenType>);
 		}
 		return GO_ON;
 	}
@@ -60,8 +61,6 @@ public:
 private:
 	std::function<std::string(In&)> kernel;
     bool recv_sync;
-    Microbatch<TokenType>* in_microbatch;
-
 };
 
 
