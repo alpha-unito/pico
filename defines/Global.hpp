@@ -42,7 +42,6 @@ int parse_PiCo_args(int& argc, char** argv) {
 	int opt;
 	bool in = false;
 	bool out = false;
-	bool port = false;
 	while ((opt = getopt(argc, argv, "w:b:i:o:s:p:m:")) != -1) {
 		switch (opt) {
 		case 'w':
@@ -51,7 +50,6 @@ int parse_PiCo_args(int& argc, char** argv) {
 			break;
 		case 'b':
 			Constants::MICROBATCH_SIZE = atoi(optarg);
-//			fprintf(stderr, "Batch set to %d\n", Constants::MICROBATCH_SIZE);
 			break;
 		case 'i':
 			Constants::INPUT_FILE = std::string(optarg);
@@ -66,7 +64,6 @@ int parse_PiCo_args(int& argc, char** argv) {
 		case 'p':
 			Constants::PORT = atoi(optarg);
 //			fprintf(stderr, "Port %d\n", Constants::port);
-			port = true;
 			break;
 		case 's':
 			Constants::SERVER_NAME = optarg;
