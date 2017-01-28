@@ -1,5 +1,6 @@
 #!/bin/bash
-
+W=$1
+MB=$2
 N_TWEETS=1M
 PORT=4000
 
@@ -10,4 +11,4 @@ OUT_FILE=out/stock_tweets.out
 testdata/generate_tweets $STOCK_FILE $N_TWEETS | nc -l $PORT &
 
 #launch the streaming pipeline
-./stock_tweets $STOCK_FILE localhost $PORT > $OUT_FILE
+./stock_tweets -i $STOCK_FILE  -w $W -b $MB -s localhost -p $PORT > $OUT_FILE
