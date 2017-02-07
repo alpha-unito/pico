@@ -21,6 +21,10 @@ typedef KeyValue<StockName, std::string> StockAndTweet;
 typedef KeyValue<StockName, unsigned> StockAndCount;
 typedef KeyValue<StockName, StockPrice> StockAndPrice;
 
-
+// return the payoff of the function you want to evaluate
+// payoff from the European call option
+double payoff(double S,double strikePrice) {
+  return std::max( S - strikePrice , 0. ); // change this line here to solve for different European options
+}
 
 #endif /* EXAMPLES_STOCK_MARKET_DEFS_H_ */

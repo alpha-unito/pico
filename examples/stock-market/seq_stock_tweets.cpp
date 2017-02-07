@@ -28,6 +28,7 @@
 #include <unordered_map>
 
 #include <timers.hpp>
+#include <Internals/Types/KeyValue.hpp>
 
 class TweetProcessor {
 public:
@@ -49,7 +50,6 @@ public:
         unsigned len;
         if (filter(tweet, stock, len))
         {
-
             if (cnt_map.find(stock) == cnt_map.end())
             {
                 /* first occurrence of stock */
@@ -70,11 +70,11 @@ public:
 
     void finalize()
     {
-        for (auto it : len_map)
-        {
-            if (cnt_map[it.first] > 0)
-                emit(it.first, it.second);
-        }
+//        for (auto it : len_map)
+//        {
+//            if (cnt_map[it.first] > 0)
+//                emit(it.first, it.second);
+//        }
     }
 
 private:
@@ -201,7 +201,7 @@ void core_loop(int sockfd, TweetProcessor &proc)
         }
     }
 
-    proc.finalize();
+//    proc.finalize();
 }
 
 int main(int argc, char** argv)

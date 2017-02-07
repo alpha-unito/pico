@@ -46,10 +46,9 @@ public:
 				if(kvmap.find(kv.Key()) != kvmap.end()){
 					kvmap[kv.Key()].first = kernel(kvmap[kv.Key()].first, kv);
 					if(++(kvmap[kv.Key()].second) == mb_size){
-					    //TODO check: why not standard size micro-batches?
 						mb_t *out_microbatch;
 						NEW(out_microbatch, mb_t, 1);
-						new (out_microbatch->allocate()) In(std::move(kvmap[kv.Key()].first));
+						new (out_microbatch->allocate()) In(kvmap[kv.Key()].first);
 						out_microbatch->commit();
 						ff_send_out(reinterpret_cast<void*>(out_microbatch));
 						kvmap.erase(kv.Key());
@@ -63,15 +62,15 @@ public:
 #ifdef DEBUG
 		fprintf(stderr, "[P-REDUCE-FFNODE-%p] In SVC RECEIVED PICO_EOS \n", this);
 #endif
-			typename std::unordered_map<typename In::keytype, std::pair<In, size_t>>::iterator it;
-			for (it=kvmap.begin(); it!=kvmap.end(); ++it){
-				if((it->second).second < mb_size){
-				    //TODO check: manage incomplete windows
-//					out_microbatch = new Microbatch<TokenType>();
-//					out_microbatch->push_back(TokenType(std::move((it->second).first)));
-//					ff_send_out(reinterpret_cast<void*>(out_microbatch));
-				}
-			}
+//			typename std::unordered_map<typename In::keytype, std::pair<In, size_t>>::iterator it;
+//			for (it=kvmap.begin(); it!=kvmap.end(); ++it){
+//				if((it->second).second < mb_size){
+//				    //TODO check: manage incomplete windows
+////					out_microbatch = new Microbatch<TokenType>();
+////					out_microbatch->push_back(TokenType(std::move((it->second).first)));
+////					ff_send_out(reinterpret_cast<void*>(out_microbatch));
+//				}
+//			}
 			ff_send_out(task);
 		}
 		return GO_ON;
@@ -80,6 +79,9 @@ public:
 private:
 	typedef Microbatch<TokenType> mb_t;
 	std::function<In(In&, In&)> kernel;
+	// map containing, for each key, the partial reduced value plus the counter of how many
+	// elements entered the window.
+	// It works only for tumbling windows
 	std::unordered_map<typename In::keytype, std::pair<In, size_t>> kvmap;
 	size_t mb_size;
 };
