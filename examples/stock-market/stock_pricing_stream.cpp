@@ -33,11 +33,14 @@
 #include <Pipe.hpp>
 #include <Operators/Map.hpp>
 #include <Operators/PReduce.hpp>
-#include <Operators/InOut/ReadFromFile.hpp>
-#include <Operators/InOut/WriteToDisk.hpp>
+#include <Operators/InOut/ReadFromSocket.hpp>
+#include <Operators/InOut/WriteToStdOut.hpp>
 
 #include "defs.h"
 #include "black_scholes.hpp"
+#include "binomial_tree.hpp"
+#include "explicit_finite_difference.hpp"
+#include "monte_carlo.hpp"
 
 int main(int argc, char** argv)
 {
@@ -63,8 +66,23 @@ int main(int argc, char** argv)
             &opt.s, &opt.strike, &opt.r, &opt.divq, &opt.v, &opt.t,//
             &otype, &opt.divs, &opt.DGrefval);
         opt.OptionType = (otype == 'P');
-
-        return StockAndPrice(std::string(name), black_scholes(opt));
+        int iMax=4, jMax=4, steps=10, N=10, size = 3;
+        StockPrice res[size];
+        res[0] = black_scholes(opt);
+        res[1] = binomial_tree(opt, steps);
+        res[2] = explicit_finite_difference(opt, iMax, jMax);
+//        res[3] = monte_carlo(opt, 0.75, N);
+        StockPrice mean = 0;
+        for(int i = 0; i < size; ++i){
+        	mean+=res[i];
+        }
+         mean /= size;
+        StockPrice variance = 0;
+        for(int i = 0; i < size; ++i){
+        	variance+=(res[i]-mean)*(res[i]-mean);
+        }
+        variance/=size;
+        return StockAndPrice(std::string(name), variance);
     }));
 
     // blackScholes can now be used to build both batch and streaming pipelines.
@@ -76,20 +94,22 @@ int main(int argc, char** argv)
      * 3. extracts the maximum price for each stock name
      * 4. write prices to file
      */
-    Pipe stockPricing((ReadFromFile()));
+//    Pipe stockPricing((ReadFromFile()));
+    size_t window_size = 8;
+    Pipe stockPricing(ReadFromSocket('\n'));
     stockPricing //
     .to(blackScholes).add(PReduce<StockAndPrice>([]
-    (StockAndPrice p1, StockAndPrice p2)
-    {   return std::max(p1,p2);}))
-    .add(WriteToDisk<StockAndPrice>([](StockAndPrice kv)
+    (StockAndPrice p1, StockAndPrice p2) {
+    	return std::max(p1,p2);
+    }).window(window_size))
+    .add(WriteToStdOut<StockAndPrice>([](StockAndPrice kv)
             {   return kv.to_string();}));
 
     /* generate dot file with the semantic DAG */
-    stockPricing.to_dotfile("stock_pricing.dot");
+//    stockPricing.to_dotfile("stock_pricing.dot");
 
     /* execute the pipeline */
     stockPricing.run();
-
     /* print execution time */
     std::cout << "done in " << stockPricing.pipe_time() << " ms\n";
 

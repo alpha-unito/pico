@@ -14,7 +14,7 @@
 #define EXAMPLES_STOCK_MARKET_BLACK_SCHOLES_HPP_
 
 #include <cmath>
-
+#include <timers.hpp>
 typedef double fptype;
 
 // Cumulative Normal Distribution Function
@@ -89,6 +89,7 @@ fptype BlkSchlsEqEuroNoDiv(fptype sptprice, fptype strike, fptype rate,
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
 #endif
+
     fptype OptionPrice;
 
     // local private working variables for the calculation
@@ -153,6 +154,7 @@ fptype BlkSchlsEqEuroNoDiv(fptype sptprice, fptype strike, fptype rate,
         NegNofXd2 = (1.0 - NofXd2);
         OptionPrice = (FutureValueX * NegNofXd2) - (sptprice * NegNofXd1);
     }
+
     return OptionPrice;
 }
 

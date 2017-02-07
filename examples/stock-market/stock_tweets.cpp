@@ -111,6 +111,7 @@ int main(int argc, char** argv)
                 if(single_stock){
 
                 	collector.add(StockAndCount(stock, count));
+//                	std::cout << StockAndCount(stock, count).to_string() << std::endl;
                 }
             });
     /* define i/o operators from/to standard input/output */
