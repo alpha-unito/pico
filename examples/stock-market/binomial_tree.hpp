@@ -21,7 +21,6 @@
 #ifndef EXAMPLES_STOCK_MARKET_BINOMIAL_TREE_HPP_
 #define EXAMPLES_STOCK_MARKET_BINOMIAL_TREE_HPP_
 
-
 #include <iostream>
 #include <fstream>
 #include <cmath>
@@ -35,54 +34,45 @@ using namespace std;
  * http://www.maths.manchester.ac.uk/~pjohnson/Tutorials/node1.html
  */
 
-
-
-
-
-
 // return the value of the binomial tree
 double binomialTree(double S0, // price
-					double X, // strike price
-					double T, // time to maturity or option expiration in years
-					double r, // risk-free interest rate
-					double sigma, // volatility
-					int n) // tree paramaters (steps in tree)
-{
-  // declare and initialise local variables (u,d,q)
-  double dt,u,d,q;
-  dt = T/n;
-  u = exp(sigma*sqrt(dt));
-  d = exp(-sigma*sqrt(dt));
-  q = (exp(r*dt)-d)/(u-d);
-  // create storage for the stock price tree and option price tree
-  vector<vector<double>> stockTree(n+1,vector<double>(n+1));
-  // setup and initialise the stock price tree
-  for(int i=0;i<=n;i++)
-  {
-    for(int j=0;j<=i;j++)
-    {
-      stockTree[i][j]=S0*pow(u,j)*pow(d,i-j);
-    }
-  }
-  vector<vector<double>> valueTree(n+1,vector<double>(n+1));
-  for(int j=0;j<=n;j++)
-  {
-    valueTree[n][j]=payoff(stockTree[n][j],X);
-  }
-  for(int i=n-1;i>=0;i--)
-  {
-    for(int j=0;j<=i;j++)
-    {
-      valueTree[i][j] = exp(-r*dt)*( q*valueTree[i+1][j+1] + (1-q)*valueTree[i+1][j]);
-    }
-  }
-  return valueTree[0][0];
+		double X, // strike price
+		double T, // time to maturity or option expiration in years
+		double r, // risk-free interest rate
+		double sigma, // volatility
+		int n) // tree paramaters (steps in tree)
+		{
+	// declare and initialise local variables (u,d,q)
+	double dt, u, d, q;
+	dt = T / n;
+	u = exp(sigma * sqrt(dt));
+	d = exp(-sigma * sqrt(dt));
+	q = (exp(r * dt) - d) / (u - d);
+	// create storage for the stock price tree and option price tree
+	double stockTree[n + 1][n + 1];
+	// setup and initialise the stock price tree
+	for (int i = 0; i <= n; i++) {
+		for (int j = 0; j <= i; j++) {
+			stockTree[i][j] = S0 * pow(u, j) * pow(d, i - j);
+		}
+	}
+	double valueTree[n + 1][n + 1];
+	for (int j = 0; j <= n; j++) {
+		valueTree[n][j] = payoff(stockTree[n][j], X);
+	}
+	for (int i = n - 1; i >= 0; i--) {
+		for (int j = 0; j <= i; j++) {
+			valueTree[i][j] = exp(-r * dt)
+					* (q * valueTree[i + 1][j + 1]
+							+ (1 - q) * valueTree[i + 1][j]);
+		}
+	}
+	return valueTree[0][0];
 }
 
-StockPrice binomial_tree(const OptionData &opt, int steps){
+StockPrice binomial_tree(const OptionData &opt, int steps) {
 	return binomialTree(opt.s, opt.strike, opt.t, opt.r, opt.v, steps);
 }
-
 
 //int main()
 //{
@@ -96,6 +86,5 @@ StockPrice binomial_tree(const OptionData &opt, int steps){
 // V(S=100,t=0) = 11.552
 // */
 //}
-
 
 #endif /* EXAMPLES_STOCK_MARKET_BINOMIAL_TREE_HPP_ */

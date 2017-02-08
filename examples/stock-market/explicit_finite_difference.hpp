@@ -43,7 +43,7 @@ double explicitCallOption(double S0, // price
   double dS=S_max/jMax;
   double dt=T/iMax;
   // create storage for the stock price and option price (old and new)
-  vector<double> S(jMax+1),vOld(jMax+1),vNew(jMax+1);
+  double S[jMax+1],vOld[jMax+1],vNew[jMax+1];
   // setup and initialise the stock price
   for(int j=0;j<=jMax;j++)
   {
