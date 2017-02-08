@@ -70,7 +70,6 @@ double explicitCallOption(double S0, // price
 		for (int j = 0; j <= jMax; j++) {
 			vOld[j] = vNew[j];
 		}
-		vOld = vNew;
 	}
 	// get j* such that S_0 \in [ j*dS , (j*+1)dS ]
 	int jstar;
