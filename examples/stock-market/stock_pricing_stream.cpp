@@ -12,7 +12,7 @@
  along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * stock_pricing.cpp
+ * stock_pricing_stream.cpp
  *
  *  Created on: Dec 12, 2016
  *      Author: drocco
