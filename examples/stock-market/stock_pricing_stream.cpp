@@ -48,7 +48,7 @@ int main(int argc, char** argv)
     if (argc < 2)
     {
         std::cerr << "Usage: " << argv[0];
-        std::cerr << " -i <input-file> -o <output-file>\n";
+        std::cerr << " -s <server> -p <port>\n";
         return -1;
     }
     parse_PiCo_args(argc, argv);
