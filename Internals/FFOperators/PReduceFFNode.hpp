@@ -29,61 +29,6 @@
 
 using namespace ff;
 
-/*
- * TODO only works with non-decorating token
- */
 
-template<typename In, typename TokenType>
-class PReduceFFNode: public ff_node {
-public:
-	PReduceFFNode(std::function<In(In&, In&)>& reducef_, size_t mb_size_ = Constants::MICROBATCH_SIZE) :
-			kernel(reducef_), mb_size(mb_size_){};
-
-	void* svc(void* task) {
-		if(task != PICO_EOS && task != PICO_SYNC){
-			auto in_microbatch = reinterpret_cast<mb_t*>(task);
-			for(In& kv : *in_microbatch){
-				if(kvmap.find(kv.Key()) != kvmap.end()){
-					kvmap[kv.Key()].first = kernel(kvmap[kv.Key()].first, kv);
-					if(++(kvmap[kv.Key()].second) == mb_size){
-						mb_t *out_microbatch;
-						NEW(out_microbatch, mb_t, 1);
-						new (out_microbatch->allocate()) In(kvmap[kv.Key()].first);
-						out_microbatch->commit();
-						ff_send_out(reinterpret_cast<void*>(out_microbatch));
-						kvmap.erase(kv.Key());
-					}
-				} else {
-					kvmap[kv.Key()] = std::make_pair(kv, 1);
-				}
-			}
-			DELETE(in_microbatch, mb_t);
-		} else if (task == PICO_EOS) {
-#ifdef DEBUG
-		fprintf(stderr, "[P-REDUCE-FFNODE-%p] In SVC RECEIVED PICO_EOS \n", this);
-#endif
-//			typename std::unordered_map<typename In::keytype, std::pair<In, size_t>>::iterator it;
-//			for (it=kvmap.begin(); it!=kvmap.end(); ++it){
-//				if((it->second).second < mb_size){
-//				    //TODO check: manage incomplete windows
-////					out_microbatch = new Microbatch<TokenType>();
-////					out_microbatch->push_back(TokenType(std::move((it->second).first)));
-////					ff_send_out(reinterpret_cast<void*>(out_microbatch));
-//				}
-//			}
-			ff_send_out(task);
-		}
-		return GO_ON;
-	}
-
-private:
-	typedef Microbatch<TokenType> mb_t;
-	std::function<In(In&, In&)> kernel;
-	// map containing, for each key, the partial reduced value plus the counter of how many
-	// elements entered the window.
-	// It works only for tumbling windows
-	std::unordered_map<typename In::keytype, std::pair<In, size_t>> kvmap;
-	size_t mb_size;
-};
 
 #endif /* INTERNALS_FFOPERATORS_PREDUCEFFNODE_HPP_ */
