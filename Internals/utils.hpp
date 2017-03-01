@@ -24,6 +24,7 @@
 #include "../defines/Global.hpp"
 #include <utility>
 #include <typeinfo>
+#include <examples/include/timers.hpp>
 using TypeInfoRef = std::reference_wrapper<const std::type_info>;
 
 enum DAGNodeRole {

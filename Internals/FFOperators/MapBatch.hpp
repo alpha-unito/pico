@@ -21,7 +21,6 @@
 #ifndef INTERNALS_FFOPERATORS_MAPBATCH_HPP_
 #define INTERNALS_FFOPERATORS_MAPBATCH_HPP_
 
-
 #include <ff/farm.hpp>
 
 #include <Internals/utils.hpp>
@@ -38,45 +37,57 @@ using namespace ff;
  * TODO only works with non-decorating token
  */
 
-template<typename In, typename Out, typename Farm, typename TokenTypeIn, typename TokenTypeOut>
+template<typename In, typename Out, typename Farm, typename TokenTypeIn,
+		typename TokenTypeOut>
 class MapBatch: public Farm {
 public:
 
-	MapBatch(int parallelism, std::function<Out(In&)>& mapf, WindowPolicy* win){
-			this->setEmitterF(win->window_farm(parallelism, this->getlb()));
-			this->setCollectorF(new FarmCollector(parallelism));
-			delete win;
+	MapBatch(int parallelism, std::function<Out(In&)>& mapf,
+			WindowPolicy* win) {
+		this->setEmitterF(win->window_farm(parallelism, this->getlb()));
+		this->setCollectorF(new FarmCollector(parallelism));
+		delete win;
 		std::vector<ff_node *> w;
-		for(int i = 0; i < parallelism; ++i){
+		for (int i = 0; i < parallelism; ++i) {
 			w.push_back(new Worker(mapf));
 		}
 		this->add_workers(w);
-	};
-
+	}
+	;
 
 private:
 
-	class Worker : public ff_node{
+	class Worker: public ff_node {
 	public:
-		Worker(std::function<Out(In&)> kernel_): kernel(kernel_){}
+		Worker(std::function<Out(In&)> kernel_) :
+				kernel(kernel_) {
+		}
+
 
 		void* svc(void* task) {
-			if(task != PICO_EOS && task != PICO_SYNC){
+			if (task != PICO_EOS && task != PICO_SYNC) {
+
+//				time_point_t t0, t1;
+//				hires_timer_ull(t0);
 				auto in_microbatch = reinterpret_cast<mb_in*>(task);
 				mb_out *out_microbatch;
 				NEW(out_microbatch, mb_out, Constants::MICROBATCH_SIZE);
 				// iterate over microbatch
-				for(In &in : *in_microbatch) {
-				    /* build item and enable copy elision */
+				for (In &in : *in_microbatch) {
+					/* build item and enable copy elision */
 					new (out_microbatch->allocate()) Out(kernel(in));
 					out_microbatch->commit();
 				}
 				ff_send_out(reinterpret_cast<void*>(out_microbatch));
 				DELETE(in_microbatch, mb_in);
+//				hires_timer_ull(t1);
+//				wt += get_duration(t0, t1);
+
+
 			} else {
-	#ifdef DEBUG
+#ifdef DEBUG
 				fprintf(stderr, "[MAPBATCH-%p] In SVC SENDING PICO_EOS\n", this);
-	#endif
+#endif
 				ff_send_out(task);
 			}
 			return GO_ON;
@@ -86,8 +97,8 @@ private:
 		typedef Microbatch<TokenTypeIn> mb_in;
 		typedef Microbatch<TokenTypeOut> mb_out;
 		std::function<Out(In&)> kernel;
+//		duration_t wt;
 	};
 };
-
 
 #endif /* INTERNALS_FFOPERATORS_MAPBATCH_HPP_ */
