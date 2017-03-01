@@ -27,6 +27,8 @@
 #include <Internals/FFOperators/ff_config.hpp>
 #include "../../Types/Token.hpp"
 
+#include "hdfs.h"
+
 using namespace ff;
 
 /*
@@ -36,86 +38,73 @@ using namespace ff;
 template<typename Out>
 class ReadFromFileFFNode: public ff_node {
 public:
-    ReadFromFileFFNode()
-    {
-    }
+	ReadFromFileFFNode() {
+	}
 
-    void* svc(void* in)
-    {
+	void* svc(void* in) {
 #ifdef TRACE_FASTFLOW
-        time_point_t t0, t1;
-        hires_timer_ull(t0);
+		time_point_t t0, t1;
+		hires_timer_ull(t0);
 #endif
-        std::ifstream infile(Constants::INPUT_FILE);
-        std::string line;
-        mb_t *mb;
-        NEW(mb, mb_t, Constants::MICROBATCH_SIZE);
-        if (infile.is_open())
-        {
-            while (true)
-            {
+		std::ifstream infile(Constants::INPUT_FILE);
+		std::string line;
+		mb_t *mb;
+		NEW(mb, mb_t, Constants::MICROBATCH_SIZE);
+		if (infile.is_open()) {
+			while (true) {
 
-                /* initialize a new string within the micro-batch */
-                std::string *line = new (mb->allocate()) std::string();
+				/* initialize a new string within the micro-batch */
+				std::string *line = new (mb->allocate()) std::string();
 
-                /* get a line */
-                if (getline(infile, *line))
-                {
-                    mb->commit();
+				/* get a line */
+				if (getline(infile, *line)) {
+					mb->commit();
 
-                    /* send out micro-batch if complete */
-                    if (mb->full())
-                    {
-                        ff_send_out(reinterpret_cast<void*>(mb));
-                        NEW(mb, mb_t, Constants::MICROBATCH_SIZE);
-                    }
-                }
-                else
-                    break;
-            }
-            infile.close();
+					/* send out micro-batch if complete */
+					if (mb->full()) {
+						ff_send_out(reinterpret_cast<void*>(mb));
+						NEW(mb, mb_t, Constants::MICROBATCH_SIZE);
+					}
+				} else
+					break;
+			}
+			infile.close();
 
-            /* send out the remainder micro-batch or destroy if spurious */
-            if (!mb->empty())
-            {
-                ff_send_out(reinterpret_cast<void*>(mb));
-            }
-            else
-            {
-                DELETE (mb, mb_t);
-            }
-        }
-        else
-        {
-            fprintf(stderr, "Unable to open file %s\n", filename.c_str());
-        }
+			/* send out the remainder micro-batch or destroy if spurious */
+			if (!mb->empty()) {
+				ff_send_out(reinterpret_cast<void*>(mb));
+			} else {
+				DELETE(mb, mb_t);
+			}
+		} else {
+			fprintf(stderr, "Unable to open file %s\n",
+					Constants::INPUT_FILE.c_str());
+		}
 #ifdef DEBUG
-        fprintf(stderr, "[READ FROM FILE MB-%p] In SVC: SEND OUT PICO_EOS\n", this);
+		fprintf(stderr, "[READ FROM FILE MB-%p] In SVC: SEND OUT PICO_EOS\n", this);
 #endif
 #ifdef TRACE_FASTFLOW
-        hires_timer_ull(t1);
-        user_svc = get_duration(t0, t1);
+		hires_timer_ull(t1);
+		user_svc = get_duration(t0, t1);
 #endif
-        ff_send_out(PICO_EOS);
-        return EOS;
-    }
+		ff_send_out(PICO_EOS);
+		return EOS;
+	}
 
 private:
-    /*
-     * emits Microbatches of non-decorated data items
-     */
-    typedef Microbatch<Token<Out>> mb_t;
-
-    std::string filename;
+	/*
+	 * emits Microbatches of non-decorated data items
+	 */
+	typedef Microbatch<Token<Out>> mb_t;
 
 #ifdef TRACE_FASTFLOW
-    duration_t user_svc;
+	duration_t user_svc;
 
-    virtual void print_pico_stats(std::ostream & out)
-    {
-        out << "*** PiCo stats ***\n";
-        out << "user svc (ms) : " << time_count(user_svc) * 1000 << std::endl;
-    }
+	virtual void print_pico_stats(std::ostream & out)
+	{
+		out << "*** PiCo stats ***\n";
+		out << "user svc (ms) : " << time_count(user_svc) * 1000 << std::endl;
+	}
 #endif
 };
 

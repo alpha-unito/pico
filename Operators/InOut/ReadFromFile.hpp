@@ -25,14 +25,11 @@
 #include <iostream>
 #include <fstream>
 
-#include <Internals/FFOperators/InOut/ReadFromFileFFNode.hpp>
 #include "InputOperator.hpp"
 /**
- * Defines an operator that reads data from a text file and produces an Ordered+Buonded collection (i.e. LIST).
+ * Defines an operator that reads data from a text file and produces an Ordered+Bounded collection (i.e. LIST).
  *
- * The user specifies the kernel function that operates on each line of the text file, passed as a std::string.
- * The kernel can be a lambda function, a functor or a function.
- *
+ * The operator returns a std::string to the user containing a single line read.
  *
  * The operator is global and unique for the Pipe it refers to.
  */

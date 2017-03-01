@@ -49,7 +49,7 @@ public:
 
 	}
 
-	~PReduceWin(){
+	~PReduceWin() {
 		delete win;
 	}
 private:
@@ -61,22 +61,34 @@ private:
 
 	class PReduceFFNode: public ff_node {
 	public:
-		PReduceFFNode(std::function<In(In&, In&)>& reducef_, size_t mb_size_ = Constants::MICROBATCH_SIZE) :
-				kernel(reducef_), mb_size(mb_size_){};
+		PReduceFFNode(std::function<In(In&, In&)>& reducef_, size_t mb_size_ =
+				Constants::MICROBATCH_SIZE) :
+				kernel(reducef_), mb_size(mb_size_) {
+		}
+
+//		void svc_end(){
+//			fprintf(stderr, "PREDW %f\n", time_count(wt));
+//		}
 
 		void* svc(void* task) {
-			if(task != PICO_EOS && task != PICO_SYNC){
+
+			if (task != PICO_EOS && task != PICO_SYNC) {
+
+//				time_point_t t0, t1;
+//				hires_timer_ull(t0);
 				auto in_microbatch = reinterpret_cast<mb_t*>(task);
-				for(In& kv : *in_microbatch){
-					if(kvmap.find(kv.Key()) != kvmap.end()){
+				for (In& kv : *in_microbatch) {
+					if (kvmap.find(kv.Key()) != kvmap.end()) {
 						kvmap[kv.Key()] = kernel(kvmap[kv.Key()], kv);
-						if(++(kvcountmap[kv.Key()]) == mb_size){
+						if (++(kvcountmap[kv.Key()]) == mb_size) {
 							mb_t *out_microbatch;
 							NEW(out_microbatch, mb_t, 1);
-							new (out_microbatch->allocate()) In(kvmap[kv.Key()]);
+							new (out_microbatch->allocate()) In(
+									kvmap[kv.Key()]);
 							out_microbatch->commit();
-							ff_send_out(reinterpret_cast<void*>(out_microbatch));
-							kvcountmap.erase(kv.Key());
+							ff_send_out(
+									reinterpret_cast<void*>(out_microbatch));
+							kvcountmap[kv.Key()] = 1;
 						}
 					} else {
 						kvcountmap[kv.Key()] = 1;
@@ -84,13 +96,18 @@ private:
 					}
 				}
 				DELETE(in_microbatch, mb_t);
+//				hires_timer_ull(t1);
+//				wt += get_duration(t0, t1);
+
+
 			} else if (task == PICO_EOS) {
-	#ifdef DEBUG
-			fprintf(stderr, "[P-REDUCE-FFNODE-%p] In SVC RECEIVED PICO_EOS \n", this);
-	#endif
+#ifdef DEBUG
+				fprintf(stderr, "[P-REDUCE-FFNODE-%p] In SVC RECEIVED PICO_EOS \n", this);
+#endif
 
 				ff_send_out(task);
 			}
+
 			return GO_ON;
 		}
 
@@ -104,9 +121,8 @@ private:
 		std::unordered_map<typename In::keytype, In> kvmap;
 		std::unordered_map<typename In::keytype, size_t> kvcountmap;
 		size_t mb_size;
+//		duration_t wt;
 	};
 };
-
-
 
 #endif /* INTERNALS_FFOPERATORS_PREDUCEWIN_HPP_ */

@@ -29,12 +29,15 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <arpa/inet.h> //inet_addr
+#include <fcntl.h> //fcntl
 #include <Internals/Types/TimedToken.hpp>
 #include <Internals/Types/Microbatch.hpp>
 #include <Internals/utils.hpp>
 #include <Internals/FFOperators/ff_config.hpp>
 
 using namespace ff;
+#define CHUNK_SIZE 512
 
 /*
  * TODO only works with non-decorating token
@@ -43,13 +46,9 @@ using namespace ff;
 template<typename TokenType>
 class ReadFromSocketFFNode: public ff_node {
 public:
-	ReadFromSocketFFNode(
-			std::string& server_name_, int port_, char delimiter_) :
-			server_name(server_name_), port(port_),
-			delimiter(delimiter_), counter(0) {
-	}
-
-	int svc_init() {
+	ReadFromSocketFFNode(std::string& server_name_, int port_, char delimiter_) :
+			server_name(server_name_), port(port_), delimiter(delimiter_), counter(
+					0) {
 		int option = 1;
 		sockfd = socket(AF_INET, SOCK_STREAM, 0);
 		setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
@@ -65,56 +64,52 @@ public:
 		bcopy((char *) server->h_addr,
 		(char *)&serv_addr.sin_addr.s_addr, server->h_length);
 		serv_addr.sin_port = htons(port);
-		return 0;
 	}
 
 	void* svc(void* in) {
 		std::string tail;
-		char buffer[256];
-		if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+		char buffer[CHUNK_SIZE];
+		if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))
+				< 0) {
 			error("ERROR connecting");
 		}
 		bzero(buffer, sizeof(buffer));
 		mb_t *microbatch;
 		NEW(microbatch, mb_t, Constants::MICROBATCH_SIZE);
 		std::string *line = new (microbatch->allocate()) std::string();
-		while (read(sockfd, buffer, sizeof(buffer)-1) > 0) {
-			if (n < 0)
-				error("ERROR reading from socket");
-			else {
-				tail.append(buffer);
-				std::istringstream f(tail);
-				/* initialize a new string within the micro-batch */
-				while (std::getline(f, *line, delimiter)) {
-					if(!f.eof()) {// line contains another delimiter
-						microbatch->commit();
-						if (microbatch->full()) {
-							ff_send_out(reinterpret_cast<void*>(microbatch));
-							NEW(microbatch, mb_t, Constants::MICROBATCH_SIZE);
- 						}
-						tail.clear();
-						line = new (microbatch->allocate()) std::string();
-					} else { // trunked line, store for next parsing
-						tail.clear();
-						tail.append(*line);
-					}
-				}
-				bzero(buffer, sizeof(buffer));
-			}
-		}
 
-		close(sockfd);
+		while ((n = read(sockfd, buffer, sizeof(buffer))) > 0) {
+			tail.append(buffer,n);
+			std::istringstream f(tail);
+			/* initialize a new string within the micro-batch */
+			while (std::getline(f, *line, delimiter)) {
+				if (!f.eof()) {         // line contains another delimiter
+					microbatch->commit();
+					if (microbatch->full()) {
+						ff_send_out(reinterpret_cast<void*>(microbatch));
+						NEW(microbatch, mb_t, Constants::MICROBATCH_SIZE);
+					}
+					tail.clear();
+					line = new (microbatch->allocate()) std::string();
+				} else { // trunked line, store for next parsing
+					tail.clear();
+					tail.append(*line);
+				}
+			}
+			bzero(buffer, sizeof(buffer));
+		} // end while read
+
 		if (!microbatch->empty()) {
 			ff_send_out(reinterpret_cast<void*>(microbatch));
-		}
-		else {
-		    DELETE (microbatch, mb_t);
+		} else {
+			DELETE(microbatch, mb_t);
 		}
 
 #ifdef DEBUG
 		fprintf(stderr, "[READ FROM SOCKET-%p] In SVC: SEND OUT PICO_EOS\n", this);
 #endif
 		ff_send_out(PICO_EOS);
+		close(sockfd);
 		return EOS;
 	}
 
