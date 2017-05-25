@@ -22,6 +22,7 @@
 #define DEFINES_GLOBAL_HPP_
 
 #include <getopt.h>
+#include <ff/mapper.hpp>
 
 namespace Constants {
 // forward declarations only

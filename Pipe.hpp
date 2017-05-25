@@ -131,7 +131,7 @@ public:
 	 * Create a Pipe from an initial operator (move)
 	 */
 	template<typename T>
-	Pipe(const T&& op) : Pipe() {
+	Pipe(T&& op) : Pipe() {
 		add(op);
 	}
 
@@ -151,7 +151,7 @@ public:
 	 * Add a new stage to the Pipe (move).
 	 */
 	template<typename T>
-	Pipe& add(const T &&op) {
+	Pipe& add(T &&op) {
 		return add(std::shared_ptr<T>(new T(op))); //move constructor
 	}
 

@@ -60,9 +60,6 @@ protected:
 #ifdef DEBUG
 		std::cerr << "[REDUCE] running... \n";
 #endif
-		// input read by the runtime
-		In in1, in2;
-		In out = reducef(in1, in2);
 	}
 
 	const OperatorClass operator_class(){

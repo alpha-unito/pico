@@ -66,6 +66,7 @@ public:
 			if(task == PICO_EOS){
 				for (int i = 0; i < nworkers; ++i) {
 					if(!w_win_map[i]->empty()){
+						std::cout << "send to " << i << std::endl;
 						lb->ff_send_out_to(reinterpret_cast<void*>(w_win_map[i]), i);
 					}
 					lb->ff_send_out_to(task, i);

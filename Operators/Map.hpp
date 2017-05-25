@@ -75,20 +75,8 @@ public:
 protected:
 
 	Out run_kernel(In* in_task){
-#ifdef DEBUG
-		std::cerr << "[MAP] running... \n";
-#endif
 
-#ifdef WORDC
-		if(kv_pairs == nullptr)
-			kv_pairs = new std::list<Out>();
-		for(In in: *tokens) {
-			kv_pairs->push_back(mapf(in));
-		}
-		std::cerr << "list size " << kv_pairs->size() << std::endl;
-#else
 		return mapf(*in_task);
-#endif
 	}
 
 	/**

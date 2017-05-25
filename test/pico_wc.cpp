@@ -54,11 +54,9 @@ static auto tokenizer = [](std::string &in, FlatMapCollector<KV> &collector) {
 int main(int argc, char** argv) {
 	// parse command line
 	if (argc < 2) {
-		std::cerr << "Usage: ./pico_wc <input file> <output file>\n";
-		return -1;
-	}
-	std::string filename = argv[1];
-	std::string outputfilename = argv[2];
+			std::cerr << "Usage: ./pico_wc -i <input file> -o <output file> [-w workers] [-b batch-size] \n";
+			return -1;
+		}
 
 	/* define a generic word-count pipeline */
 	Pipe countWords;
@@ -72,8 +70,8 @@ int main(int argc, char** argv) {
 	// and streaming pipelines.
 
 	/* define i/o operators from/to file */
-	ReadFromFile reader(filename);
-	WriteToDisk<KV> writer(outputfilename, [&](KV in) {
+	ReadFromFile reader;
+	WriteToDisk<KV> writer([&](KV in) {
 		return in.to_string();
 	});
 
