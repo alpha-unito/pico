@@ -1,16 +1,16 @@
 /*
-    This file is part of PiCo.
-    PiCo is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    PiCo is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-    You should have received a copy of the GNU Lesser General Public License
-    along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ This file is part of PiCo.
+ PiCo is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ PiCo is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+ You should have received a copy of the GNU Lesser General Public License
+ along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
+ */
 /*
  * ParExecDF.hpp
  *
@@ -31,7 +31,6 @@
 #include "FFOperators/SupportFFNodes/MergeCollector.hpp"
 #include "FFOperators/SupportFFNodes/RREmitter.hpp"
 
-
 using namespace ff;
 using adjList = std::map<SemDAGNode*, std::vector<SemDAGNode*>>;
 
@@ -50,7 +49,6 @@ public:
 		//picoDAG.setFixedSize(false); //TODO check
 	}
 
-
 	void run() {
 		// mapped on one socket
 //		const char* occam = "0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41, 45, 2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46,"
@@ -64,7 +62,7 @@ public:
 //		picoDAG.run_then_freeze();
 	}
 
-	double pipe_time(){
+	double pipe_time() {
 #ifdef TRACE_FASTFLOW
 		picoDAG.ffStats(std::cerr);
 #endif
@@ -73,7 +71,8 @@ public:
 
 private:
 
-	SemDAGNode** create_ffpipe(ff_pipeline*& pipe, SemDAGNode** iterator, const size_t& farmid) {
+	SemDAGNode** create_ffpipe(ff_pipeline*& pipe, SemDAGNode** iterator,
+			const size_t& farmid) {
 
 		if ((*iterator)->opclass == OperatorClass::MERGE
 				|| (*iterator)->role == DAGNodeRole::ExitPoint
@@ -95,7 +94,7 @@ private:
 		ff_farm<> *farm = new ff_farm<>();
 		farm->cleanup_all();
 		Emitter* emitter;
-		if(bcast_emitter)
+		if (bcast_emitter)
 			emitter = new BCastEmitter(npipes, farm->getlb());
 		else
 			emitter = new RREmitter(npipes, farm->getlb());
@@ -109,7 +108,8 @@ private:
 			pipe = new ff_pipeline();
 			pipe->cleanup_nodes();
 			iterator = (DAG->at(*startingNode).at(i));
-			iterator = *create_ffpipe(pipe, &iterator, iterator->farmid/*farmid*/);//TODO start from here
+			iterator = *create_ffpipe(pipe, &iterator,
+					iterator->farmid/*farmid*/); //TODO start from here
 			w.push_back(pipe);
 		}
 		farm->add_workers(w);
@@ -123,10 +123,14 @@ private:
 		switch ((*iterator)->op->operator_class()) {
 		case UMAP: //same as unary flatmap
 			(*iterator)->op->set_data_stype(pipe_st);
-			if (DAG->at(*iterator).at(0)->op->operator_class() == OperatorClass::COMBINE) {
-				pipe.add_stage((*iterator)->node_operator(Constants::PARALLELISM, DAG->at(*iterator).at(0)->op));
+			if (DAG->at(*iterator).at(0)->op->operator_class()
+					== OperatorClass::COMBINE) {
+				pipe.add_stage(
+						(*iterator)->node_operator(Constants::PARALLELISM,
+								DAG->at(*iterator).at(0)->op));
 			} else {
-				pipe.add_stage((*iterator)->node_operator(Constants::PARALLELISM));
+				pipe.add_stage(
+						(*iterator)->node_operator(Constants::PARALLELISM));
 			}
 			*iterator = (DAG->at(*iterator).at(0));
 			build_ffnode(iterator, pipe);
@@ -135,6 +139,12 @@ private:
 			(*iterator)->op->set_data_stype(pipe_st);
 			break;
 		case COMBINE:
+			(*iterator)->op->set_data_stype(pipe_st);
+			pipe.add_stage((*iterator)->node_operator(Constants::PARALLELISM));
+			*iterator = (DAG->at(*iterator).at(0));
+			build_ffnode(iterator, pipe);
+			break;
+		case FOLDR:
 			(*iterator)->op->set_data_stype(pipe_st);
 			pipe.add_stage((*iterator)->node_operator(Constants::PARALLELISM));
 			*iterator = (DAG->at(*iterator).at(0));

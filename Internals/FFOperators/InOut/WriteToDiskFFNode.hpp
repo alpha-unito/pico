@@ -51,10 +51,19 @@ public:
 			return GO_ON;
 		}
 
-		if(recv_sync && task != PICO_EOS){
+		if(recv_sync || task != PICO_EOS){
 			if (outfile.is_open()) {
 				auto mb = reinterpret_cast<Microbatch<Token<In>>*>(task);
+
 				for(In& in: *mb){
+					std::cout << "state in wtd" << std::endl;
+									for (auto it = in.begin(); it != in.end(); ++it) {
+										std::cout << it->first << ": ";
+										for (auto val : it->second) {
+											std::cout << val << " ";
+										}
+										std::cout << std::endl;
+									}
 					outfile << kernel(in) << std::endl;
 				}
 				DELETE (mb, Microbatch<Token<In>>);

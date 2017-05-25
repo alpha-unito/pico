@@ -1,0 +1,12 @@
+digraph DAG {
+ rankdir=LR;
+a7f9119c031c0 [label="ReadFromFile
+[data/input]"]
+a7f9119c032a0 [label="Map"]
+a7f9119c033a0 [label="FoldReduce"]
+a7f9119c03470 [label="WriteToDisk
+[data/res]"]
+a7f9119c031c0 -> {a7f9119c032a0 }
+a7f9119c032a0 -> {a7f9119c033a0 }
+a7f9119c033a0 -> {a7f9119c03470 }
+}

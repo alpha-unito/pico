@@ -27,7 +27,6 @@
 #include <Internals/FFOperators/ff_config.hpp>
 #include "../../Types/Token.hpp"
 
-#include "hdfs.h"
 
 using namespace ff;
 
