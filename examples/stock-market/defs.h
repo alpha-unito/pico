@@ -14,12 +14,12 @@
 
 /* define some types */
 typedef std::string StockName;
-typedef double StockPrice;
+typedef double StockPriceValue;
 
 typedef KeyValue<StockName, OptionData> StockAndOption;
 typedef KeyValue<StockName, std::string> StockAndTweet;
 typedef KeyValue<StockName, unsigned> StockAndCount;
-typedef KeyValue<StockName, StockPrice> StockAndPrice;
+typedef KeyValue<StockName, StockPriceValue> StockAndPrice;
 
 // return the payoff of the function you want to evaluate
 // payoff from the European call option

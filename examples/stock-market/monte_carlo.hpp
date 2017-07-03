@@ -57,7 +57,7 @@ double monteCarlo(double S0,
 }
 
 
-StockPrice monte_carlo(const OptionData& opt, double maturity, int N){
+StockPriceValue monte_carlo(const OptionData& opt, double maturity, int N){
 	return monteCarlo(opt.s, opt.strike, opt.r, opt.v, maturity, N);
 }
 //int main()

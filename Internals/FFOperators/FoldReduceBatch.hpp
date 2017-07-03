@@ -92,22 +92,22 @@ private:
 				std::function<void(const State&, State&)> &reducef_) :
 				nworkers(nworkers_), picoEOSrecv(0), reducef(reducef_) {
 			NEW(out_microbatch, mb_out, Constants::MICROBATCH_SIZE);
-			new (out_microbatch->allocate()) State();
+			state = new (out_microbatch->allocate()) State();
 		}
 
 		void* svc(void* task) {
 			if (task != PICO_EOS && task != PICO_SYNC) {
 				State* s = reinterpret_cast<State*>(task);
-				reducef(*s, state);
+				reducef(*s, *state);
 
-				std::cout << "state " << std::endl;
-				for (auto it = s->begin(); it != s->end(); ++it) {
-					std::cout << it->first << ": ";
-					for (auto val : it->second) {
-						std::cout << val << " ";
-					}
-					std::cout << std::endl;
-				}
+//				std::cout << "state " << std::endl;
+//				for (auto it = state->begin(); it != state->end(); ++it) {
+//					std::cout << it->first << ": ";
+//					for (auto val : it->second) {
+//						std::cout << val << " ";
+//					}
+//					std::cout << std::endl;
+//				}
 				delete s;
 			}
 
@@ -124,7 +124,7 @@ private:
 	private:
 		int nworkers;
 		int picoEOSrecv;
-		State state;
+		State* state;
 		std::function<void(const State&, State&)> &reducef;
 		typedef Microbatch<TokenTypeState> mb_out;
 		mb_out * out_microbatch;

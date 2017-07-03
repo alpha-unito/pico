@@ -67,17 +67,17 @@ int main(int argc, char** argv)
             &otype, &opt.divs, &opt.DGrefval);
         opt.OptionType = (otype == 'P');
         int iMax=4, jMax=4, steps=10, N=15, size = 3;
-        StockPrice res[size];
+        StockPriceValue res[size];
         res[0] = black_scholes(opt);
         res[1] = binomial_tree(opt, steps);
         res[2] = explicit_finite_difference(opt, iMax, jMax);
 //        res[3] = monte_carlo(opt, 0.75, N);
-        StockPrice mean = 0;
+        StockPriceValue mean = 0;
         for(int i = 0; i < size; ++i){
         	mean+=res[i];
         }
          mean /= size;
-        StockPrice variance = 0;
+        StockPriceValue variance = 0;
         for(int i = 0; i < size; ++i){
         	variance+=(res[i]-mean)*(res[i]-mean);
         }

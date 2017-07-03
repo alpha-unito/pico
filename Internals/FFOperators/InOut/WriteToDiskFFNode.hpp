@@ -56,14 +56,6 @@ public:
 				auto mb = reinterpret_cast<Microbatch<Token<In>>*>(task);
 
 				for(In& in: *mb){
-					std::cout << "state in wtd" << std::endl;
-									for (auto it = in.begin(); it != in.end(); ++it) {
-										std::cout << it->first << ": ";
-										for (auto val : it->second) {
-											std::cout << val << " ";
-										}
-										std::cout << std::endl;
-									}
 					outfile << kernel(in) << std::endl;
 				}
 				DELETE (mb, Microbatch<Token<In>>);

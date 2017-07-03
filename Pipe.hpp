@@ -151,7 +151,7 @@ public:
 	 * Add a new stage to the Pipe (move).
 	 */
 	template<typename T>
-	Pipe& add(T &&op) {
+	Pipe& add(const T &&op) {
 		return add(std::shared_ptr<T>(new T(op))); //move constructor
 	}
 

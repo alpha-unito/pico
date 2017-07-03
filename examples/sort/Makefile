@@ -1,7 +1,7 @@
 CXX                  = g++
 LINK_OPT             = 
 VERSION              = 
-OPTIMIZE_FLAGS       = -O0 -g3 -std=c++11 #-ferror-limit=1
+OPTIMIZE_FLAGS       = -O3 -g0 -std=c++11 #-ferror-limit=1
 CCFLAGS             = -Wall# -DDEBUG -DTRACE_FASTFLOW 
 CFLAGS               =
 LDFLAGS              = 
