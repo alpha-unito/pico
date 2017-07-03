@@ -38,12 +38,7 @@ public:
 	}
 
 	~ByKeyEmitter() {
-	    /* delete dangling empty windows */
-	    for (auto it=w_win_map.begin(); it!=w_win_map.end(); ++it){
-	        if(it->second->empty()) {
-	            DELETE(it->second, mb_t);
-            }
-	    }
+
 	}
 
 	void* svc(void* task) {
@@ -66,7 +61,6 @@ public:
 			if(task == PICO_EOS){
 				for (int i = 0; i < nworkers; ++i) {
 					if(!w_win_map[i]->empty()){
-						std::cout << "send to " << i << std::endl;
 						lb->ff_send_out_to(reinterpret_cast<void*>(w_win_map[i]), i);
 					}
 					lb->ff_send_out_to(task, i);
@@ -86,9 +80,8 @@ private:
 	typedef Microbatch<TokenType> mb_t;
 	int nworkers;
 	ff_loadbalancer * const lb;
-	std::unordered_map<size_t, Microbatch<TokenType>*> w_win_map;
+	std::unordered_map<size_t, mb_t	*> w_win_map;
 	size_t w_size;
-
 	inline size_t key_to_worker( const keytype& k) {
 	    return std::hash<keytype>{}(k) % nworkers;
 	}

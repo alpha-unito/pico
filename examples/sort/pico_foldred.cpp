@@ -18,8 +18,6 @@ typedef KeyValue<std::string, int> KV;
 typedef std::map<std::string, std::vector<int>> stype;
 
 int main(int argc, char* argv[]) {
-//	std::function<State(In&, State&)> foldf;
-//	std::function<State(State&, State&)> reducef;
 
 	static auto foldf = [](const KV& in, stype& state) {
 
@@ -53,13 +51,13 @@ int main(int argc, char* argv[]) {
 	WriteToDisk<stype> writer([&](stype in) {
 		std::string result;
 		for( auto it = in.begin(); it != in.end(); ++it ) {
-			std::cout << "in write to disk kernel\n";
 			result.append(it->first);
+			result.append(": [");
 			for(auto val: it->second) {
-				result.append(" ");
 				result.append(std::to_string(val));
+				result.append(" ");
 			}
-
+			result.append("]\n");
 		}
 		return result;
 	});

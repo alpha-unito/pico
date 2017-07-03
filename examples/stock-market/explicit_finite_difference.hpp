@@ -81,7 +81,7 @@ double explicitCallOption(double S0, // price
 	return sum;
 }
 
-StockPrice explicit_finite_difference(const OptionData &opt, int iMax, // grid paramaters
+StockPriceValue explicit_finite_difference(const OptionData &opt, int iMax, // grid paramaters
 		int jMax) {
 	return explicitCallOption(opt.s, opt.strike, opt.t, opt.r, opt.v, iMax,
 			jMax);

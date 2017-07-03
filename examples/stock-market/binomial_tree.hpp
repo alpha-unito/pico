@@ -70,7 +70,7 @@ double binomialTree(double S0, // price
 	return valueTree[0][0];
 }
 
-StockPrice binomial_tree(const OptionData &opt, int steps) {
+StockPriceValue binomial_tree(const OptionData &opt, int steps) {
 	return binomialTree(opt.s, opt.strike, opt.t, opt.r, opt.v, steps);
 }
 
