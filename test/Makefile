@@ -9,7 +9,7 @@ FF                   = ../ff
 LIBS                 = -lpthread
 
 INCLUDES             = -I.. -I$(FF)
-TARGET               = pico_wc pico_merge pico_wc_socket pico_fr
+TARGET               = pico_wc pico_merge pico_wc_socket
 
 
 .PHONY: all clean cleanall distclean
@@ -30,18 +30,15 @@ pico_wc_socket: pico_wc_socket.cpp
 pico_merge: pico_merge.cpp
 	$(CXX) $(INCLUDES) $(CCFLAGS) $(OPTIMIZE_FLAGS) $(LIBS) $< -o $@
 
-pico_fr: pico_foldred.cpp
-	$(CXX) $(INCLUDES) $(CCFLAGS) $(OPTIMIZE_FLAGS) $(LIBS) $< -o $@
-	
 test1: pico_wc
-	@./pico_wc testdata/nopunct.txt output.txt 2> trace.txt
+	@./pico_wc -i testdata/nopunct.txt -o output.txt 2> trace.txt
 	@sort output.txt > output-sorted.txt
 	@diff testresult/output1-sorted.txt output-sorted.txt
 	@echo "OK"
 
 
 test2: pico_merge
-	@./pico_merge testdata/nopunct.txt output.txt 2> trace.txt
+	@./pico_merge -i testdata/nopunct.txt -o output.txt 2> trace.txt
 	@sort output.txt > output-sorted.txt
 	@diff testresult/output2.txt output-sorted.txt
 	@echo "OK"

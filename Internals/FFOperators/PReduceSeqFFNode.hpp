@@ -73,10 +73,10 @@ public:
             ff_send_out(PICO_SYNC);
             mb_t *out_microbatch;
             NEW(out_microbatch, mb_t, outmb_size);
-            for (auto it = kvmap.begin(); it != kvmap.end(); ++it)
-            {
+            for (auto it = kvmap.begin(); it != kvmap.end(); ++it){
                 new (out_microbatch->allocate()) In(std::move(it->second));
                 out_microbatch->commit();
+
 
                 if (out_microbatch->full())
                 {
@@ -85,9 +85,9 @@ public:
                 }
             }
 
-            if (!out_microbatch->empty())
+            if (!out_microbatch->empty()){
                 ff_send_out(reinterpret_cast<void*>(out_microbatch));
-            else
+            } else
                 DELETE(out_microbatch, mb_t);
 
             return task;

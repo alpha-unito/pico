@@ -42,7 +42,7 @@ public:
 	void* svc(void* task) {
 		if(task == PICO_SYNC) {
 #ifdef DEBUG
-					fprintf(stderr,"[WRITE TO DISK] In SVC: RECEIVED PICO_SYNC\n");
+					fprintf(stderr,"[WRITE TO STDOUT] In SVC: RECEIVED PICO_SYNC\n");
 #endif
 			recv_sync = true;
 			return GO_ON;

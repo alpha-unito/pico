@@ -1,16 +1,16 @@
 /*
-    This file is part of PiCo.
-    PiCo is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    PiCo is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-    You should have received a copy of the GNU Lesser General Public License
-    along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ This file is part of PiCo.
+ PiCo is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ PiCo is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+ You should have received a copy of the GNU Lesser General Public License
+ along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
+ */
 /*
  * main.cpp
  *
@@ -36,9 +36,12 @@ int main(int argc, char** argv) {
 
 	/* parse command line */
 	if (argc < 2) {
-		std::cerr << "Usage: ./pico_merge <input file> <output file>\n";
+		std::cerr
+				<< "Usage: ./pico_foldred -i <input file> -o <output file> [-w workers] [-b batch-size] \n";
 		return -1;
 	}
+	parse_PiCo_args(argc, argv);
+
 	std::string filename = argv[1];
 	std::string outputfilename = argv[2];
 
@@ -46,8 +49,8 @@ int main(int argc, char** argv) {
 	auto map1 = Map<std::string, KV>([&](std::string &in) {return KV(in,1);});
 	auto map2 = Map<std::string, KV>([&](std::string &in) {return KV(in,2);});
 
-	auto reader = ReadFromFile<std::string>(filename);
-	auto wtd = WriteToDisk<KV>(outputfilename, [](KV in) {
+	ReadFromFile reader;
+	auto wtd = WriteToDisk<KV>([](KV in) {
 		return in.to_string();
 	});
 
@@ -67,7 +70,8 @@ int main(int argc, char** argv) {
 	p1m.run();
 
 	/* print pipeline exec time */
-	std::cout << "PiCo execution time including init and finalize time: " << p1m.pipe_time() << " ms\n";
+	std::cout << "PiCo execution time including init and finalize time: "
+			<< p1m.pipe_time() << " ms\n";
 
 	/* print the semantic DAG and generate dot file */
 	p1m.print_DAG();
