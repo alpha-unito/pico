@@ -58,7 +58,6 @@ public:
 				/* get a line */
 				if (getline(infile, *line)) {
 					mb->commit();
-
 					/* send out micro-batch if complete */
 					if (mb->full()) {
 						ff_send_out(reinterpret_cast<void*>(mb));
@@ -76,7 +75,7 @@ public:
 				DELETE(mb, mb_t);
 			}
 		} else {
-			fprintf(stderr, "Unable to open file %s\n",
+			fprintf(stderr, "Unable to open input file %s\n",
 					Constants::INPUT_FILE.c_str());
 		}
 #ifdef DEBUG

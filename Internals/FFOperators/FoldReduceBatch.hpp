@@ -64,17 +64,16 @@ private:
 				// iterate over microbatch
 				for (In &in : *in_microbatch) {
 					/* build item and enable copy elision */
-//					std::cout << "in " << in << std::endl;
 					foldf(in, *state);
-//					std::cout << "state size " << state->size() << std::endl;
 				}
 				DELETE(in_microbatch, mb_t);
 			} else if (task == PICO_EOS) {
 #ifdef DEBUG
 				fprintf(stderr, "[SORT-FFNODE-%p] In SVC RECEIVED PICO_EOS %p \n", this, task);
 #endif
-				ff_send_out(PICO_SYNC);
+//				ff_send_out(PICO_SYNC);
 				ff_send_out(reinterpret_cast<void*>(state));
+
 				return task;
 
 			}
@@ -90,18 +89,16 @@ private:
 	public:
 		Collector(int nworkers_,
 				std::function<void(const State&, State&)> &reducef_) :
-				nworkers(nworkers_), picoEOSrecv(0), reducef(reducef_) {
-			NEW(out_microbatch, mb_out, Constants::MICROBATCH_SIZE);
-			state = new (out_microbatch->allocate()) State();
+				nworkers(nworkers_), picoEOSrecv(0), reducef(reducef_){
 		}
 
 		void* svc(void* task) {
 			if (task != PICO_EOS && task != PICO_SYNC) {
 				State* s = reinterpret_cast<State*>(task);
-				reducef(*s, *state);
+				reducef(*s, state);
 
 //				std::cout << "state " << std::endl;
-//				for (auto it = state->begin(); it != state->end(); ++it) {
+//				for (auto it = state.begin(); it != state.end(); ++it) {
 //					std::cout << it->first << ": ";
 //					for (auto val : it->second) {
 //						std::cout << val << " ";
@@ -113,7 +110,11 @@ private:
 
 			if (task == PICO_EOS) {
 				if (++picoEOSrecv == nworkers) {
+					mb_out * out_microbatch;
+					NEW(out_microbatch, mb_out, Constants::MICROBATCH_SIZE);
+					new (out_microbatch->allocate()) State(state);
 					out_microbatch->commit();
+					ff_send_out(PICO_SYNC);
 					ff_send_out(reinterpret_cast<void*>(out_microbatch));
 					return task;
 				}
@@ -124,10 +125,10 @@ private:
 	private:
 		int nworkers;
 		int picoEOSrecv;
-		State* state;
+		State state;
 		std::function<void(const State&, State&)> &reducef;
 		typedef Microbatch<TokenTypeState> mb_out;
-		mb_out * out_microbatch;
+
 	};
 };
 

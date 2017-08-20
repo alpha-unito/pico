@@ -42,7 +42,6 @@ public:
 		return 0;
 	}
 	void* svc(void* task){
-
 		if(task == PICO_SYNC){
 #ifdef DEBUG
 		fprintf(stderr, "[WRITE TO DISK] In SVC: RECEIVED PICO_SYNC\n");
@@ -51,16 +50,15 @@ public:
 			return GO_ON;
 		}
 
-		if(recv_sync || task != PICO_EOS){
+		if(recv_sync && task != PICO_EOS){
 			if (outfile.is_open()) {
 				auto mb = reinterpret_cast<Microbatch<Token<In>>*>(task);
-
 				for(In& in: *mb){
 					outfile << kernel(in) << std::endl;
 				}
 				DELETE (mb, Microbatch<Token<In>>);
 			} else {
-				std::cerr << "Unable to open file";
+				std::cerr << "Unable to open output file\n";
 			}
 		}
 		return GO_ON;
