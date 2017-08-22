@@ -38,8 +38,10 @@ or
 
 Test input files can be found in `test/testdata/`.
 
+## Examples
+
 In the `example` directory can be found an optimized word count, a stock-market and a fold+reduce benchmarks.
-The word count example can be executed as the following:
+The **word count** example can be executed as the following:
 
 `$ cd word-count`
 
@@ -57,7 +59,7 @@ An input text can be generated as follows:
 
 `$ ./generate_text <dictionary file> <n. of lines> >> <output.file>`
 
-The fold+reduce example is a basic usage of the fold+reduce operator with state. 
+The **fold+reduce** example is a basic usage of the fold+reduce operator with state. 
 This example will read a list of integers and outputs a list of lists containing all the occurrences of integers in input.
 Each entry of the input file is first converted into a <string, int> pair, where the key represents the current number parsed as a string.
 Such keys are stored as a local state in a map of pairs <string, vector<int>> (**fold** stage) and merged into a global map (**reduce** stage).
