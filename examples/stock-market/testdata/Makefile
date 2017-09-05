@@ -8,7 +8,7 @@ LDFLAGS              =
 LIBS                 =
 
 INCLUDES             = #-I../../include
-TARGET               = generate_tweets
+TARGET               = generate_tweets tag_options
 
 
 .PHONY: all clean cleanall
@@ -26,7 +26,7 @@ all: $(TARGET)
 
 #dependencies
 generate_tweets : generate_tweets.o
-
+tag_options: tag_options.o
 clean:
 	rm -rf *.o *~
 
