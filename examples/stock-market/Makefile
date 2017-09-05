@@ -12,7 +12,7 @@ FF                   = $(ROOT)/ff
 
 INCLUDES             = -I$(ROOT) -I$(FF) -I$(ROOT)/examples/include
 
-TARGET               = stock_pricing stock_tweets
+TARGET               = stock_pricing stock_tweets stock_pricing_stream
 TARGET_SEQ           = seq_stock_pricing seq_stock_tweets
 
 .PHONY: all clean cleanall
@@ -33,6 +33,7 @@ seq: $(TARGET_SEQ)
 #dependencies
 stock_pricing: stock_pricing.o
 stock_tweets: stock_tweets.o
+stock_pricing_stream: stock_pricing_stream.o
 seq_stock_pricing: seq_stock_pricing.o
 seq_stock_tweets: seq_stock_tweets.o
 
@@ -41,4 +42,4 @@ clean:
 
 cleanall: clean
 	rm -fr $(TARGET) $(TARGET_SEQ) *.d
-	rm -rf *.dSYM *.dot *.png
+	rm -rf *.dSYM *.dot *.png                          

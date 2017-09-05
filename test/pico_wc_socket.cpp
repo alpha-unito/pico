@@ -1,16 +1,16 @@
 /*
-    This file is part of PiCo.
-    PiCo is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    PiCo is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-    You should have received a copy of the GNU Lesser General Public License
-    along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ This file is part of PiCo.
+ PiCo is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ PiCo is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+ You should have received a copy of the GNU Lesser General Public License
+ along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
+ */
 /*
  * pico_wc_socket.cpp
  *
@@ -39,39 +39,37 @@
 #include <Pipe.hpp>
 #include <Internals/WindowPolicy.hpp>
 
-
 typedef KeyValue<std::string, int> KV;
 
-/* static tokenizer function */
-static auto tokenizer = [](std::string in) {
+static auto tokenizer = [](std::string& in, FlatMapCollector<std::string>& collector) {
 	std::istringstream f(in);
-	std::vector<std::string> tokens;
 	std::string s;
 
 	while (std::getline(f, s, ' ')) {
-		tokens.push_back(s);
+		collector.add(s);
 	}
-	return tokens;
+
 };
 
 int main(int argc, char** argv) {
-	// parse command line
-	if (argc < 3) {
-		std::cerr << "Usage: ./pico_wc_socket <server> <port>\n";
+	/* parse command line */
+	if (argc < 2) {
+		std::cerr << "Usage: " << argv[0];
+		std::cerr << " -s <socket ip> -p <socket port>\n";
 		return -1;
 	}
+
+	parse_PiCo_args(argc, argv);
 	std::string server = argv[1];
-	int port = atoi(argv[2]);
 
 	/* define batch windowing */
 	size_t size = 8;
 
 	/* define a generic word-count pipeline */
 	Pipe countWords;
-	countWords
-	.add(FlatMap<std::string, std::string>(tokenizer))//.window(size)) //
-	.add(Map<std::string, KV>([&](std::string in) {return KV(in,1);}))//.window(size))
-	.add(PReduce<KV>([&](KV v1, KV v2) {return v1+v2;}).window(size));
+	countWords.add(FlatMap<std::string, std::string>(tokenizer)) //.window(size)) //
+	.add(Map<std::string, KV>([&](std::string in) {return KV(in,1);})) //.window(size))
+	.add(PReduce<KV>([](KV& v1, KV& v2) {return v1+v2;}).window(size));
 
 	// countWords can now be used to build batch pipelines.
 	// If we enrich the last combine operator with a windowing policy (i.e.,
@@ -79,9 +77,8 @@ int main(int argc, char** argv) {
 	// and streaming pipelines.
 
 	/* define i/o operators from/to file */
-	ReadFromSocket<std::string> reader(server, port, [](std::string s) {return s;}, '\n');
-//	ReadFromSocket<std::string> reader("testdata/nopunct.txt", [](std::string s) {return s;});
-	WriteToStdOut<KV> writer([&](KV in) {
+	ReadFromSocket reader('\n');
+	WriteToStdOut<KV> writer([](KV in) {
 		return in.to_string();
 	});
 
@@ -96,12 +93,12 @@ int main(int argc, char** argv) {
 	p2.run();
 
 	/* print pipeline exec time */
-	std::cout << "PiCo execution time including init and finalize time: " << p2.pipe_time() << " ms\n";
+	std::cout << "PiCo execution time including init and finalize time: "
+			<< p2.pipe_time() << " ms\n";
 
 	/* print the semantic DAG and generate dot file */
 //	p2.print_DAG();
 //	p2.to_dotfile("wordcount.dot");
-
 
 	return 0;
 }

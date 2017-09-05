@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
 	Pipe countWords;
 	countWords
 	.add(FlatMap<std::string, KV>(tokenizer)) //
-	.add(PReduce<KV>([&](KV &v1, KV &v2) {return v1+v2;}));
+	.add(PReduce<KV>([](KV &v1, KV &v2) {return v1+v2;}));
 
 	// countWords can now be used to build batch pipelines.
 	// If we enrich the last combine operator with a windowing policy (i.e.,
