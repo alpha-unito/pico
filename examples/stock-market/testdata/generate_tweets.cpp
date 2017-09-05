@@ -141,7 +141,7 @@ int main(int argc, char** argv)
     unsigned long long tweets_cnt = 0;
     if (argc < 3) {
         std::cerr << "Usage: " << argv[0];
-        std::cerr << " <stock names file> [n. of tweets]\n";
+        std::cerr << " <stock names file> [n. of tweets] >> output_file\n";
         return -1;
     }
     std::string stock_fname = argv[1];
