@@ -1,0 +1,21 @@
+-- RUN STREAM ON PLAIN TAGGED OPTIONS
+
+eg: ./run_stream.sh testdata/tagged_options_10M.txt
+runs stock_pricing_stream. The input stream is read from the first argument and sent through a socket initialized by nc. It executes once for each number of worker with a fixed batch size (512)
+
+eg: ./run_stockpricing_multi.sh testdata/tagged_options_10M.txt
+runs stock_pricing_stream. Same as run_stream but run the experiments 20 times for each worker. 
+
+
+==========================================================
+
+
+-- RUN BATCH ON PLAIN TAGGED OPTIONS
+
+
+eg: run_stockpricingbatch_suite.sh  testdata/tagged_options_10M.txt
+Runs stock_pricing reading data from the first argument. It executes once for each number of workers by changing the batch size.
+
+eg: ./run_stock_tweets.sh <workers> <batchsize>
+launch the stream generator and pipe it to netcat and then launches the streaming pipeline.
+Input stock file and output are hardcoded in the script.
