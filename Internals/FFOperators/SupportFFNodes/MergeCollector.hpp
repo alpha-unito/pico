@@ -31,13 +31,22 @@ public:
 	}
 
 	void* svc(void* task) {
-		if (task == PICO_EOS) {
-			if (++picoEOSrecv == nworkers) {
-				return task;
-			}
-		} else if (task != PICO_SYNC) {
-			return task; //forward regular task
-		}
+//		if (task == PICO_EOS) {
+//			if (++picoEOSrecv == nworkers) {
+//				printf("mergecollector sending eos\n");
+//				return task;
+//			}
+//		}
+//		else if (task != PICO_SYNC) {
+//			printf("mergecollector sending task\n");
+//			return task; //forward regular task
+//		}
+
+		//if(task != PICO_EOS && task != PICO_SYNC) {
+		//	printf("mergecollector sending task\n");
+//			        return task;
+		//	    }
+		ff_send_out(task);
 		return GO_ON;
 	}
 
