@@ -50,7 +50,7 @@ public:
 			return GO_ON;
 		}
 
-		if(recv_sync && task != PICO_EOS){
+		if(/*recv_sync &&*/ task != PICO_EOS){
 			if (outfile.is_open()) {
 				auto mb = reinterpret_cast<Microbatch<Token<In>>*>(task);
 				for(In& in: *mb){
