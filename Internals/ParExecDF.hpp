@@ -130,7 +130,7 @@ private:
 								DAG->at(*iterator).at(0)->op));
 			} else {
 				pipe.add_stage(
-						(*iterator)->node_operator(Constants::PARALLELISM));
+						(*iterator)->node_operator(Constants::PARALLELISM,nullptr));
 			}
 			*iterator = (DAG->at(*iterator).at(0));
 			build_ffnode(iterator, pipe);

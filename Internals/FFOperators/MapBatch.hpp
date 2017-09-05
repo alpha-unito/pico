@@ -88,6 +88,7 @@ private:
 #ifdef DEBUG
 				fprintf(stderr, "[MAPBATCH-%p] In SVC SENDING PICO_EOS\n", this);
 #endif
+				ff_send_out(PICO_SYNC);
 				ff_send_out(task);
 			}
 			return GO_ON;

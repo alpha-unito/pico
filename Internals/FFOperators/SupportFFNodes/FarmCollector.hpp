@@ -30,15 +30,16 @@ public:
 	}
 
 	void* svc(void* task) {
-	    if(task != PICO_EOS && task != PICO_SYNC) {
-	        return task;
-	    }
-
 		if(task == PICO_EOS) {
 			if(++picoEOSrecv == nworkers){
 				return task;
 			}
 		}
+
+		if(task != PICO_EOS /*&& task != PICO_SYNC*/) {
+			        return task;
+			    }
+
 		return GO_ON;
     }
 
