@@ -10,6 +10,8 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <stdlib.h>     /* srand, rand */
+#include <time.h>       /* time */
 
 #define IN_OPTIONS "options_10M.txt"
 #define IN_TAGS "nasdaq_europe.txt"
