@@ -22,13 +22,13 @@ TARGET               = pico_wc pico_merge #pico_wc_socket
 all: $(TARGET) 
 
 pico_wc: pico_wc.cpp
-	$(CXX) $(INCLUDES) $(CCFLAGS) $(OPTIMIZE_FLAGS) $(LIBS) $< -o $@
+	$(CXX) $< -o $@ $(INCLUDES) $(CCFLAGS) $(OPTIMIZE_FLAGS) $(LIBS)
 
 pico_wc_socket: pico_wc_socket.cpp
-	$(CXX) $(INCLUDES) $(CCFLAGS) $(OPTIMIZE_FLAGS) $(LIBS) $< -o $@
+	$(CXX) $< -o $@ $(INCLUDES) $(CCFLAGS) $(OPTIMIZE_FLAGS) $(LIBS) 
 
 pico_merge: pico_merge.cpp
-	$(CXX) $(INCLUDES) $(CCFLAGS) $(OPTIMIZE_FLAGS) $(LIBS) $< -o $@
+	$(CXX) $< -o $@ $(INCLUDES) $(CCFLAGS) $(OPTIMIZE_FLAGS) $(LIBS)
 
 test1: pico_wc
 	@./pico_wc -i testdata/nopunct.txt -o output.txt 2> trace.txt
