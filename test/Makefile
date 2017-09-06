@@ -1,7 +1,7 @@
 CXX                  = g++
 LINK_OPT             = 
 VERSION              = 
-OPTIMIZE_FLAGS       = -O0 -g3 -std=c++14
+OPTIMIZE_FLAGS       = -O3 -g0 -std=c++11
 CCFLAGS             = -Wall # -DDEBUG #-DTRACE_FASTFLOW
 CFLAGS               =
 LDFLAGS              = 
@@ -9,15 +9,15 @@ FF                   = ../ff
 LIBS                 = -lpthread
 
 INCLUDES             = -I.. -I$(FF)
-TARGET               = pico_wc pico_merge pico_wc_socket
+TARGET               = pico_wc pico_merge #pico_wc_socket
 
 
 .PHONY: all clean cleanall distclean
 .SUFFIXES: .c .cpp .o
 
-default: tests
+#default: tests
 
-tests: test1 #test2
+#tests: test1 #test2
 
 all: $(TARGET) 
 
