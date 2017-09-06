@@ -68,8 +68,8 @@ int main(int argc, char** argv) {
 	/* define a generic word-count pipeline */
 	Pipe countWords;
 	countWords.add(FlatMap<std::string, std::string>(tokenizer)) //.window(size)) //
-	.add(Map<std::string, KV>([&](std::string in) {return KV(in,1);})) //.window(size))
-	.add(PReduce<KV>([](KV& v1, KV& v2) {return v1+v2;}).window(size));
+	.add(Map<std::string, KV>([](std::string in) {return KV(in,1);})) //.window(size))
+	.add(PReduce<KV>([](KV v1, KV v2) {return v1+v2;}).window(size));
 
 	// countWords can now be used to build batch pipelines.
 	// If we enrich the last combine operator with a windowing policy (i.e.,
