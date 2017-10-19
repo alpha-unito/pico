@@ -41,13 +41,14 @@
 
 typedef KeyValue<std::string, int> KV;
 
-static auto tokenizer = [](std::string& in, FlatMapCollector<std::string>& collector) {
-	std::istringstream f(in);
-	std::string s;
-
-	while (std::getline(f, s, ' ')) {
-		collector.add(s);
+static auto tokenizer = [](std::string& in, FlatMapCollector<KV>& collector) {
+	std::string::size_type i = 0, j;
+	while((j = in.find_first_of(' ', i)) != std::string::npos) {
+	    collector.add(KV(in.substr(i, j - i), 1));
+	    i = j + 1;
 	}
+	if(i < in.size())
+	    collector.add(KV(in.substr(i, in.size() - i), 1));
 
 };
 
@@ -64,13 +65,12 @@ int main(int argc, char** argv) {
 
 	/* define batch windowing */
 	size_t size = 8;
-
+  
 	/* define a generic word-count pipeline */
 	Pipe countWords;
-	countWords.add(FlatMap<std::string, std::string>(tokenizer)) //.window(size)) //
-	.add(Map<std::string, KV>([](std::string in) {return KV(in,1);})) //.window(size))
+	countWords.add(FlatMap<std::string, KV>(tokenizer)) //.window(size)) //
 	.add(PReduce<KV>([](KV v1, KV v2) {return v1+v2;}).window(size));
-
+  
 	// countWords can now be used to build batch pipelines.
 	// If we enrich the last combine operator with a windowing policy (i.e.,
 	// WPReduce combine operator), the pipeline can be used to build both batch
@@ -81,14 +81,13 @@ int main(int argc, char** argv) {
 	WriteToStdOut<KV> writer([](KV in) {
 		return in.to_string();
 	});
-
+  
 	/* compose the pipeline */
 	Pipe p2;
 	p2 //the empty pipeline
 	.add(reader) //
 	.to(countWords) //
 	.add(writer);
-
 	/* execute the pipeline */
 	p2.run();
 
