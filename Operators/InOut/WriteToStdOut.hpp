@@ -94,13 +94,11 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism, Operator* nextop=nullptr) {
-//		if(parallelism>=1){ //always return single item operator
-		if(this->data_stype()  == StructureType::STREAM){
-			return new WriteToStdOutFFNode<In, Token<In>>(func);
-		}
-		return new WriteToStdOutFFNode<In, Token<In>>(func);
+//		if(this->data_stype()  == StructureType::STREAM){
+//			std::cout << "STREAM\n";
+//			return new WriteToStdOutFFNode<In, Token<In>>(func);
 //		}
-//		return new WriteToStdOutFFNodeMB<In>(func);
+		return new WriteToStdOutFFNode<In, Token<In>>(func);
 	}
 
 
