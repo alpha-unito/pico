@@ -64,12 +64,14 @@ int main(int argc, char** argv) {
 	std::string server = argv[1];
 
 	/* define batch windowing */
-	size_t size = 8;
+	size_t size = 4;
   
 	/* define a generic word-count pipeline */
 	Pipe countWords;
 	countWords.add(FlatMap<std::string, KV>(tokenizer)) //.window(size)) //
-	.add(PReduce<KV>([](KV v1, KV v2) {return v1+v2;}).window(size));
+	.add(PReduce<KV>([](KV v1, KV v2) {
+		return v1+v2;
+	}).window(size));
   
 	// countWords can now be used to build batch pipelines.
 	// If we enrich the last combine operator with a windowing policy (i.e.,
@@ -79,6 +81,7 @@ int main(int argc, char** argv) {
 	/* define i/o operators from/to file */
 	ReadFromSocket reader('\n');
 	WriteToStdOut<KV> writer([](KV in) {
+//		std::cout << in << std::endl;
 		return in.to_string();
 	});
   

@@ -47,7 +47,10 @@ public:
 			recv_sync = true;
 			return GO_ON;
 		}
-		if(recv_sync || task != PICO_EOS){
+//		if(task == PICO_EOS) {
+//			std::cout << "received eos\n";
+//		}
+		if(/*recv_sync || */task != PICO_EOS){
 			auto in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
 			for(In& tt: *in_microbatch) {
 				std::cout << kernel(tt) << std::endl;
