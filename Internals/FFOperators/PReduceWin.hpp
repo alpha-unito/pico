@@ -81,17 +81,17 @@ private:
 					if (kvmap.find(kv.Key()) != kvmap.end()) {
 						kvmap[kv.Key()] = kernel(kvmap[kv.Key()], kv);
 //						std::cout << "mb_size " << mb_size << " key " << kvcountmap[kv.Key()] << std::endl;
-						if (++(kvcountmap[kv.Key()]) == mb_size) {
-//							std::cout << "enters\n";
+						kvcountmap[kv.Key()]++;
+						if (kvcountmap[kv.Key()] == mb_size) {
 							mb_t *out_microbatch;
 							NEW(out_microbatch, mb_t, 1);
-						//	std::cout << "adding to mb " << In(kvmap[kv.Key()]) << std::endl;
+//							std::cout << "adding to mb " << In(kvmap[kv.Key()]) << " kv " << kvmap[kv.Key()] << std::endl;
 							new (out_microbatch->allocate()) In(kvmap[kv.Key()]);
 							out_microbatch->commit();
 							ff_send_out(reinterpret_cast<void*>(out_microbatch));
 							kvcountmap[kv.Key()] = 1;
+							kvmap.erase(kv.Key());
 						}
-//						std::cout << "it didn't\n";
 					} else {
 						kvcountmap[kv.Key()] = 1;
 						kvmap[kv.Key()] = kv;
