@@ -71,10 +71,10 @@ static auto normalize = Map<UrlRank, UrlRank>([](UrlRank nr) {
 
 static auto parseRanks = Map<std::string, UrlRank>([](std::string in) {
 	int url; //assume numeric url
-	float rank;
-	sscanf(in.c_str(), "<%d, %f>", &url, &rank);
-	return UrlRank(std::to_string(url), rank);
-});
+		float rank;
+		sscanf(in.c_str(), "<%d, %f>", &url, &rank);
+		return UrlRank(std::to_string(url), rank);
+	});
 
 /* main */
 int main(int argc, char** argv) {
@@ -88,6 +88,7 @@ int main(int argc, char** argv) {
 
 	populateLinks();
 
+#if 0
 	// The pipe that gets iterated to improve the values of the ranks
 	// for the various links.
 	Pipe improveRanks;
@@ -95,14 +96,10 @@ int main(int argc, char** argv) {
 	.add(computeContributions) //
 	.add(sumContributions) //
 	.add(normalize);
+#endif
 
 	// The i/o part.
 	ReadFromFile readRanks;
-	Pipe generateStartingRanks;
-	generateStartingRanks //
-	.add(readRanks) //
-	.add(parseRanks);
-
 	WriteToDisk<UrlRank> writer([&](UrlRank in) {
 		return in.to_string();
 	});
@@ -110,11 +107,15 @@ int main(int argc, char** argv) {
 	// The whole pageRank pipeline.
 	Pipe pageRank;
 	pageRank //
-	.to(generateStartingRanks) //
-	.to(improveRanks) //
+	.add(readRanks) //
+	.add(parseRanks) //
+	.add(computeContributions) //
+	.add(sumContributions) //
+	.add(normalize) //
 	.add(writer);
 
-	pageRank.run();
+	for(int i=0; i <10; ++i)
+		pageRank.run();
 
 	return 0;
 }
