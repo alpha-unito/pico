@@ -175,7 +175,7 @@ int main(int argc, char** argv) {
 	// parse command line
 	if (argc < 3) {
 		std::cerr
-				<< "Usage: ./pico_wc -i <pages-file> -o <output file> [-w workers] [-b batch-size] <links-file>\n";
+				<< "Usage: ./pico_pr_iter -i <pages-file> -o <output file> [-w workers] [-b batch-size] <links-file>\n";
 		return -1;
 	}
 	char *mapdata_in = nullptr, *mapdata_out = nullptr, *linksdata = nullptr;

@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
 	std::string server = argv[1];
 
 	/* define batch windowing */
-	size_t size = 4;
+	size_t size = 2;
   
 	/* define a generic word-count pipeline */
 	Pipe countWords;
@@ -81,7 +81,6 @@ int main(int argc, char** argv) {
 	/* define i/o operators from/to file */
 	ReadFromSocket reader('\n');
 	WriteToStdOut<KV> writer([](KV in) {
-//		std::cout << in << std::endl;
 		return in.to_string();
 	});
   

@@ -23,6 +23,10 @@
 
 #include <getopt.h>
 #include <ff/mapper.hpp>
+#include <iostream>
+#include <string>
+#include <sstream>
+
 
 namespace Constants {
 // forward declarations only
@@ -33,6 +37,9 @@ namespace Constants {
 	int PORT;
 	std::string SERVER_NAME;
 	const char* MAPPING;
+	char* MMAP_IN;
+	char* MMAP_OUT;
+	int FD_OUT;
 }
 
 /**

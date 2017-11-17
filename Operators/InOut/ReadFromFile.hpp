@@ -21,7 +21,7 @@
 #ifndef OPERATORS_INOUT_READFROMFILE_HPP_
 #define OPERATORS_INOUT_READFROMFILE_HPP_
 
-#include <Internals/FFOperators/InOut/ReadFromFileFFNode.hpp>
+#include <Internals/FFOperators/InOut/ReadFromFileFFNode2.hpp>
 #include <iostream>
 #include <fstream>
 
