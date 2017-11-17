@@ -9,7 +9,7 @@ FF                   = ../ff
 LIBS                 = -lpthread
 
 INCLUDES             = -I.. -I$(FF)
-TARGET               = pico_wc pico_merge #pico_wc_socket
+TARGET               = pico_wc pico_merge pico_wc_socket
 
 
 .PHONY: all clean cleanall distclean

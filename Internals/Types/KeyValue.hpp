@@ -92,6 +92,11 @@ public:
         return val;
     }
 
+     V& Value()
+       {
+           return val;
+       }
+
     /**
      * Setter methods.
      */

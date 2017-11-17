@@ -26,8 +26,7 @@
 
 class MergeCollector: public Collector {
 public:
-	MergeCollector(int nworkers_) :
-			nworkers(nworkers_), picoEOSrecv(0) {
+	MergeCollector(int nworkers_) {
 	}
 
 	void* svc(void* task) {
@@ -51,8 +50,8 @@ public:
 	}
 
 private:
-	int nworkers;
-	int picoEOSrecv;
+//	int nworkers;
+//	int picoEOSrecv;
 };
 
 #endif /* INTERNALS_FFOPERATORS_SUPPORTFFNODES_MERGECOLLECTOR_HPP_ */
