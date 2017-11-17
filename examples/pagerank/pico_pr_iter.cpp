@@ -114,8 +114,11 @@ int main(int argc, char** argv) {
 	.add(normalize) //
 	.add(writer);
 
-	for(int i=0; i <10; ++i)
+	for(int i=0; i <10; ++i){
 		pageRank.run();
+		Constants::swap();
+//		printf("new in %s new out %s\n", Constants::INPUT_FILE.c_str(), Constants::OUTPUT_FILE.c_str());
+	}
 
 	return 0;
 }

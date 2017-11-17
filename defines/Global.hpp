@@ -37,9 +37,11 @@ namespace Constants {
 	int PORT;
 	std::string SERVER_NAME;
 	const char* MAPPING;
-	char* MMAP_IN;
-	char* MMAP_OUT;
-	int FD_OUT;
+	void swap(){
+			std::string tmp = INPUT_FILE;
+			INPUT_FILE = OUTPUT_FILE;
+			OUTPUT_FILE = tmp;
+		}
 }
 
 /**
