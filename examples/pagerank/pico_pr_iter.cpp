@@ -128,16 +128,15 @@ int main(int argc, char** argv) {
 	.add(normalize) //
 	.add(writer);
 
+	double extime = 0;
 	for (int i = 0; i < N_ITERATIONS; ++i) {
 		pageRank.run();
 		Constants::swap();
-
-		/* print the execution time */
-		std::cout << "ITER" << i << " " << pageRank.pipe_time() << " ms\n";
+		extime += pageRank.pipe_time();
 	}
 
-	if ((N_ITERATIONS % 2) != 0)
-		Constants::swap();
+	/* print the execution time */
+	std::cout << "ITERS " <<  extime << " ms\n";
 
 	return 0;
 }
