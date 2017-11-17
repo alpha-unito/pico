@@ -32,6 +32,7 @@
 #include <cassert>
 #include <fstream>
 #include <sstream>
+#include <chrono>
 
 #include <Internals/Types/KeyValue.hpp>
 #include <Operators/FlatMap.hpp>
@@ -43,7 +44,11 @@
 
 #include "defs.hpp"
 
+#define DAMPENING 0.85
+#define N_ITERATIONS 10
+
 /* global graph */
+static unsigned long long VERTICES = 0;
 static std::unordered_map<Url, std::list<Url>> adjacencyListInput;
 
 static void populateLinks() {
@@ -53,6 +58,7 @@ static void populateLinks() {
 	std::string src, dst;
 	while (infile >> src >> dst)
 		adjacencyListInput[src].push_back(dst);
+	VERTICES = adjacencyListInput.size();
 }
 
 /* kernels */
@@ -67,7 +73,9 @@ static auto sumContributions = PReduce<UrlRank>([](UrlRank r1, UrlRank r2) {
 	return r1 + r2;});
 
 static auto normalize = Map<UrlRank, UrlRank>([](UrlRank nr) {
-	return UrlRank(nr.Key(), 0.15 * 0.85 * nr.Value());});
+	float jump = (1 - DAMPENING) / VERTICES;
+	return UrlRank(nr.Key(), nr.Value() * DAMPENING + jump);
+});
 
 static auto parseRanks = Map<std::string, UrlRank>([](std::string in) {
 	int url; //assume numeric url
@@ -86,15 +94,21 @@ int main(int argc, char** argv) {
 	}
 	parse_PiCo_args(argc, argv);
 
+	auto start = std::chrono::system_clock::now();
 	populateLinks();
+	auto end = std::chrono::system_clock::now();
+	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+			end - start);
+
+	std::cout << "LINKS " << elapsed.count() << " ms\n";
 
 #if 0
 	// The pipe that gets iterated to improve the values of the ranks
 	// for the various links.
 	Pipe improveRanks;
-	improveRanks //
-	.add(computeContributions) //
-	.add(sumContributions) //
+	improveRanks//
+	.add(computeContributions)//
+	.add(sumContributions)//
 	.add(normalize);
 #endif
 
@@ -114,11 +128,16 @@ int main(int argc, char** argv) {
 	.add(normalize) //
 	.add(writer);
 
-	for(int i=0; i <10; ++i){
+	for (int i = 0; i < N_ITERATIONS; ++i) {
 		pageRank.run();
 		Constants::swap();
-//		printf("new in %s new out %s\n", Constants::INPUT_FILE.c_str(), Constants::OUTPUT_FILE.c_str());
+
+		/* print the execution time */
+		std::cout << "ITER" << i << " " << pageRank.pipe_time() << " ms\n";
 	}
+
+	if ((N_ITERATIONS % 2) != 0)
+		Constants::swap();
 
 	return 0;
 }

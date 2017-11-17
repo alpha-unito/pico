@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
 	p2.to_dotfile("pico_pr_init.dot");
 
 	/* print the execution time */
-	std::cout << "done in " << p2.pipe_time() << " ms\n";
+	std::cout << "INIT " << p2.pipe_time() << " ms\n";
 
 	return 0;
 }
