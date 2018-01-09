@@ -1,17 +1,17 @@
 CXX                  = g++
 LINK_OPT             = 
 VERSION              = 
-OPTIMIZE_FLAGS       = -O3 -g0 -std=c++11 #-ferror-limit=1
-CCFLAGS             = -Wall -DTRACE_FASTFLOW 
+OPTIMIZE_FLAGS       = -O3 -g0 -std=c++11
+CCFLAGS             = -Wall #-DTRACE_FASTFLOW 
 CFLAGS               =
 LDFLAGS              = 
-LIBS                 = -lpthread #-L${HADOOP_LIB} -lhdfs
+LIBS                 = -lpthread
 
 ROOT                 = ../..
 FF                   = $(ROOT)/ff
 
-INCLUDES             = -I$(ROOT) -I$(FF) -I../include #-I${HADOOP_SRC}
-TARGET               = pico_wc seq_wc pico_pr_iter
+INCLUDES             = -I$(ROOT) -I$(FF) -I../include
+TARGET               = pico_wc seq_wc
 
 
 .PHONY: all clean cleanall
@@ -30,7 +30,6 @@ all: $(TARGET)
 #dependencies
 pico_wc: pico_wc.o
 seq_wc: seq_wc.o
-pico_pr_iter: pico_pr_iter.o
 
 clean:
 	rm -rf *.o *~

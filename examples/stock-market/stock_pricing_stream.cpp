@@ -30,11 +30,11 @@
 #include <algorithm>
 #include <iomanip>
 
-#include <Pipe.hpp>
-#include <Operators/Map.hpp>
-#include <Operators/PReduce.hpp>
-#include <Operators/InOut/ReadFromSocket.hpp>
-#include <Operators/InOut/WriteToStdOut.hpp>
+#include <pico/Pipe.hpp>
+#include <pico/Operators/Map.hpp>
+#include <pico/Operators/PReduce.hpp>
+#include <pico/Operators/InOut/ReadFromSocket.hpp>
+#include <pico/Operators/InOut/WriteToStdOut.hpp>
 
 #include "defs.h"
 #include "black_scholes.hpp"
@@ -66,7 +66,7 @@ int main(int argc, char** argv)
             &opt.s, &opt.strike, &opt.r, &opt.divq, &opt.v, &opt.t,//
             &otype, &opt.divs, &opt.DGrefval);
         opt.OptionType = (otype == 'P');
-        int iMax=4, jMax=4, steps=10, N=15, size = 3;
+        int iMax=4, jMax=4, steps=10, size = 3;
         StockPriceValue res[size];
         res[0] = black_scholes(opt);
         res[1] = binomial_tree(opt, steps);

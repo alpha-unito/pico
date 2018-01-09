@@ -35,10 +35,10 @@
 #include <string>
 #include <sstream>
 
-#include <Pipe.hpp>
-#include <Operators/FlatMap.hpp>
-#include <Operators/InOut/ReadFromSocket.hpp>
-#include <Operators/InOut/WriteToStdOut.hpp>
+#include <pico/Pipe.hpp>
+#include <pico/Operators/FlatMap.hpp>
+#include <pico/Operators/InOut/ReadFromSocket.hpp>
+#include <pico/Operators/InOut/WriteToStdOut.hpp>
 
 #include "defs.h"
 
