@@ -30,11 +30,11 @@
 #include <algorithm>
 #include <iomanip>
 
-#include <Pipe.hpp>
-#include <Operators/Map.hpp>
-#include <Operators/PReduce.hpp>
-#include <Operators/InOut/ReadFromFile.hpp>
-#include <Operators/InOut/WriteToDisk.hpp>
+#include <pico/Pipe.hpp>
+#include <pico/Operators/Map.hpp>
+#include <pico/Operators/PReduce.hpp>
+#include <pico/Operators/InOut/ReadFromFile.hpp>
+#include <pico/Operators/InOut/WriteToDisk.hpp>
 
 #include "defs.h"
 #include "black_scholes.hpp"

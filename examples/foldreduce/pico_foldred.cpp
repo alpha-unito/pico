@@ -6,13 +6,12 @@
  */
 #include <iostream>
 #include <string>
-#include <sstream>
 
-#include <Internals/Types/KeyValue.hpp>
-#include <Operators/FoldReduce.hpp>
-#include <Operators/InOut/ReadFromFile.hpp>
-#include <Operators/InOut/WriteToDisk.hpp>
-#include <Pipe.hpp>
+#include <pico/Internals/Types/KeyValue.hpp>
+#include <pico/Operators/FoldReduce.hpp>
+#include <pico/Operators/InOut/ReadFromFile.hpp>
+#include <pico/Operators/InOut/WriteToDisk.hpp>
+#include <pico/Pipe.hpp>
 
 typedef KeyValue<std::string, int> KV;
 typedef std::map<std::string, std::vector<int>> stype;

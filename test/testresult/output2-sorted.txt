@@ -1,8 +1,0 @@
-<are only no words without randomly randomly, 1>
-<are only no words without randomly randomly, 2>
-<punctuation and without capital, 1>
-<punctuation and without capital, 2>
-<some words are copied randomly to have more counts, 1>
-<some words are copied randomly to have more counts, 2>
-<this is plain text without punctuation and without capital letters so there are only no capital letter words in this plain text file, 1>
-<this is plain text without punctuation and without capital letters so there are only no capital letter words in this plain text file, 2>

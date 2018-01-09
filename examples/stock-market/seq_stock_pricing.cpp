@@ -35,7 +35,6 @@
 
 #include "defs.h"
 
-
 #include "black_scholes.hpp"
 
 int main(int argc, char** argv)
