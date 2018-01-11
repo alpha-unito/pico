@@ -36,6 +36,8 @@ class Reduce: public UnaryOperator<In, In> {
 	friend class Pipe;
 public:
 	/**
+	 * \ingroup op-api
+	 *
 	 * Constructor. Creates a new Reduce operator by defining its kernel function reducef: <In, In> -> In
 	 */
 	Reduce(std::function<In(In, In)> reducef_) :

@@ -47,6 +47,8 @@ class FlatMap : public UnaryOperator<In, Out> {
 public:
 
 	/**
+	 * \ingroup op-api
+	 *
 	 * Constructor.
 	 * Creates a new FlatMap operator by defining its kernel function  flatMapf: In->Out
 	 * @param flatmapf std::function<Out(In)> FlatMap kernel function with input type In producing zero, one or more element of type Out

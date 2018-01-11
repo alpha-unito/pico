@@ -14,11 +14,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Pipe.hpp
  *
  *  Created on: Aug 2, 2016
  *      Author: misale
+ *
+ */
+
+/**
+ * \defgroup pipe-api Pipes API
+ * \defgroup op-api Operators API
  */
 
 #ifndef PIPE_HPP_
@@ -93,7 +100,7 @@ class Pipe {
 
 public:
 	/**
-	 * \ingroup API
+	 * \ingroup pipe-api
 	 * Create an empty Pipe
 	 */
 	Pipe():i_deg(1), o_deg(1){
@@ -121,6 +128,7 @@ public:
 #endif
 
 	/**
+	 * \ingroup pipe-api
 	 * Create a Pipe from an initial operator
 	 */
 	template<typename T>
@@ -130,6 +138,7 @@ public:
 	}
 
 	/**
+	 * \ingroup pipe-api
 	 * Create a Pipe from an initial operator (move)
 	 */
 	template<typename T>
@@ -138,11 +147,9 @@ public:
 	}
 
 	/**
+	 * \ingroup pipe-api
 	 * Add a new stage to the Pipe.
-	 *
-	 * @todo op should be const
 	 */
-	/* should be const but it does not work*/
 	template<typename T>
 	Pipe& add(const T &op) {
 
@@ -150,6 +157,7 @@ public:
 	}
 
 	/**
+	 * \ingroup pipe-api
 	 * Add a new stage to the Pipe (move).
 	 */
 	template<typename T>
@@ -158,6 +166,8 @@ public:
 	}
 
 	/**
+	 * \ingroup pipe-api
+	 *
      * Append a Pipe to the current one.
      * Operators in the Pipe to append are copied into the current one.
      * This method fails if:
@@ -268,6 +278,7 @@ public:
 	 */
 	template <typename in1, typename in2, typename out>
 	Pipe& pair_with(const BinaryOperator<in1, in2, out> &a, const Pipe& pipe){
+#if 0
 		assert(o_deg==1); // can not add new nodes if pipe is complete
 		if(!DAG.empty()){
 			assert(DAG.lastOp()->checkOutputTypeSanity(typeid(in1))
@@ -282,9 +293,12 @@ public:
 		}*/
 		//TODO method incomplete
 		return *this;
+#endif
 	}
 
 	/**
+	 * \ingroup pipe-api
+	 *
 	 * Merges data coming from the current Pipe and the one passed as argument.
 	 * The resulting collection is the union of the collection of the two Pipes.
 	 * If the input collections are ordered, the order is respected only within each input collections,
@@ -315,6 +329,8 @@ public:
 	}
 
 	/**
+	 * \ingroup pipe-api
+	 *
 	 * Print the DAG in two subsequent format:
 	 * - Adjacency list
 	 * - BFS visit
@@ -331,6 +347,8 @@ public:
 	}
 
 	/**
+	 * \ingroup pipe-api
+	 *
 	 * Executes the Pipe
 	 */
 	void run() {
@@ -343,6 +361,8 @@ public:
 
 
 	/**
+	 * \ingroup pipe-api
+	 *
 	 * Encodes the DAG into a dot file.
 	 * @param filename dot file
 	 */
@@ -354,6 +374,8 @@ public:
 	}
 
 	/**
+	 * \ingroup pipe-api
+	 *
 	 * Return execution time of the application in milliseconds.
 	 */
 	double pipe_time(){

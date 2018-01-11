@@ -48,6 +48,8 @@ class Map : public UnaryOperator<In, Out> {
 public:
 
 	/**
+	 * \ingroup op-api
+	 *
 	 * Constructor. Creates a new Map operator by defining its kernel function  mapf: In->Out
 	 * @param mapf std::function<Out(In)> Map kernel function with input type In producing an element of type Out
 	 */

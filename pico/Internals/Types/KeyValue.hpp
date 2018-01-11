@@ -23,6 +23,9 @@
 
 #include <iostream>
 
+/**
+ * \ingroup op-api
+ */
 template<typename K, typename V>
 class KeyValue {
 public:

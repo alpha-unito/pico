@@ -38,6 +38,8 @@ class BinaryMap : public BinaryOperator<In1, In2, Out> {
 	friend class Pipe;
 public:
 	/**
+	 * \ingroup op-api
+	 *
 	 * Constructor. Creates a new BinaryMap operator by defining its kernel function  bmapf: <In1, In2>->Out
 	 * @param bmapf std::function<Out(In1, In2)> BinaryMap kernel function with input types In1, In2 and
 	 * producing an element of type Out
