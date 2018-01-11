@@ -43,6 +43,8 @@ class ReadFromSocket : public InputOperator<std::string>{
 public:
 
 	/**
+	 * \ingroup op-api
+	 *
 	* Constructor. Creates a new ReadFromSocket operator by defining its kernel function: std::string -> Out
     * operating on each token of the stream, delimited by the delimiter value.
 	*/

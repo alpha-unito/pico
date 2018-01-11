@@ -33,6 +33,9 @@ class FoldReduce : public UnaryOperator<In, Out> {
 	friend class Pipe;
 	friend class ParExecDF;
 public:
+	/**
+	 * \ingroup op-api
+	 */
 	FoldReduce(std::function<void(const In&, State&)> foldf_, std::function<void(const State&, State&)> reducef_)  {
 		foldf = foldf_;
 		reducef = reducef_;

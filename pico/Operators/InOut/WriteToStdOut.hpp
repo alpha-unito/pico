@@ -43,6 +43,8 @@ class WriteToStdOut : public OutputOperator<In>{
 public:
 
 	/**
+	 * \ingroup op-api
+	 *
 	* Constructor. Creates a new WriteToStdOut operator by defining its kernel function In -> std::string
     * writing to standard output.
 	*/

@@ -43,6 +43,8 @@ class PReduce: public UnaryOperator<In, In> {
 	friend class Pipe;
 public:
 	/**
+	 * \ingroup op-api
+	 *
 	 * Constructor. Creates a new PReduce operator by defining its kernel function reducef: <In, In> -> In
 	 */
 	PReduce(std::function<In(In&, In&)> reducef_) :

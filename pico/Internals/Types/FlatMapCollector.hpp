@@ -27,6 +27,8 @@
 #include "../FFOperators/ff_config.hpp"
 
 /**
+ * \ingroup op-api
+ *
  * Collector for FlatMap user kernels.
  */
 template<typename Out>
