@@ -267,6 +267,32 @@ public:
 #endif
 
 	/**
+	 * \ingroup pipe-api
+	 *
+	 * Iterate the Pipe, by feeding output to input channel,
+	 * until a termination condition is met.
+	 */
+	template<typename TermCond>
+	Pipe& iterate(const TermCond &termination) {
+#ifdef DEBUG
+        std::cerr << "[PIPE] Iterating pipe \n";
+#endif
+        assert(o_deg == 1 && i_deg == 1);
+        assert(!DAG.empty());
+
+		//data-type checking
+		assert(getHeadTypeInfo() == infotypes.back());
+
+		//structure-type checking
+		assert(struct_type_check(raw_struct_type));
+
+		//no inference needed: types do not change
+
+        DAG.iterate(termination); //todo
+        return *this;
+	}
+
+	/**
 	 * Pair the current Pipe with a second pipe by a BinaryOperator that combines the two input items (a pair) with the
 	 * function specified by the user.
 	 * This method fails if:
