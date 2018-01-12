@@ -128,6 +128,11 @@ public:
 //			}
 	}
 
+	template<typename TermCond>
+	void iterate(const TermCond &termination) {
+		graph[lastdagnode].push_back(firstdagnode);
+	}
+
 	void print() {
 		std::cerr
 				<< "[SEMDAG] printing adjacency lists [operator]=>[connected operators]:\n";
