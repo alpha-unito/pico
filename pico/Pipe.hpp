@@ -117,6 +117,10 @@ double run_time(FastFlowExecutor &);
 class Pipe {
 
 public:
+	enum term_node_t {
+		EMPTY, OPERATOR, TO, ITERATE, MERGE //TODO PAIR MULTITO
+	};
+
 	/**
 	 * \ingroup pipe-api
 	 * Create an empty Pipe
@@ -494,9 +498,7 @@ private:
 	bool structure_types[4];
 
 	/* term syntax tree */
-	enum {
-		EMPTY, OPERATOR, TO, ITERATE, MERGE //TODO PAIR
-	} term_node_type;
+	term_node_t term_node_type;
 	union term_value_t {
 		term_value_t(Operator *op_) : op(op_) {}
 		Operator *op;

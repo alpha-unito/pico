@@ -27,7 +27,6 @@
 #include <fstream>
 #include <map>
 
-#include "../ParExecDF.hpp"
 #include "SemDAGNode.hpp"
 
 size_t SemDAGNode::farmidcounter = 1;
@@ -242,24 +241,10 @@ public:
 		return firstop;
 	}
 
-	void run() {
-#ifdef DEBUG
-		std::cerr << "[SEMDAG] Executing DAG...\n";
-#endif
-		parDAG = new ParExecDF(&graph, firstdagnode, lastdagnode, firstop.get(),
-				lastop.get());
-		parDAG->run();
-	}
 
 	size_t size() {
 		return graph.size();
 	}
-
-
-	double pipe_time(){
-		return parDAG->pipe_time();
-	}
-
 
 private:
 	bool add_node(SemDAGNode *node) {
@@ -328,7 +313,7 @@ private:
 	//TODO const-ify dagnode pointers
 	typedef std::map<SemDAGNode*, std::vector<SemDAGNode*>> adjList;
 	adjList graph;
-	std::shared_ptr<Operator> firstop, lastop;
+	//std::shared_ptr<Operator> firstop, lastop;
 	SemDAGNode *lastdagnode, *firstdagnode;
 	ParExecDF* parDAG;
 };
