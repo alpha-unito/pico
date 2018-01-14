@@ -32,13 +32,6 @@
 
 using TypeInfoRef = std::reference_wrapper<const std::type_info>;
 
-enum DAGNodeRole {
-	EntryPoint,
-	ExitPoint,
-	Processing,
-	BCast
-};
-
 enum RawStructureType {
 	BOUNDED,
 	UNBOUNDED,
