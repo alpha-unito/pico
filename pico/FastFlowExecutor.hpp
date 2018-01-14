@@ -49,7 +49,7 @@ public:
 		ff_pipe->run_and_wait_end();
 	}
 
-	double run_time() {
+	double run_time() const {
 		return ff_pipe->ffTime();
 	}
 
@@ -57,7 +57,7 @@ private:
 	const Pipe &pipe;
 	ff::ff_pipeline *ff_pipe = nullptr;
 
-	ff::ff_pipeline *make_ff_term(const Pipe &p) {
+	ff::ff_pipeline *make_ff_term(const Pipe &p) const {
 		/* create the ff pipeline with automatic node cleanup */
 		auto *res = new ff::ff_pipeline();
 		res->cleanup_nodes();
@@ -70,9 +70,9 @@ private:
 			res->add_stage(p.term_value.op->node_operator(1, nullptr)); //TODO par
 			break;
 		case Pipe::TO:
-			assert(p.children.size() == 2);
-			res->add_stage(make_ff_term(*p.children[0]));
-			res->add_stage(make_ff_term(*p.children[1]));
+			//TODO PEG optimizations
+			for(auto p_ : p.children)
+				res->add_stage(make_ff_term(*p_));
 			break;
 		case Pipe::ITERATE:
 			assert(p.children.size() == 1);
@@ -87,14 +87,14 @@ private:
 		return res;
 	}
 
-	ff::ff_farm<> *make_merge_farm(const Pipe &p) {
-		assert(p.children.size() == 2);
+	ff::ff_farm<> *make_merge_farm(const Pipe &p) const {
 		auto *res = new ff::ff_farm<>();
-		res->add_emitter(new BCastEmitter(2, res->getlb()));
-		res->add_collector(new MergeCollector(2));
+		auto nw = p.children.size();
+		res->add_emitter(new BCastEmitter(nw, res->getlb()));
+		res->add_collector(new MergeCollector(nw));
 		std::vector<ff::ff_node *> w;
-		w.push_back(make_ff_term(p.children[0]));
-		w.push_back(make_ff_term(p.children[1]));
+		for(auto p_ : p.children)
+			w.push_back(make_ff_term(*p_));
 		res->add_workers(w);
 		res->cleanup_all();
 		return res;

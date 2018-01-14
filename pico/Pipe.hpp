@@ -26,6 +26,8 @@
 /**
  * \defgroup pipe-api Pipes API
  * \defgroup op-api Operators API
+ *
+ * @todo generalize the executor
  */
 
 #ifndef PIPE_HPP_
@@ -52,6 +54,9 @@
  * forward declarations for semantic graph
  */
 class Pipe;
+class SemanticGraph;
+SemanticGraph *make_semantic_graph(const Pipe &);
+void destroy_semantic_graph(SemanticGraph *);
 void print_semantic_graph(const Pipe &);
 void print_dot_semantic_graph(const Pipe &, std::string);
 
@@ -164,6 +169,10 @@ public:
 			delete p;
 
 		/* destroy the executor */
+		if (semantic_graph)
+			destroy_semantic_graph(semantic_graph);
+
+		/* destroy the executor */
 		if(executor)
 			destroy_executor(executor);
 	}
@@ -228,6 +237,8 @@ public:
 		assert(out_deg == 1); // can not add new nodes if pipe is complete
 
 		if (term_node_type != EMPTY) {
+			Pipe *tmp;
+
 			/* check data types */
 			assert(pipe.in_dtype == out_dtype);
 
@@ -238,8 +249,8 @@ public:
 			/* prepare the output term */
 			Pipe res;
 			res.term_node_type = TO;
-			res.children.push_back(new Pipe(*this));
-			res.children.push_back(new Pipe(pipe));
+			add_to_chain(res, *this);
+			add_to_chain(res, pipe);
 
 			/* infer types */
 			res.in_dtype = in_dtype;
@@ -252,7 +263,7 @@ public:
 			return res;
 		}
 
-		/* ignored if called on empty pipeline */
+		/* subject ignored if called on empty pipeline */
 		//TODO check
 		return Pipe(pipe);
 	}
@@ -406,8 +417,8 @@ public:
 		/* prepare the output term */
 		Pipe res;
 		res.term_node_type = MERGE;
-		res.children.push_back(new Pipe(*this));
-		res.children.push_back(new Pipe(pipe));
+		add_to_merge(res, *this);
+		add_to_merge(res, pipe);
 
 		/* infer types */
 		res.in_dtype = in_dtype;
@@ -431,6 +442,8 @@ public:
 #ifdef DEBUG
 		std::cerr << "[PIPE] Printing semantic graph\n";
 #endif
+		if(!semantic_graph)
+			semantic_graph = make_semantic_graph(*this);
 		print_semantic_graph(*this);
 	}
 
@@ -444,6 +457,8 @@ public:
 #ifdef DEBUG
 		std::cerr << "[PIPE] Writing semantic graph as dot\n";
 #endif
+		if (!semantic_graph)
+			semantic_graph = make_semantic_graph(*this);
 		print_dot_semantic_graph(*this, filename);
 	}
 
@@ -458,7 +473,8 @@ public:
 #endif
 		assert(in_deg == 0 && out_deg == 0);
 
-		executor = make_executor(*this);
+		if(!executor)
+			executor = make_executor(*this);
 		run_pipe(*executor);
 	}
 
@@ -492,6 +508,37 @@ private:
 		}
 	}
 
+	void add_to_chain(Pipe &res, const Pipe &to_be_added) const {
+		Pipe *fresh = new Pipe(to_be_added);
+
+		/* apply TO associativity */
+		if(fresh->term_node_type == TO) {
+			/* steal fresh children */
+			for(auto p : fresh->children)
+				res.children.push_back(p);
+			/* prevent children to be deleted */
+			fresh->children.clear();
+			delete fresh;
+		}
+		else
+			res.children.push_back(fresh);
+	}
+
+	void add_to_merge(Pipe &res, const Pipe &to_be_added) const {
+		Pipe *fresh = new Pipe(to_be_added);
+
+		/* apply MERGE associativity */
+		if (fresh->term_node_type == MERGE) {
+			/* steal fresh children */
+			for (auto p : fresh->children)
+				res.children.push_back(p);
+			/* prevent children to be deleted */
+			fresh->children.clear();
+			delete fresh;
+		} else
+			res.children.push_back(fresh);
+	}
+
 	/* data and structure types */
 	TypeInfoRef in_dtype, out_dtype;
 	unsigned in_deg, out_deg;
@@ -505,6 +552,9 @@ private:
 		TerminationCondition cond;
 	} term_value;
 	std::vector<Pipe *> children;
+
+	/* semantic graph */
+	SemanticGraph *semantic_graph = nullptr;
 
 	/* executor */
 	FastFlowExecutor *executor = nullptr;
