@@ -121,6 +121,9 @@ private:
 				subgraphs.push_back(from_pipe(*p_));
 				res.merge_with(subgraphs.back());
 			}
+			/* link subgraphs */
+			for(std::vector<SemanticGraph>::size_type i = 0; i < subgraphs.size() - 1; ++i)
+				res.graph[subgraphs[i].lastdagnode].push_back(subgraphs[i+1].firstdagnode);
 			/* set first and last nodes */
 			res.firstdagnode = subgraphs[0].firstdagnode;
 			res.lastdagnode = subgraphs[subgraphs.size() - 1].lastdagnode;
@@ -162,12 +165,11 @@ private:
 	 */
 	void print_(std::ostream &os) {
 		os << "[SEMGRAPH] adjacency [operator]=>[operators]:\n";
-		adjList::iterator it;
 		//iterate over keys
 		for (auto el : graph) {
 			//iterate over each list of values
 			os << "\t" << el.first->name() << "[" << el.first << "] => ";
-			for (auto& node : it->second) {
+			for (auto& node : el.second) {
 				os << node->name() << "[" << node << "] ";
 			}
 			os << std::endl;
