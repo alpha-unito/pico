@@ -55,8 +55,7 @@ int main(int argc, char** argv) {
 
 	parse_PiCo_args(argc, argv);
 	/* define a generic word-count pipeline */
-	Pipe countWords;
-	countWords
+	auto countWords = Pipe() //the empty pipeline
 	.add(FlatMap<std::string, KV>(tokenizer)) //
 	.add(PReduce<KV>([&](KV& v1, KV& v2) {return v1+v2;}));
 
@@ -72,14 +71,13 @@ int main(int argc, char** argv) {
 	});
 
 	/* compose the pipeline */
-	Pipe p2;
-	p2 //the empty pipeline
+	auto p2 = Pipe() //the empty pipeline
 	.add(reader) //
 	.to(countWords) //
 	.add(writer);
 
 	/* execute the pipeline */
-	//p2.run();
+	p2.run();
 
 	/* print the semantic DAG and generate dot file */
 	p2.print_DAG();

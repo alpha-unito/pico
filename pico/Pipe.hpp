@@ -233,7 +233,7 @@ public:
 #ifdef DEBUG
 		std::cerr << "[PIPE] Appending pipe\n";
 #endif
-		assert(out_deg == 1); // can not add new nodes if pipe is complete
+		assert(out_deg == 1 || term_node_type_ == EMPTY); // can not add new nodes if pipe is complete
 
 		if (term_node_type_ != EMPTY) {
 			/* check data types */
@@ -472,7 +472,7 @@ public:
 
 		if(!executor)
 			executor = make_executor(*this);
-		run_pipe(*executor);
+		//run_pipe(*executor);
 	}
 
 	/**
