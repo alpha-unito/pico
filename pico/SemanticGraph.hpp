@@ -153,7 +153,7 @@ private:
 	}
 
 	void merge_with(const SemanticGraph &g) {
-		for (auto adj_entry : graph) {
+		for (auto adj_entry : g.graph) {
 			auto src = adj_entry.first;
 			assert(graph.find(src) == graph.end());
 			graph[adj_entry.first] = adj_entry.second;
