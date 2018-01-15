@@ -55,7 +55,7 @@
 class Pipe;
 class SemanticGraph;
 SemanticGraph *make_semantic_graph(const Pipe &);
-void destroy_semantic_graph(SemanticGraph &);
+void destroy_semantic_graph(SemanticGraph *);
 void print_semantic_graph(SemanticGraph &, std::ostream &os);
 void print_dot_semantic_graph(SemanticGraph &, std::string);
 
@@ -64,7 +64,7 @@ void print_dot_semantic_graph(SemanticGraph &, std::string);
  */
 class FastFlowExecutor;
 FastFlowExecutor *make_executor(const Pipe &);
-void destroy_executor(FastFlowExecutor &);
+void destroy_executor(FastFlowExecutor *);
 void run_pipe(FastFlowExecutor &);
 double run_time(FastFlowExecutor &);
 
@@ -131,7 +131,7 @@ public:
 	 */
 	Pipe() :
 			in_deg(0), out_deg(0), term_node_type_(EMPTY), term_value(nullptr) {
-		/* set structure types */
+		/* set default data and structure types */
 		for (int i = 0; i < 4; ++i)
 			structure_types[i] = true;
 #ifdef DEBUG
@@ -154,7 +154,7 @@ public:
 			term_value.op = pipe.term_value.op->clone();
 		else
 			for (Pipe *p : pipe.children_)
-				children_.push_back(new Pipe(p));
+				children_.push_back(new Pipe(*p));
 	}
 
 	~Pipe() {
@@ -168,16 +168,12 @@ public:
 			delete p;
 
 		/* destroy the executor */
-		if (semantic_graph) {
-			destroy_semantic_graph(*semantic_graph);
-			delete semantic_graph;
-		}
+		if (semantic_graph)
+			destroy_semantic_graph(semantic_graph);
 
 		/* destroy the executor */
-		if(executor) {
-			destroy_executor(*executor);
-			delete executor;
-		}
+		if(executor)
+			destroy_executor(executor);
 	}
 
 	/**
@@ -218,7 +214,7 @@ public:
 	 *  - Structure Types are not compatible
 	 */
 	template<typename T>
-	Pipe& add(const T &op) const {
+	Pipe add(const T &op) const {
 		return to(Pipe(op));
 	}
 
@@ -233,17 +229,15 @@ public:
 	 *  - Structure Types are not compatible
 	 * @param pipe Pipe to append
 	 */
-	Pipe& to(const Pipe& pipe) const {
+	Pipe to(const Pipe& pipe) const {
 #ifdef DEBUG
 		std::cerr << "[PIPE] Appending pipe\n";
 #endif
 		assert(out_deg == 1); // can not add new nodes if pipe is complete
 
 		if (term_node_type_ != EMPTY) {
-			Pipe *tmp;
-
 			/* check data types */
-			assert(pipe.in_dtype == out_dtype);
+			assert(same_data_type(pipe.in_dtype, out_dtype));
 
 			/* check structure types */
 			assert(pipe.in_deg == 1);
@@ -335,14 +329,14 @@ public:
 	 * until a termination condition is met.
 	 */
 	template<typename TermCond>
-	Pipe& iterate(const TermCond &cond) const {
+	Pipe iterate(const TermCond &cond) const {
 #ifdef DEBUG
 		std::cerr << "[PIPE] Iterating pipe\n";
 #endif
 		assert(term_node_type_ != EMPTY);
 
 		/* check data types */
-		assert(in_dtype == out_dtype);
+		assert(same_data_type(in_dtype, out_dtype));
 
 		/* check structure types */
 		assert(struct_type_check(structure_types));
@@ -405,12 +399,12 @@ public:
 	 *
 	 * @param pipe Pipe to merge
 	 */
-	Pipe& merge(const Pipe& pipe) const {
+	Pipe merge(const Pipe& pipe) const {
 #ifdef DEBUG
 		std::cerr << "[PIPE] Merging pipes\n";
 #endif
 		// can not append pipes without compatibility on data types
-		assert(pipe.out_dtype == out_dtype);
+		assert(same_data_type(pipe.out_dtype, out_dtype));
 
 		/* check structure types */
 		assert(out_deg == 1 && term_node_type_ != EMPTY);
@@ -502,11 +496,15 @@ public:
 		return term_node_type_;
 	}
 
-	std::vector<Pipe *> &children() const {
+	const std::vector<Pipe *> &children() const {
 		return children_;
 	}
 
 private:
+	inline bool same_data_type(TypeInfoRef t1, TypeInfoRef t2) const {
+		return t1.get() == t2.get();
+	}
+
 	inline bool struct_type_check(const bool raw_st[4]) const {
 		bool ret = (structure_types[0] && raw_st[0]);
 		for (int i = 1; i < 4; ++i) {
@@ -559,7 +557,8 @@ private:
 	}
 
 	/* data and structure types */
-	TypeInfoRef in_dtype, out_dtype;
+	TypeInfoRef in_dtype = typeid(void);
+	TypeInfoRef out_dtype = typeid(void);
 	unsigned in_deg, out_deg;
 	bool structure_types[4];
 

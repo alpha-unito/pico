@@ -73,7 +73,7 @@ public:
 
 protected:
 	ReadFromFile *clone() {
-		return ReadFromFile(*this);
+		return new ReadFromFile(*this);
 	}
 
 	void run_kernel(){

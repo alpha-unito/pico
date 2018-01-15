@@ -64,7 +64,7 @@ public:
 	 */
 	virtual Operator *clone() = 0;
 
-	bool* structure_type() {
+	const bool* structure_type() const {
 		return structure_types;
 	}
 
@@ -100,11 +100,11 @@ public:
 		st = st_;
 	}
 
+	virtual ff::ff_node* node_operator(int par_deg, Operator* nextop=nullptr)=0;
+
 protected:
 	virtual bool checkInputTypeSanity(TypeInfoRef id)=0;
 	virtual bool checkOutputTypeSanity(TypeInfoRef id)=0;
-
-	virtual ff::ff_node* node_operator(int par_deg, Operator* nextop=nullptr)=0;
 
 private:
 	size_t in_deg, out_deg;
