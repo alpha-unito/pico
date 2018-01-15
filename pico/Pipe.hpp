@@ -39,7 +39,6 @@
 #include <deque>
 #include <cassert>
 
-#include "Internals/Graph/SemanticDAG.hpp"
 #include "Operators/BinaryOperator.hpp"
 #include "Operators/InOut/InputOperator.hpp"
 #include "Operators/InOut/OutputOperator.hpp"
@@ -56,16 +55,16 @@
 class Pipe;
 class SemanticGraph;
 SemanticGraph *make_semantic_graph(const Pipe &);
-void destroy_semantic_graph(SemanticGraph *);
-void print_semantic_graph(const Pipe &);
-void print_dot_semantic_graph(const Pipe &, std::string);
+void destroy_semantic_graph(SemanticGraph &);
+void print_semantic_graph(SemanticGraph &, std::ostream &os);
+void print_dot_semantic_graph(SemanticGraph &, std::string);
 
 /*
  * forward declarations for execution
  */
 class FastFlowExecutor;
 FastFlowExecutor *make_executor(const Pipe &);
-void destroy_executor(FastFlowExecutor *);
+void destroy_executor(FastFlowExecutor &);
 void run_pipe(FastFlowExecutor &);
 double run_time(FastFlowExecutor &);
 
@@ -131,7 +130,7 @@ public:
 	 * Create an empty Pipe
 	 */
 	Pipe() :
-			in_deg(0), out_deg(0), term_node_type(EMPTY), term_value(nullptr) {
+			in_deg(0), out_deg(0), term_node_type_(EMPTY), term_value(nullptr) {
 		/* set structure types */
 		for (int i = 0; i < 4; ++i)
 			structure_types[i] = true;
@@ -144,18 +143,18 @@ public:
 	 * Copy Constructor
 	 */
 	Pipe(const Pipe& pipe) :
-			term_node_type(pipe.term_node_type), term_value(nullptr) {
+			term_node_type_(pipe.term_node_type_), term_value(nullptr) {
 		in_dtype = pipe.in_dtype;
 		out_dtype = pipe.out_dtype;
 		in_deg = pipe.in_deg;
 		out_deg = pipe.out_deg;
 		copy_struct_type(pipe.structure_types);
 
-		if (term_node_type == OPERATOR)
+		if (term_node_type_ == OPERATOR)
 			term_value.op = pipe.term_value.op->clone();
 		else
-			for (Pipe *p : pipe.children)
-				children.push_back(new Pipe(p));
+			for (Pipe *p : pipe.children_)
+				children_.push_back(new Pipe(p));
 	}
 
 	~Pipe() {
@@ -163,18 +162,22 @@ public:
 		std::cerr << "[PIPE] Deleting\n";
 #endif
 		/* recursively delete the term tree */
-		if (term_node_type == OPERATOR)
+		if (term_node_type_ == OPERATOR)
 			delete term_value.op;
-		for (Pipe *p : children)
+		for (Pipe *p : children_)
 			delete p;
 
 		/* destroy the executor */
-		if (semantic_graph)
-			destroy_semantic_graph(semantic_graph);
+		if (semantic_graph) {
+			destroy_semantic_graph(*semantic_graph);
+			delete semantic_graph;
+		}
 
 		/* destroy the executor */
-		if(executor)
-			destroy_executor(executor);
+		if(executor) {
+			destroy_executor(*executor);
+			delete executor;
+		}
 	}
 
 	/**
@@ -183,7 +186,7 @@ public:
 	 */
 	template<typename OpType>
 	Pipe(const OpType& op_) :
-			term_node_type(OPERATOR), term_value(new OpType(op_)) {
+			term_node_type_(OPERATOR), term_value(new OpType(op_)) {
 #ifdef DEBUG
 		std::cerr << "[PIPE] Creating Pipe from operator " << op_.name() << std::endl;
 #endif
@@ -236,7 +239,7 @@ public:
 #endif
 		assert(out_deg == 1); // can not add new nodes if pipe is complete
 
-		if (term_node_type != EMPTY) {
+		if (term_node_type_ != EMPTY) {
 			Pipe *tmp;
 
 			/* check data types */
@@ -248,7 +251,7 @@ public:
 
 			/* prepare the output term */
 			Pipe res;
-			res.term_node_type = TO;
+			res.term_node_type_ = TO;
 			add_to_chain(res, *this);
 			add_to_chain(res, pipe);
 
@@ -336,7 +339,7 @@ public:
 #ifdef DEBUG
 		std::cerr << "[PIPE] Iterating pipe\n";
 #endif
-		assert(term_node_type != EMPTY);
+		assert(term_node_type_ != EMPTY);
 
 		/* check data types */
 		assert(in_dtype == out_dtype);
@@ -352,8 +355,8 @@ public:
 		res.in_deg = res.out_deg = 1;
 		res.copy_struct_type(structure_types);
 		res.term_value.cond = cond;
-		res.term_node_type = ITERATE;
-		res.children.push_back(new Pipe(*this));
+		res.term_node_type_ = ITERATE;
+		res.children_.push_back(new Pipe(*this));
 
 		return res;
 	}
@@ -410,13 +413,13 @@ public:
 		assert(pipe.out_dtype == out_dtype);
 
 		/* check structure types */
-		assert(out_deg == 1 && term_node_type != EMPTY);
+		assert(out_deg == 1 && term_node_type_ != EMPTY);
 		assert(pipe.in_deg == 0);
 		assert(struct_type_check(pipe.structure_types));
 
 		/* prepare the output term */
 		Pipe res;
-		res.term_node_type = MERGE;
+		res.term_node_type_ = MERGE;
 		add_to_merge(res, *this);
 		add_to_merge(res, pipe);
 
@@ -444,7 +447,7 @@ public:
 #endif
 		if(!semantic_graph)
 			semantic_graph = make_semantic_graph(*this);
-		print_semantic_graph(*this);
+		print_semantic_graph(*semantic_graph, std::cout);
 	}
 
 	/**
@@ -459,7 +462,7 @@ public:
 #endif
 		if (!semantic_graph)
 			semantic_graph = make_semantic_graph(*this);
-		print_dot_semantic_graph(*this, filename);
+		print_dot_semantic_graph(*semantic_graph, filename);
 	}
 
 	/**
@@ -487,6 +490,22 @@ public:
 		return run_time(*executor);
 	}
 
+	/*
+	 * Utility functions
+	 */
+	Operator *get_operator_ptr() const {
+		assert(term_node_type_ == OPERATOR);
+		return term_value.op;
+	}
+
+	term_node_t term_node_type() const {
+		return term_node_type_;
+	}
+
+	std::vector<Pipe *> &children() const {
+		return children_;
+	}
+
 private:
 	inline bool struct_type_check(const bool raw_st[4]) const {
 		bool ret = (structure_types[0] && raw_st[0]);
@@ -512,31 +531,31 @@ private:
 		Pipe *fresh = new Pipe(to_be_added);
 
 		/* apply TO associativity */
-		if(fresh->term_node_type == TO) {
+		if(fresh->term_node_type_ == TO) {
 			/* steal fresh children */
-			for(auto p : fresh->children)
-				res.children.push_back(p);
+			for(auto p : fresh->children_)
+				res.children_.push_back(p);
 			/* prevent children to be deleted */
-			fresh->children.clear();
+			fresh->children_.clear();
 			delete fresh;
 		}
 		else
-			res.children.push_back(fresh);
+			res.children_.push_back(fresh);
 	}
 
 	void add_to_merge(Pipe &res, const Pipe &to_be_added) const {
 		Pipe *fresh = new Pipe(to_be_added);
 
 		/* apply MERGE associativity */
-		if (fresh->term_node_type == MERGE) {
+		if (fresh->term_node_type_ == MERGE) {
 			/* steal fresh children */
-			for (auto p : fresh->children)
-				res.children.push_back(p);
+			for (auto p : fresh->children_)
+				res.children_.push_back(p);
 			/* prevent children to be deleted */
-			fresh->children.clear();
+			fresh->children_.clear();
 			delete fresh;
 		} else
-			res.children.push_back(fresh);
+			res.children_.push_back(fresh);
 	}
 
 	/* data and structure types */
@@ -545,13 +564,13 @@ private:
 	bool structure_types[4];
 
 	/* term syntax tree */
-	term_node_t term_node_type;
+	term_node_t term_node_type_;
 	union term_value_t {
 		term_value_t(Operator *op_) : op(op_) {}
 		Operator *op;
 		TerminationCondition cond;
 	} term_value;
-	std::vector<Pipe *> children;
+	std::vector<Pipe *> children_;
 
 	/* semantic graph */
 	SemanticGraph *semantic_graph = nullptr;
