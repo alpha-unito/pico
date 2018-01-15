@@ -29,13 +29,7 @@
 #include <iostream>
 #include <string>
 
-#include <pico/Internals/Types/KeyValue.hpp>
-#include <pico/Operators/FlatMap.hpp>
-#include <pico/Operators/InOut/ReadFromFile.hpp>
-#include <pico/Operators/InOut/WriteToDisk.hpp>
-#include <pico/Operators/PReduce.hpp>
-#include <pico/Operators/Reduce.hpp>
-#include <pico/Pipe.hpp>
+#include <pico/pico.hpp>
 
 typedef KeyValue<std::string, int> KV;
 
@@ -85,7 +79,7 @@ int main(int argc, char** argv) {
 	.add(writer);
 
 	/* execute the pipeline */
-	p2.run();
+	//p2.run();
 
 	/* print the semantic DAG and generate dot file */
 	p2.print_DAG();

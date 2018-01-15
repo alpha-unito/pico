@@ -85,7 +85,7 @@ public:
 
 protected:
 	ReadFromSocket *clone() {
-		return ReadFromSocket(*this);
+		return new ReadFromSocket(*this);
 	}
 
 	void run_kernel(){

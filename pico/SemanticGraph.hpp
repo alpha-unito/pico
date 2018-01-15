@@ -28,8 +28,9 @@
 #include <map>
 #include <string>
 #include <fstream>
+#include <queue>
 
-#include <Pipe.hpp>
+#include "Pipe.hpp"
 
 enum DAGNodeRole {
 	Processing, Merge
@@ -40,8 +41,8 @@ public:
 	SemanticGraph() {
 	}
 
-	void make(const Pipe &p) {
-		graph = from_pipe(p);
+	SemanticGraph(const Pipe &p) {
+		*this = from_pipe(p);
 	}
 
 	void destroy() {
@@ -102,19 +103,20 @@ private:
 
 	SemanticGraph from_pipe(const Pipe &p) const {
 		SemanticGraph res;
+		std::vector<SemanticGraph> subgraphs;
+		SemDAGNode *node_;
 
 		switch (p.term_node_type()) {
 		case Pipe::EMPTY:
 			break;
 		case Pipe::OPERATOR:
 			/* singleton graph */
-			auto node_ = new SemDAGNode(p.get_operator_ptr());
+			node_ = new SemDAGNode(p.get_operator_ptr());
 			res.graph[node_] = std::vector<SemDAGNode *>();
-			firstdagnode = lastdagnode = node_;
+			res.firstdagnode = res.lastdagnode = node_;
 			break;
 		case Pipe::TO:
 			/* merge children graphs */
-			std::vector<SemanticGraph> subgraphs;
 			for (auto p_ : p.children()) {
 				subgraphs.push_back(from_pipe(*p_));
 				res.merge_with(subgraphs.back());
@@ -126,14 +128,13 @@ private:
 		case Pipe::ITERATE:
 			/* add a feedback edge to child graph */
 			assert(p.children().size() == 1);
-			res = from_pipe(p.children()[0]);
+			res = from_pipe(*p.children()[0]);
 			res.graph[res.lastdagnode].push_back(res.firstdagnode);
 			//TODO termination
 			break;
 		case Pipe::MERGE:
 			node_ = new SemDAGNode();
 			/* merge children graphs */
-			std::vector<SemanticGraph> subgraphs;
 			for (auto p_ : p.children()) {
 				subgraphs.push_back(from_pipe(*p_));
 				res.merge_with(subgraphs.back());
@@ -234,13 +235,11 @@ private:
 };
 
 SemanticGraph *make_semantic_graph(const Pipe &p) {
-	auto res = new SemanticGraph();
-	res->make(p);
-	return res;
+	return new SemanticGraph(p);
 }
 
-void destroy_semantic_graph(SemanticGraph &g) {
-	g.destroy();
+void destroy_semantic_graph(SemanticGraph *g) {
+	g->destroy();
 }
 
 void print_semantic_graph(SemanticGraph &g, std::ostream &os) {

@@ -35,6 +35,11 @@ public:
 
 private:
 	unsigned iters;
+	unsigned current = 0;
+
+	bool cond() {
+		return current < iters;
+	}
 };
 
 

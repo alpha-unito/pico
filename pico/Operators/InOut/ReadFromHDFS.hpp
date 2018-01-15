@@ -75,7 +75,7 @@ public:
 
 	protected:
 		ReadFromHDFS *clone() {
-			return ReadFromHDFS(*this);
+			return new ReadFromHDFS(*this);
 		}
 
 		void run_kernel(){

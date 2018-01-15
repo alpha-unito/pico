@@ -32,7 +32,9 @@
 #include <ff/pipeline.hpp>
 #include <ff/farm.hpp>
 
-#include <Pipe.hpp>
+#include "Pipe.hpp"
+#include "Internals/FFOperators/SupportFFNodes/BCastEmitter.hpp"
+#include "Internals/FFOperators/SupportFFNodes/MergeCollector.hpp"
 
 class FastFlowExecutor {
 public:
@@ -70,7 +72,7 @@ private:
 			break;
 		case Pipe::TO:
 			//TODO PEG optimizations
-			for(auto p_ : p.children_)
+			for(auto p_ : p.children())
 				res->add_stage(make_ff_term(*p_));
 			break;
 		case Pipe::ITERATE:
@@ -110,7 +112,8 @@ FastFlowExecutor *make_executor(const Pipe &p) {
 	return new FastFlowExecutor(p);
 }
 
-void destroy_executor(FastFlowExecutor &) {
+void destroy_executor(FastFlowExecutor *e) {
+	delete e;
 }
 
 void run_pipe(FastFlowExecutor &e) {
