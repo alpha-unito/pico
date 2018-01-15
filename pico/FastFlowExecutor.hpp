@@ -62,21 +62,20 @@ private:
 		auto *res = new ff::ff_pipeline();
 		res->cleanup_nodes();
 
-		switch (p.term_node_type) {
+		switch (p.term_node_type()) {
 		case Pipe::EMPTY:
 			break;
 		case Pipe::OPERATOR:
-			assert(p.term_value.op);
-			res->add_stage(p.term_value.op->node_operator(1, nullptr)); //TODO par
+			res->add_stage(p.get_operator_ptr()->node_operator(1, nullptr)); //TODO par
 			break;
 		case Pipe::TO:
 			//TODO PEG optimizations
-			for(auto p_ : p.children)
+			for(auto p_ : p.children_)
 				res->add_stage(make_ff_term(*p_));
 			break;
 		case Pipe::ITERATE:
-			assert(p.children.size() == 1);
-			res->add_stage(make_ff_term(*p.children[0]));
+			assert(p.children().size() == 1);
+			res->add_stage(make_ff_term(*p.children()[0]));
 			//TODO add termination stage
 			res->wrap_around();
 			break;
@@ -89,11 +88,11 @@ private:
 
 	ff::ff_farm<> *make_merge_farm(const Pipe &p) const {
 		auto *res = new ff::ff_farm<>();
-		auto nw = p.children.size();
+		auto nw = p.children().size();
 		res->add_emitter(new BCastEmitter(nw, res->getlb()));
 		res->add_collector(new MergeCollector(nw));
 		std::vector<ff::ff_node *> w;
-		for(auto p_ : p.children)
+		for(auto p_ : p.children())
 			w.push_back(make_ff_term(*p_));
 		res->add_workers(w);
 		res->cleanup_all();
@@ -109,6 +108,9 @@ private:
 
 FastFlowExecutor *make_executor(const Pipe &p) {
 	return new FastFlowExecutor(p);
+}
+
+void destroy_executor(FastFlowExecutor &) {
 }
 
 void run_pipe(FastFlowExecutor &e) {
