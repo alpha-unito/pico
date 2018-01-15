@@ -78,6 +78,10 @@ public:
 		}
 
 protected:
+	PReduce<In> *clone() {
+		return new PReduce<In>(reducef);
+	}
+
 	void run() {
 		assert(false);
 	}

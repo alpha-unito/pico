@@ -72,6 +72,10 @@ public:
 	}
 
 protected:
+	FlatMap<In, Out>* clone() {
+		return new FlatMap<In, Out>(flatmapf);
+	}
+
 	void run(In* task) {
 		assert(false);
 #ifdef DEBUG

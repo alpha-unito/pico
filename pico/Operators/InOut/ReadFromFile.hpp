@@ -72,6 +72,10 @@ public:
 	}
 
 protected:
+	ReadFromFile *clone() {
+		return ReadFromFile(*this);
+	}
+
 	void run_kernel(){
 		assert(false);
 	}
