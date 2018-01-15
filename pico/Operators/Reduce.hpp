@@ -58,6 +58,10 @@ public:
 	}
 
 protected:
+	Reduce<In> *clone() {
+		return new Reduce<In>(reducef);
+	}
+
 	void run() {
 #ifdef DEBUG
 		std::cerr << "[REDUCE] running... \n";
