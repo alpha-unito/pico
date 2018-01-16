@@ -242,6 +242,7 @@ SemanticGraph *make_semantic_graph(const Pipe &p) {
 
 void destroy_semantic_graph(SemanticGraph *g) {
 	g->destroy();
+	delete g;
 }
 
 void print_semantic_graph(SemanticGraph &g, std::ostream &os) {
