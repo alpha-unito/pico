@@ -28,7 +28,7 @@
 #include <vector>
 #include <cassert>
 
-#include <utils.hpp>
+#include "../../include/utils.hpp"
 
 #define MIN_WPL 1   //min words per line
 #define MAX_WPL 128 //max words per line
