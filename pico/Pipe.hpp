@@ -441,6 +441,7 @@ public:
 #ifdef DEBUG
 		std::cerr << "[PIPE] Printing semantic graph\n";
 #endif
+		std::cout << "=== Semantic Graph\n";
 		if(!semantic_graph)
 			semantic_graph = make_semantic_graph(*this);
 		print_semantic_graph(*semantic_graph, std::cout);
@@ -476,7 +477,7 @@ public:
 			executor = make_executor(*this);
 		std::cout << "=== Executor Info\n";
 		print_executor_info(*executor, std::cout);
-		//run_pipe(*executor);
+		run_pipe(*executor);
 	}
 
 	/**
