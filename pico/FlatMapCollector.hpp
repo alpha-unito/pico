@@ -21,10 +21,10 @@
 #ifndef INTERNALS_TYPES_FLATMAPCOLLECTOR_HPP_
 #define INTERNALS_TYPES_FLATMAPCOLLECTOR_HPP_
 
-#include "../../defines/Global.hpp"
-#include "Microbatch.hpp"
-#include "../Types/Token.hpp"
-#include "../FFOperators/ff_config.hpp"
+#include "defines/Global.hpp"
+#include "ff_implementation/ff_config.hpp"
+#include "Internals/Microbatch.hpp"
+#include "Internals/Token.hpp"
 
 /**
  * \ingroup op-api

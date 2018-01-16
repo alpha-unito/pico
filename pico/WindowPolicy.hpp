@@ -21,9 +21,9 @@
 #ifndef INTERNALS_WINDOWPOLICY_HPP_
 #define INTERNALS_WINDOWPOLICY_HPP_
 
-#include "../Internals/FFOperators/SupportFFNodes/FarmEmitter.hpp"
-#include "../Internals/FFOperators/WindowFFNodes/ByKeyEmitter.hpp"
-#include "../Internals/FFOperators/WindowFFNodes/OFarmEmitter.hpp"
+#include "ff_implementation/SupportFFNodes/FarmEmitter.hpp"
+#include "ff_implementation/WindowFFNodes/ByKeyEmitter.hpp"
+#include "ff_implementation/WindowFFNodes/OFarmEmitter.hpp"
 
 class WindowPolicy {
 public:

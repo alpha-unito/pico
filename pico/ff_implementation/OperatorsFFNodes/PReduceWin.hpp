@@ -24,15 +24,16 @@
 #include <unordered_map>
 
 #include <ff/farm.hpp>
+#include "PReduceFFNode.hpp"
 
-#include "../FFOperators/PReduceFFNode.hpp"
-#include "../Types/KeyValue.hpp"
-#include "../utils.hpp"
-#include "../FFOperators/SupportFFNodes/Emitter.hpp"
-#include "../FFOperators/SupportFFNodes/Collector.hpp"
-#include "../FFOperators/SupportFFNodes/FarmCollector.hpp"
-#include "../WindowPolicy.hpp"
-#include "../FFOperators/ff_config.hpp"
+#include "../../KeyValue.hpp"
+#include "../../Internals/utils.hpp"
+#include "../../WindowPolicy.hpp"
+
+#include "../SupportFFNodes/Collector.hpp"
+#include "../SupportFFNodes/FarmCollector.hpp"
+#include "../SupportFFNodes/Emitter.hpp"
+#include "../ff_config.hpp"
 
 using namespace ff;
 

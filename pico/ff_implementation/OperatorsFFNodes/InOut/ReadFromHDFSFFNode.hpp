@@ -22,14 +22,16 @@
 #define INTERNALS_FFOPERATORS_INOUT_READFROMHDFSFFNODE_HPP_
 
 #include <hdfs.h>
+#include <cstring>
 
 #include <ff/node.hpp>
 #include <ff/ubuffer.hpp>
-#include <Internals/utils.hpp>
-#include <Internals/Types/Microbatch.hpp>
-#include <Internals/FFOperators/ff_config.hpp>
-#include "../../Types/Token.hpp"
-#include <string.h>
+
+#include "../../../Internals/utils.hpp"
+#include "../../../Internals/Microbatch.hpp"
+#include "../../../Internals/Token.hpp"
+
+#include "../../ff_config.hpp"
 using namespace ff;
 
 /*

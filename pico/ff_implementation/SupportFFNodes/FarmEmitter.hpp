@@ -22,7 +22,7 @@
 #define INTERNALS_FFOPERATORS_FARMEMITTER_HPP_
 
 #include "Emitter.hpp"
-#include "../../utils.hpp"
+#include "../../Internals/utils.hpp"
 
 template<typename TokenType>
 class FarmEmitter: public Emitter {

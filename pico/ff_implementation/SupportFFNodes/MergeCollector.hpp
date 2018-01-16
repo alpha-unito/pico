@@ -22,7 +22,7 @@
 #define INTERNALS_FFOPERATORS_SUPPORTFFNODES_MERGECOLLECTOR_HPP_
 
 #include "Collector.hpp"
-#include "../../utils.hpp"
+#include "../../Internals/utils.hpp"
 
 class MergeCollector: public Collector {
 public:

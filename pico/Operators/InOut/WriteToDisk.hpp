@@ -24,7 +24,7 @@
 #include <iostream>
 #include <fstream>
 
-#include "../../Internals/FFOperators/InOut/WriteToDiskFFNode.hpp"
+#include "../../ff_implementation/OperatorsFFNodes/InOut/WriteToDiskFFNode.hpp"
 #include "OutputOperator.hpp"
 
 /**

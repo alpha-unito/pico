@@ -21,14 +21,14 @@
 #ifndef PREDUCE_HPP_
 #define PREDUCE_HPP_
 
+#include "../ff_implementation/OperatorsFFNodes/PReduceSeqFFNode.hpp"
+#include "../ff_implementation/OperatorsFFNodes/PReduceWin.hpp"
+#include "../ff_implementation/SupportFFNodes/FarmWrapper.hpp"
 #include "UnaryOperator.hpp"
 
-#include "../Internals/Types/TimedToken.hpp"
-#include "../Internals/Types/Token.hpp"
+#include "../Internals/TimedToken.hpp"
+#include "../Internals/Token.hpp"
 
-#include "../Internals/FFOperators/PReduceSeqFFNode.hpp"
-#include "../Internals/FFOperators/PReduceWin.hpp"
-#include "../Internals/FFOperators/SupportFFNodes/FarmWrapper.hpp"
 
 /**
  * Defines a PReduce operator performing a tree reduce function on partitioned input (i.e. reduce by key).

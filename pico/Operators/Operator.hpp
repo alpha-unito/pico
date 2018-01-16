@@ -26,7 +26,7 @@
 #include <ff/node.hpp>
 
 #include "../Internals/utils.hpp"
-#include "../Internals/WindowPolicy.hpp"
+#include "../WindowPolicy.hpp"
 
 /**
  * Base class defining a semantic dataflow operator.

@@ -32,10 +32,10 @@
 #include <ff/pipeline.hpp>
 #include <ff/farm.hpp>
 #include <ff/fftree.hpp>
+#include "SupportFFNodes/BCastEmitter.hpp"
+#include "SupportFFNodes/MergeCollector.hpp"
 
-#include "Pipe.hpp"
-#include "Internals/FFOperators/SupportFFNodes/BCastEmitter.hpp"
-#include "Internals/FFOperators/SupportFFNodes/MergeCollector.hpp"
+#include "../Pipe.hpp"
 
 class FastFlowExecutor {
 public:

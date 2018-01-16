@@ -23,10 +23,11 @@
 
 #include <unordered_map>
 
-#include "../../FFOperators/SupportFFNodes/Emitter.hpp"
-#include "../../FFOperators/ff_config.hpp"
-#include "../../utils.hpp"
-#include "../../Types/Microbatch.hpp"
+#include "../../Internals/utils.hpp"
+#include "../../Internals/Microbatch.hpp"
+
+#include "../ff_config.hpp"
+#include "../SupportFFNodes/Emitter.hpp"
 
 template<typename TokenType>
 class ByKeyEmitter: public Emitter {

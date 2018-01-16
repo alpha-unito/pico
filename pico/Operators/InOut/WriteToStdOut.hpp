@@ -24,8 +24,8 @@
 #include <iostream>
 #include <fstream>
 
+#include "../../ff_implementation/OperatorsFFNodes/InOut/WriteToStdOutFFNode.hpp"
 #include "OutputOperator.hpp"
-#include "../../Internals/FFOperators/InOut/WriteToStdOutFFNode.hpp"
 
 /**
  * Defines an operator that writes data to standard output.

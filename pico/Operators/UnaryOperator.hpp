@@ -21,7 +21,6 @@
 #ifndef OPERATORS_UNARYOPERATOR_HPP_
 #define OPERATORS_UNARYOPERATOR_HPP_
 
-#include "../Internals/Types/Global.hpp"
 #include "Operator.hpp"
 /**
  * Base class for actor nodes with *one* input stream and *one* output stream, either bound or unbound and grouped or plain.

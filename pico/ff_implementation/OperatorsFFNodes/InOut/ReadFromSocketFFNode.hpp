@@ -33,10 +33,11 @@
 
 #include <ff/node.hpp>
 
-#include "../../Types/TimedToken.hpp"
-#include "../../Types/Microbatch.hpp"
-#include "../../utils.hpp"
-#include "../../FFOperators/ff_config.hpp"
+#include "../../../Internals/TimedToken.hpp"
+#include "../../../Internals/Microbatch.hpp"
+#include "../../../Internals/utils.hpp"
+
+#include "../../ff_config.hpp"
 
 using namespace ff;
 #define CHUNK_SIZE 512

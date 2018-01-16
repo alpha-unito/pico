@@ -21,17 +21,17 @@
 #ifndef OPERATORS_FLATMAP_HPP_
 #define OPERATORS_FLATMAP_HPP_
 
-
 #include "PReduce.hpp"
 #include "UnaryOperator.hpp"
 
-#include "../Internals/WindowPolicy.hpp"
-#include "../Internals/Types/TimedToken.hpp"
-#include "../Internals/Types/Token.hpp"
+#include "../WindowPolicy.hpp"
+#include "../Internals/TimedToken.hpp"
+#include "../Internals/Token.hpp"
 
-#include "../Internals/FFOperators/SupportFFNodes/FarmWrapper.hpp"
-#include "../Internals/FFOperators/FMapBatch.hpp"
-#include "../Internals/FFOperators/FMapPReduceBatch.hpp"
+#include "../ff_implementation/OperatorsFFNodes/FMapBatch.hpp"
+#include "../ff_implementation/OperatorsFFNodes/FMapPReduceBatch.hpp"
+#include "../ff_implementation/SupportFFNodes/FarmWrapper.hpp"
+
 /**
  * Defines an operator performing a FlatMap, taking in input one element from
  * the input source and producing zero, one or more elements in output.
