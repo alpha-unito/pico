@@ -129,7 +129,7 @@ int main(int argc, char** argv)
     }).window(Constants::MICROBATCH_SIZE))
     .add(writeCounts);
 
-    /* generate dot file with the semantic DAG */
+    /* generate dot file with the semantic graph */
     stockTweets.to_dotfile("stock_tweets.dot");
 
     /* execute the pipeline */

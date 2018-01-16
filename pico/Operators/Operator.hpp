@@ -38,12 +38,6 @@
  */
 
 class Operator {
-#if 0
-	friend class Pipe;
-	friend class SemanticDAG;
-	friend class ParExecDF;
-	friend class SemDAGNode;
-#endif
 public:
 	virtual ~Operator(){};
 

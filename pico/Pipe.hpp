@@ -437,7 +437,7 @@ public:
 	 * - Adjacency list
 	 * - BFS visit
 	 */
-	void print_DAG() {
+	void print_semantics() {
 #ifdef DEBUG
 		std::cerr << "[PIPE] Printing semantic graph\n";
 #endif
