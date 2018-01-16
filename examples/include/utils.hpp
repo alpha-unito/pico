@@ -13,6 +13,8 @@
 #ifndef EXAMPLES_INCLUDE_UTILS_HPP_
 #define EXAMPLES_INCLUDE_UTILS_HPP_
 
+#include <iostream>
+
 /* some verbose printing */
 void print_progress(float progress)
 {
