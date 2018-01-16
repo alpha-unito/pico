@@ -129,6 +129,23 @@ private:
 			res.firstdagnode = subgraphs[0].firstdagnode;
 			res.lastdagnode = subgraphs[subgraphs.size() - 1].lastdagnode;
 			break;
+		case Pipe::MULTITO:
+			if(p.out_deg())
+				node_ = new SemGraphNode(); //merge
+			/* merge children graphs */
+			for (auto p_ : p.children()) {
+				subgraphs.push_back(from_pipe(*p_));
+				res.merge_with(subgraphs.back());
+			}
+			/* link children (having output) with merge node */
+			if(p.out_deg())
+				for(auto it = subgraphs.begin() + 1; it != subgraphs.end(); ++it)
+					if(it->lastdagnode->op->o_degree())
+						res.graph[it->lastdagnode].push_back(node_);
+			/* set first and last nodes */
+			res.firstdagnode = subgraphs[0].firstdagnode;
+			res.lastdagnode = p.out_deg() ? node_ : subgraphs.back().firstdagnode;
+			break;
 		case Pipe::ITERATE:
 			/* add a feedback edge to child graph */
 			assert(p.children().size() == 1);
