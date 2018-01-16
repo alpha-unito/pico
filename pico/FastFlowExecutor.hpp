@@ -31,6 +31,7 @@
 #include <ff/node.hpp>
 #include <ff/pipeline.hpp>
 #include <ff/farm.hpp>
+#include <ff/fftree.hpp>
 
 #include "Pipe.hpp"
 #include "Internals/FFOperators/SupportFFNodes/BCastEmitter.hpp"
@@ -59,6 +60,9 @@ private:
 	const Pipe &pipe;
 	ff::ff_pipeline *ff_pipe = nullptr;
 
+	/*
+	 * TODO - simplify ff terms
+	 */
 	ff::ff_pipeline *make_ff_term(const Pipe &p) const {
 		/* create the ff pipeline with automatic node cleanup */
 		auto *res = new ff::ff_pipeline();
@@ -122,6 +126,10 @@ void run_pipe(FastFlowExecutor &e) {
 
 double run_time(FastFlowExecutor &e) {
 	return e.run_time();
+}
+
+void print_executor_info(FastFlowExecutor &e, std::ostream &os) {
+	ff::print_fftrees(os);
 }
 
 #endif /* PICO_FASTFLOWEXECUTOR_HPP_ */

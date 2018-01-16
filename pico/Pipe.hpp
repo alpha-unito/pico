@@ -67,6 +67,8 @@ FastFlowExecutor *make_executor(const Pipe &);
 void destroy_executor(FastFlowExecutor *);
 void run_pipe(FastFlowExecutor &);
 double run_time(FastFlowExecutor &);
+void print_executor_info(FastFlowExecutor &, std::ostream &os);
+void print_executor_trace(FastFlowExecutor &, std::ostream &os);
 
 
 /**
@@ -472,6 +474,8 @@ public:
 
 		if(!executor)
 			executor = make_executor(*this);
+		std::cout << "=== Executor Info\n";
+		print_executor_info(*executor, std::cout);
 		//run_pipe(*executor);
 	}
 
