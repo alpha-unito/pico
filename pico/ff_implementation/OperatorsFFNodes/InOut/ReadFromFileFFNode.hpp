@@ -23,10 +23,12 @@
 
 #include <ff/node.hpp>
 
-#include "../../utils.hpp"
-#include "../../Types/Microbatch.hpp"
-#include "../../FFOperators/ff_config.hpp"
-#include "../../Types/Token.hpp"
+#include "../../../Internals/Microbatch.hpp"
+#include "../../../Internals/Token.hpp"
+#include "../../../Internals/utils.hpp"
+
+#include "../../ff_config.hpp"
+
 
 
 using namespace ff;

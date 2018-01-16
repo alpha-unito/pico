@@ -23,8 +23,9 @@
 
 #include <ff/node.hpp>
 
-#include "../../Types/Token.hpp"
-#include "../../utils.hpp"
+#include "../../../Internals/Token.hpp"
+#include "../../../Internals/Microbatch.hpp"
+#include "../../../Internals/utils.hpp"
 
 using namespace ff;
 

@@ -25,7 +25,7 @@
 #include <iostream>
 #include <fstream>
 
-#include "../../Internals/FFOperators/InOut/ReadFromSocketFFNode.hpp"
+#include "../../ff_implementation/OperatorsFFNodes/InOut/ReadFromSocketFFNode.hpp"
 #include "InputOperator.hpp"
 
 /**

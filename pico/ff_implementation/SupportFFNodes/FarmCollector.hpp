@@ -12,38 +12,40 @@
     along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
 */
 /*
- * Global.hpp
+ * FarmCollector.hpp
  *
- *  Created on: Aug 31, 2016
+ *  Created on: Dec 9, 2016
  *      Author: misale
  */
 
-#ifndef INTERNALS_TYPES_GLOBAL_HPP_
-#define INTERNALS_TYPES_GLOBAL_HPP_
+#ifndef INTERNALS_FFOPERATORS_FARMCOLLECTOR_HPP_
+#define INTERNALS_FFOPERATORS_FARMCOLLECTOR_HPP_
 
-#if 0
-#include <list>
+#include "Collector.hpp"
+#include "../../Internals/utils.hpp"
 
-#include "KeyValue.hpp"
-typedef KeyValue<std::string, int> KV;
-
-bool key_compare(KV v1, KV v2){
-	std::string first = v1.Key();
-	std::string second = v2.Key();
-	size_t i = 0;
-	while ((i < first.length()) && (i < second.length())) {
-		if (tolower(first[i]) < tolower(second[i]))
-			return true;
-		else if (tolower(first[i]) > tolower(second[i]))
-			return false;
-		i++;
+class FarmCollector : public Collector {
+public:
+	FarmCollector(int nworkers_):nworkers(nworkers_), picoEOSrecv(0) {
 	}
 
-	if (first.length() < second.length())
-		return true;
-	return false;
-}
-#endif
+	void* svc(void* task) {
+		if(task == PICO_EOS) {
+			if(++picoEOSrecv == nworkers){
+				return task;
+			}
+		}
 
+		if(task != PICO_EOS /*&& task != PICO_SYNC*/) {
+			        return task;
+			    }
 
-#endif /* INTERNALS_TYPES_GLOBAL_HPP_ */
+		return GO_ON;
+    }
+
+private:
+	int nworkers;
+	int picoEOSrecv;
+};
+
+#endif /* INTERNALS_FFOPERATORS_FARMCOLLECTOR_HPP_ */

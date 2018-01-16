@@ -24,13 +24,14 @@
 #include "UnaryOperator.hpp"
 #include "PReduce.hpp"
 
-#include "../Internals/WindowPolicy.hpp"
-#include "../Internals/Types/Token.hpp"
-#include "../Internals/Types/TimedToken.hpp"
+#include "../WindowPolicy.hpp"
 
-#include "../Internals/FFOperators/MapBatch.hpp"
-#include "../Internals/FFOperators/MapPReduceBatch.hpp"
-#include "../Internals/FFOperators/SupportFFNodes/FarmWrapper.hpp"
+#include "../Internals/Token.hpp"
+#include "../Internals/TimedToken.hpp"
+
+#include "../ff_implementation/OperatorsFFNodes/MapBatch.hpp"
+#include "../ff_implementation/OperatorsFFNodes/MapPReduceBatch.hpp"
+#include "../ff_implementation/SupportFFNodes/FarmWrapper.hpp"
 
 /**
  * Defines an operator performing a Map function, taking in input one element from

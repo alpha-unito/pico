@@ -18,8 +18,8 @@
  *      Author: misale
  */
 
-#ifndef INTERNALS_TYPES_KEYVALUE_HPP_
-#define INTERNALS_TYPES_KEYVALUE_HPP_
+#ifndef KEYVALUE_HPP_
+#define KEYVALUE_HPP_
 
 #include <iostream>
 
@@ -170,4 +170,4 @@ private:
     V val;
 };
 
-#endif /* INTERNALS_TYPES_KEYVALUE_HPP_ */
+#endif /* KEYVALUE_HPP_ */

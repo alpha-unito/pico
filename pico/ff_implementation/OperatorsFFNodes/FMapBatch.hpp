@@ -22,13 +22,13 @@
 #define INTERNALS_FFOPERATORS_FMAPBATCH_HPP_
 
 #include <ff/farm.hpp>
+#include "../SupportFFNodes/FarmCollector.hpp"
+#include "../SupportFFNodes/FarmEmitter.hpp"
 
-#include "../utils.hpp"
-#include "SupportFFNodes/FarmCollector.hpp"
-#include "SupportFFNodes/FarmEmitter.hpp"
-#include "../Types/TimedToken.hpp"
-#include "../WindowPolicy.hpp"
-#include "../Types/FlatMapCollector.hpp"
+#include "../../Internals/utils.hpp"
+#include "../../Internals/TimedToken.hpp"
+#include "../../WindowPolicy.hpp"
+#include "../../FlatMapCollector.hpp"
 
 using namespace ff;
 

@@ -21,9 +21,10 @@
 #ifndef INTERNALS_FFOPERATORS_WINDOWFFNODES_OFARMMITTER_HPP_
 #define INTERNALS_FFOPERATORS_WINDOWFFNODES_OFARMMITTER_HPP_
 
-#include "../../FFOperators/SupportFFNodes/Emitter.hpp"
-#include "../../utils.hpp"
-#include "../../Types/Microbatch.hpp"
+#include "../../Internals/utils.hpp"
+#include "../../Internals/Microbatch.hpp"
+
+#include "../SupportFFNodes/Emitter.hpp"
 
 template<typename TokenType>
 class OFarmEmitter: public Emitter {

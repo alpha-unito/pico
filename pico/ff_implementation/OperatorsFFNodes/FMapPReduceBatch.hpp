@@ -23,16 +23,16 @@
 
 #include <ff/farm.hpp>
 
-#include "../utils.hpp"
-#include "SupportFFNodes/FarmCollector.hpp"
-#include "SupportFFNodes/FarmEmitter.hpp"
-#include "../Types/TimedToken.hpp"
-#include "../Types/Microbatch.hpp"
-#include "../WindowPolicy.hpp"
-#include "../Types/FlatMapCollector.hpp"
-#include "../FFOperators/ff_config.hpp"
+#include "../../Internals/utils.hpp"
+#include "../../Internals/TimedToken.hpp"
+#include "../../Internals/Microbatch.hpp"
+#include "../../WindowPolicy.hpp"
+#include "../../FlatMapCollector.hpp"
+#include "../ff_config.hpp"
 
 #include <unordered_map>
+#include "../SupportFFNodes/FarmCollector.hpp"
+#include "../SupportFFNodes/FarmEmitter.hpp"
 
 using namespace ff;
 

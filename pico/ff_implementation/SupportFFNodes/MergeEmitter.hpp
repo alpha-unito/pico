@@ -22,7 +22,7 @@
 #define INTERNALS_FFOPERATORS_SUPPORTFFNODES_MERGEEMITTER_HPP_
 
 #include "Emitter.hpp"
-#include "../../utils.hpp"
+#include "../../Internals/utils.hpp"
 
 class MergeEmitter: public Emitter {
 public:

@@ -10,10 +10,12 @@
 
 #include "Pipe.hpp"
 #include "SemanticGraph.hpp"
-#include "FastFlowExecutor.hpp"
+#include "ff_implementation/FastFlowExecutor.hpp"
 
 /* basic */
-#include "Internals/Types/KeyValue.hpp"
+#include "FlatMapCollector.hpp"
+#include "KeyValue.hpp"
+#include "WindowPolicy.hpp"
 
 /* operators */
 #include "Operators/Map.hpp"

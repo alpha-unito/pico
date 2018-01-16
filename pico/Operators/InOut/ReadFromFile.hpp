@@ -24,7 +24,7 @@
 #include <iostream>
 #include <fstream>
 
-#include "../../Internals/FFOperators/InOut/ReadFromFileFFNode.hpp"
+#include "../../ff_implementation/OperatorsFFNodes/InOut/ReadFromFileFFNode.hpp"
 #include "InputOperator.hpp"
 /**
  * Defines an operator that reads data from a text file and produces an Ordered+Bounded collection (i.e. LIST).

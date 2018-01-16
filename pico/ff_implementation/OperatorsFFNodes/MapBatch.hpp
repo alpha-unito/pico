@@ -23,13 +23,13 @@
 
 #include <ff/farm.hpp>
 
-#include "../utils.hpp"
-#include "../FFOperators/SupportFFNodes/FarmCollector.hpp"
-#include "../FFOperators/SupportFFNodes/FarmEmitter.hpp"
-#include "../FFOperators/ff_config.hpp"
-#include "../Types/TimedToken.hpp"
-#include "../Types/Microbatch.hpp"
-#include "../WindowPolicy.hpp"
+#include "../../Internals/utils.hpp"
+#include "../SupportFFNodes/FarmCollector.hpp"
+#include "../SupportFFNodes/FarmEmitter.hpp"
+#include "../ff_config.hpp"
+#include "../../Internals/TimedToken.hpp"
+#include "../../Internals/Microbatch.hpp"
+#include "../../WindowPolicy.hpp"
 
 using namespace ff;
 

@@ -25,8 +25,8 @@
 #include <iostream>
 #include <fstream>
 
+#include "../../ff_implementation/OperatorsFFNodes/InOut/ReadFromHDFSFFNode.hpp"
 #include "InputOperator.hpp"
-#include "../../Internals/FFOperators/InOut/ReadFromHDFSFFNode.hpp"
 
 /**
  * Defines an operator that reads data from HDFS file system and produces an Ordered+Bounded collection (i.e. LIST).

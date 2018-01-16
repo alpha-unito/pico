@@ -23,10 +23,9 @@
 
 #include "UnaryOperator.hpp"
 
-#include "../Internals/Types/Token.hpp"
-
-#include "../Internals/FFOperators/FoldReduceBatch.hpp"
-#include "../Internals/FFOperators/SupportFFNodes/FarmWrapper.hpp"
+#include "../ff_implementation/OperatorsFFNodes/FoldReduceBatch.hpp"
+#include "../ff_implementation/SupportFFNodes/FarmWrapper.hpp"
+#include "../Internals/Token.hpp"
 
 template <typename In, typename Out, typename State>
 class FoldReduce : public UnaryOperator<In, Out> {

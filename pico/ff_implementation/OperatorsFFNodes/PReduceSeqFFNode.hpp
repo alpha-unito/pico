@@ -25,11 +25,12 @@
 
 #include <ff/node.hpp>
 
-#include "../utils.hpp"
-#include "../Types/Microbatch.hpp"
-#include "../WindowPolicy.hpp"
-#include "../FFOperators/ff_config.hpp"
-#include "../Types/Token.hpp"
+#include "../ff_config.hpp"
+
+#include "../../WindowPolicy.hpp"
+#include "../../Internals/utils.hpp"
+#include "../../Internals/Microbatch.hpp"
+#include "../../Internals/Token.hpp"
 
 using namespace ff;
 

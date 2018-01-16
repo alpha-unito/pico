@@ -23,7 +23,7 @@
 
 #include <cstring>
 
-#include "../FFOperators/ff_config.hpp"
+#include "../ff_implementation/ff_config.hpp"
 
 /**
  * Microbatch is the atomic storage of PiCo collections.
