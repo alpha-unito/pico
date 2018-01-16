@@ -73,9 +73,8 @@ void print_executor_trace(FastFlowExecutor &, std::ostream &os);
 
 /**
  * A Pipe is a single entity composed by operators.
- * It can be created and modified by adding single operators or by appending Pipes.
- *
- * Each add or append is done on its right side.
+ * Pipes are immutable, they are created from existing Pipes,
+ * by adding single operators or by combining other Pipes.
  *
  * A Pipe has an input cardinality and an output cardinality <I-degree, O-degree>, where
  * 	- I-degree = {0,1}
@@ -93,8 +92,7 @@ void print_executor_trace(FastFlowExecutor &, std::ostream &os);
  *
  *	A Pipe can manage one or more compatible Structure Types which intersection
  *	is not empty. The Structure Type is determined by the Emitter since it is coded in the collection,
- *	but it can be modified while chaining Pipes by computing the intersection of Structure Types.
- *
+ *	and it is propagated while chaining Pipes by computing the intersection of Structure Types.
  *
  *	The following show a simple pseudo-code example on how to compose Pipes.
  *
@@ -108,17 +106,14 @@ void print_executor_trace(FastFlowExecutor &, std::ostream &os);
  *
  ~~~~~~~~~~~~~{.c}
 
- Pipe Pipe_A(Map(f));
- Pipe_B(Map(g));
- Pipe_B.add(Reduce(h));
- Pipe_A.to(Pipe_B));
+ auto Pipe_A(Map(f));
+ auto Pipe_B(Map(g));
+ auto Pipe_C = Pipe_B.add(Reduce(h));
+ auto Pipe_D = Pipe_A.to(Pipe_C));
  ~~~~~~~~~~~~~
 
- * This example produces a Pipe Pipe_A by appending Pipe_B on its right side. The resulting pipe
- * has I-degree and O-degree 1. This Pipe can manage all the Structure Types specifications.
- *
- * When composing Pipes with other Pipes or Operators (to or add methods), the resulting I/O
- * cardinality must be at most one.
+ * The resulting pipe Pipe_D has I-degree and O-degree 1 and
+ * it can manage all the Structure Types.
  */
 class Pipe {
 
@@ -150,7 +145,7 @@ public:
 		out_dtype = pipe.out_dtype;
 		in_deg_ = pipe.in_deg_;
 		out_deg_ = pipe.out_deg_;
-		copy_struct_type(pipe.structure_types);
+		copy_struct_type(*this, pipe.structure_types);
 
 		if (term_node_type_ == OPERATOR)
 			term_value.op = pipe.term_value.op->clone();
@@ -203,7 +198,7 @@ public:
 
 		// if Emitter node, Pipe takes its structure type
 		if (in_deg_ == 0)
-			copy_struct_type(op_.structure_type());
+			copy_struct_type(*this, op_.structure_type());
 	}
 
 	/**
@@ -254,8 +249,8 @@ public:
 			/* infer types */
 			res.in_dtype = in_dtype;
 			res.out_dtype = pipe.out_dtype;
-			res.copy_struct_type(structure_types);
-			res.struct_type_intersection(pipe.structure_types);
+			copy_struct_type(res, structure_types);
+			struct_type_intersection(res, pipe.structure_types);
 			res.in_deg_ = in_deg_;
 			res.out_deg_ = pipe.out_deg_;
 
@@ -294,7 +289,7 @@ public:
 		/* infer types at input side */
 		res.in_dtype = in_dtype;
 		res.in_deg_ = in_deg_;
-		res.copy_struct_type(structure_types);
+		copy_struct_type(res, structure_types);
 
 		for(auto p : pipes) {
 			/* check data types */
@@ -305,7 +300,7 @@ public:
 			assert(p->in_deg_ == 1);
 			assert(p->out_deg_ == 0 || p->out_deg_ == 1);
 			assert(res.struct_type_check(p->structure_types));
-			res.struct_type_intersection(p->structure_types);
+			struct_type_intersection(res, p->structure_types);
 
 			/* typing at output side */
 			if(p->out_deg_) {
@@ -351,7 +346,7 @@ public:
 		res.in_dtype = in_dtype;
 		res.out_dtype = out_dtype;
 		res.in_deg_ = res.out_deg_ = 1;
-		res.copy_struct_type(structure_types);
+		copy_struct_type(res, structure_types);
 		res.term_value.cond = cond;
 		res.term_node_type_ = ITERATE;
 		res.children_.push_back(new Pipe(*this));
@@ -424,8 +419,8 @@ public:
 		/* infer types */
 		res.in_dtype = in_dtype;
 		res.out_dtype = pipe.out_dtype;
-		res.copy_struct_type(structure_types);
-		res.struct_type_intersection(pipe.structure_types);
+		copy_struct_type(res, structure_types);
+		struct_type_intersection(res, pipe.structure_types);
 		res.in_deg_ = in_deg_;
 		res.out_deg_ = 1;
 
@@ -528,15 +523,15 @@ private:
 		return ret;
 	}
 
-	inline void copy_struct_type(const bool raw_st[4]) {
+	inline void copy_struct_type(Pipe &res, const bool raw_st[4]) const {
 		for (int i = 0; i < 4; ++i) {
-			structure_types[i] = raw_st[i];
+			res.structure_types[i] = raw_st[i];
 		}
 	}
 
-	inline void struct_type_intersection(const bool raw_st[4]) {
+	inline void struct_type_intersection(Pipe &res, const bool raw_st[4]) const {
 		for (int i = 0; i < 4; ++i) {
-			structure_types[i] = raw_st[i] && structure_types[i];
+			res.structure_types[i] = raw_st[i] && structure_types[i];
 		}
 	}
 
