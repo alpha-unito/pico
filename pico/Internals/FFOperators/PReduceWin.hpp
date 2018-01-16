@@ -49,7 +49,7 @@ public:
 			w.push_back(new PReduceFFNode(preducef, win->win_size()));
 		}
 		this->add_workers(w);
-
+		this->cleanup_all();
 	}
 
 	~PReduceWin() {
