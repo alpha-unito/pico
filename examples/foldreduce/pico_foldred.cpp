@@ -70,8 +70,8 @@ int main(int argc, char* argv[]) {
 	std::cout << "PiCo execution time including init and finalize time: "
 			<< foldreduce.pipe_time() << " ms\n";
 
-	/* print the semantic DAG and generate dot file */
-	foldreduce.print_DAG();
+	/* print the semantic graph and generate dot file */
+	foldreduce.print_semantics();
 	foldreduce.to_dotfile("foldreduce.dot");
 
 	return 0;

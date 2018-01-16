@@ -29,10 +29,11 @@
 #include <string>
 #include <fstream>
 #include <queue>
+#include <vector>
 
 #include "Pipe.hpp"
 
-enum DAGNodeRole {
+enum SemNodeRole {
 	Processing, Merge
 };
 
@@ -64,20 +65,20 @@ public:
 	}
 
 private:
-	struct SemDAGNode {
+	struct SemGraphNode {
 		Operator *op;
-		DAGNodeRole role;
+		SemNodeRole role;
 
-		SemDAGNode() :
-				op(nullptr), role(DAGNodeRole::Merge) {
+		SemGraphNode() :
+				op(nullptr), role(SemNodeRole::Merge) {
 		}
 
-		SemDAGNode(Operator *op_) :
-				op(op_), role(DAGNodeRole::Processing) {
+		SemGraphNode(Operator *op_) :
+				op(op_), role(SemNodeRole::Processing) {
 		}
 
-		/**
-		 * Returns an unique name for the semDAGNode object.
+		/*
+		 * Returns an unique name for the node.
 		 */
 		std::string name() const {
 			std::string name;
@@ -88,31 +89,31 @@ private:
 		}
 
 		std::string name_short() const {
-			if (role == DAGNodeRole::Processing) {
+			if (role == SemNodeRole::Processing) {
 				assert(op);
 				return op->name_short();
 			}
-			assert(role == DAGNodeRole::Merge);
+			assert(role == SemNodeRole::Merge);
 			return "Merge";
 		}
 	};
 
-	typedef std::map<SemDAGNode*, std::vector<SemDAGNode*>> adjList;
-	std::map<SemDAGNode*, std::vector<SemDAGNode*>> graph;
-	SemDAGNode *lastdagnode = nullptr, *firstdagnode = nullptr;
+	typedef std::map<SemGraphNode*, std::vector<SemGraphNode*>> adjList;
+	adjList graph;
+	SemGraphNode *lastdagnode = nullptr, *firstdagnode = nullptr;
 
 	SemanticGraph from_pipe(const Pipe &p) const {
 		SemanticGraph res;
 		std::vector<SemanticGraph> subgraphs;
-		SemDAGNode *node_;
+		SemGraphNode *node_;
 
 		switch (p.term_node_type()) {
 		case Pipe::EMPTY:
 			break;
 		case Pipe::OPERATOR:
 			/* singleton graph */
-			node_ = new SemDAGNode(p.get_operator_ptr());
-			res.graph[node_] = std::vector<SemDAGNode *>();
+			node_ = new SemGraphNode(p.get_operator_ptr());
+			res.graph[node_] = std::vector<SemGraphNode *>();
 			res.firstdagnode = res.lastdagnode = node_;
 			break;
 		case Pipe::TO:
@@ -136,7 +137,7 @@ private:
 			//TODO termination
 			break;
 		case Pipe::MERGE:
-			node_ = new SemDAGNode();
+			node_ = new SemGraphNode();
 			/* merge children graphs */
 			for (auto p_ : p.children()) {
 				subgraphs.push_back(from_pipe(*p_));
@@ -188,7 +189,7 @@ private:
 
 	void dot_(std::ofstream &dotfile) {
 		adjList::iterator it;
-		dotfile << "digraph DAG {\n rankdir=LR;\n";
+		dotfile << "digraph sem {\n rankdir=LR;\n";
 
 		//preparing labels
 		for (it = graph.begin(); it != graph.end(); ++it) {
@@ -199,7 +200,7 @@ private:
 		for (it = graph.begin(); it != graph.end(); ++it) {
 			if (it->second.size() > 0) {
 				dotfile << it->first->name() << " -> {";
-				for (SemDAGNode* node : it->second) {
+				for (SemGraphNode* node : it->second) {
 					dotfile << node->name() << " ";
 				}
 				dotfile << "}\n";
@@ -209,14 +210,14 @@ private:
 	}
 
 	void bfs(std::ostream &os) {
-		std::map<SemDAGNode*, int> distance;
-		std::map<SemDAGNode*, SemDAGNode*> parent;
+		std::map<SemGraphNode*, int> distance;
+		std::map<SemGraphNode*, SemGraphNode*> parent;
 		adjList::iterator it;
 		for (it = graph.begin(); it != graph.end(); ++it) {
 			distance[it->first] = -1;
 			parent[it->first] = nullptr;
 		}
-		std::queue<SemDAGNode*> queue;
+		std::queue<SemGraphNode*> queue;
 		queue.push(firstdagnode);
 		while (!queue.empty()) {
 			auto n = queue.front();

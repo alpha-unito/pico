@@ -3,7 +3,7 @@ PiCo
 
 PiCo stands for **Pi**peline **Co**mposition.
 
-The main entity in PiCo is the *Pipeline*, basically a DAG-composition of processing elements. 
+The main entity in PiCo is the *Pipeline*, basically a graph-composition of processing elements. 
 
 This model is intended to give the user an unique interface for both stream and batch processing, hiding completely data management and focusing only on operations, which are represented by Pipeline stages. 
 

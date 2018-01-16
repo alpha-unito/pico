@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
 	p2.run();
 
 	/* print the semantic graph and generate dot file */
-	p2.print_DAG();
+	p2.print_semantics();
 	p2.to_dotfile("wordcount.dot");
 
 	/* print the execution time */

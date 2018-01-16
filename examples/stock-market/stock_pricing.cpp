@@ -84,7 +84,7 @@ int main(int argc, char** argv)
     .add(WriteToDisk<StockAndPrice>([](StockAndPrice kv)
             {   return kv.to_string();}));
 
-    /* generate dot file with the semantic DAG */
+    /* generate dot file with the semantic graph */
     stockPricing.to_dotfile("stock_pricing.dot");
 
     /* execute the pipeline */
