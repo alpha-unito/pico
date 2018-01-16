@@ -124,7 +124,7 @@ class Pipe {
 
 public:
 	enum term_node_t {
-		EMPTY, OPERATOR, TO, ITERATE, MERGE //TODO PAIR MULTITO
+		EMPTY, OPERATOR, TO, ITERATE, MERGE, MULTITO //TODO PAIR
 	};
 
 	/**
@@ -132,7 +132,7 @@ public:
 	 * Create an empty Pipe
 	 */
 	Pipe() :
-			in_deg(0), out_deg(0), term_node_type_(EMPTY), term_value(nullptr) {
+			in_deg_(0), out_deg_(0), term_node_type_(EMPTY), term_value(nullptr) {
 		/* set default data and structure types */
 		for (int i = 0; i < 4; ++i)
 			structure_types[i] = true;
@@ -148,8 +148,8 @@ public:
 			term_node_type_(pipe.term_node_type_), term_value(nullptr) {
 		in_dtype = pipe.in_dtype;
 		out_dtype = pipe.out_dtype;
-		in_deg = pipe.in_deg;
-		out_deg = pipe.out_deg;
+		in_deg_ = pipe.in_deg_;
+		out_deg_ = pipe.out_deg_;
 		copy_struct_type(pipe.structure_types);
 
 		if (term_node_type_ == OPERATOR)
@@ -198,11 +198,11 @@ public:
 		//TODO check
 		for (int i = 0; i < 4; ++i)
 			structure_types[i] = true;
-		in_deg = op_.i_degree();
-		out_deg = op_.o_degree();
+		in_deg_ = op_.i_degree();
+		out_deg_ = op_.o_degree();
 
 		// if Emitter node, Pipe takes its structure type
-		if (in_deg == 0)
+		if (in_deg_ == 0)
 			copy_struct_type(op_.structure_type());
 	}
 
@@ -235,14 +235,14 @@ public:
 #ifdef DEBUG
 		std::cerr << "[PIPE] Appending pipe\n";
 #endif
-		assert(out_deg == 1 || term_node_type_ == EMPTY); // can not add new nodes if pipe is complete
+		assert(out_deg_ == 1 || term_node_type_ == EMPTY); // can not add new nodes if pipe is complete
 
 		if (term_node_type_ != EMPTY) {
 			/* check data types */
 			assert(same_data_type(pipe.in_dtype, out_dtype));
 
 			/* check structure types */
-			assert(pipe.in_deg == 1);
+			assert(pipe.in_deg_ == 1);
 			assert(struct_type_check(pipe.structure_types));
 
 			/* prepare the output term */
@@ -256,8 +256,8 @@ public:
 			res.out_dtype = pipe.out_dtype;
 			res.copy_struct_type(structure_types);
 			res.struct_type_intersection(pipe.structure_types);
-			res.in_deg = in_deg;
-			res.out_deg = pipe.out_deg;
+			res.in_deg_ = in_deg_;
+			res.out_deg_ = pipe.out_deg_;
 
 			return res;
 		}
@@ -267,7 +267,6 @@ public:
 		return Pipe(pipe);
 	}
 
-#if 0
 	/**
 	 * Append a series of independent pipes taking input from the current one. The template parameters
 	 * identify input and output types that must be equal for all pipes with O-degree 1.
@@ -280,49 +279,52 @@ public:
 	 * @param pipes vector of references to Pipes
 	 */
 	template <typename in, typename out>
-	Pipe& to(std::vector<Pipe*> pipes) {
+	Pipe to(std::vector<Pipe*> pipes) const {
 #ifdef DEBUG
 		std::cerr << "[PIPE] Appending multiple Pipes \n";
 #endif
-		assert(out_deg==1 && !DAG.empty()); // can not add new nodes if pipe is complete or pipe is empty
-		// first do all type checks on all input pipes
-		Pipe* prec = nullptr;
-		// needed as fake collector to guarantee 1-1 pipes
-		Merge<out>* mergeOp = new Merge<out>();
+		assert(out_deg_==1 && term_node_type_ != EMPTY); // can not add new nodes if pipe is complete or pipe is empty
+		TypeInfoRef res_out_dtype = typeid(void);
 
-		for(Pipe* pipe : pipes) {
-			// can not append pipes without compatibility on data types
-			assert(pipe->getHeadTypeInfo() == infotypes.back());
-			// can not append pipes with I-Degree zero if Pipe is not empty
-			assert(pipe->DAG.firstOp()->i_degree() == 1);
-			// can not append pipes with in/out types different from template
-			assert(pipe->getHeadTypeInfo() == typeid(in));
-			if(pipe->out_deg > 0)
-			assert(pipe->getTailTypeInfo() == typeid(out));
-			// can not append pipes without compatibility on structure types
-			assert(struct_type_check(pipe->structure_types));
-			struct_type_intersection(pipe->structure_types);
-			if(pipe->out_deg > 0) {
-				if(prec != nullptr) {
-					assert(prec->getTailTypeInfo() == pipe->getTailTypeInfo());
-					out_deg = pipe->out_deg;
-				} else {
-					prec = pipe;
-				}
+		/* prepare the result pipe */
+		Pipe res;
+		res.term_node_type_ = MULTITO;
+		res.children_.push_back(new Pipe(*this));
+
+		/* infer types at input side */
+		res.in_dtype = in_dtype;
+		res.in_deg_ = in_deg_;
+		res.copy_struct_type(structure_types);
+
+		for(auto p : pipes) {
+			/* check data types */
+			assert(p->in_dtype.get() == typeid(in));
+			assert(same_data_type(p->in_dtype, out_dtype));
+
+			/* check structure types */
+			assert(p->in_deg_ == 1);
+			assert(p->out_deg_ == 0 || p->out_deg_ == 1);
+			assert(res.struct_type_check(p->structure_types));
+			res.struct_type_intersection(p->structure_types);
+
+			/* typing at output side */
+			if(p->out_deg_) {
+				assert(p->out_dtype.get() == typeid(out));
+				if(res_out_dtype.get() != typeid(void))
+					assert(same_data_type(res_out_dtype, p->out_dtype));
+				else
+					res_out_dtype = p->out_dtype;
 			}
+
+			res.children_.push_back(new Pipe(p));
 		}
-		SemDAGNode* mergeNode = DAG.add_bcast_block(mergeOp);
-		SemDAGNode* bcastnode = DAG.lastNode();
-		for(Pipe* pipe : pipes) {
-			DAG.lastNode(bcastnode);
-			DAG.lastOp(bcastnode->op);
-			DAG.append_to(pipe->DAG, mergeNode);
-		}
-		DAG.lastNode(mergeNode);
-		DAG.lastOp(mergeOp);
-		return *this;
+
+		/* infer types at output side */
+		res.out_dtype = res_out_dtype;
+		res.out_deg_ = (res_out_dtype.get() != typeid(void)) ? 1 : 0;
+
+		return res;
 	}
-#endif
 
 	/**
 	 * \ingroup pipe-api
@@ -342,13 +344,13 @@ public:
 
 		/* check structure types */
 		assert(struct_type_check(structure_types));
-		assert(out_deg == 1 && in_deg == 1);
+		assert(out_deg_ == 1 && in_deg_ == 1);
 
 		/* prepare the outer iteration term */
 		Pipe res;
 		res.in_dtype = in_dtype;
 		res.out_dtype = out_dtype;
-		res.in_deg = res.out_deg = 1;
+		res.in_deg_ = res.out_deg_ = 1;
 		res.copy_struct_type(structure_types);
 		res.term_value.cond = cond;
 		res.term_node_type_ = ITERATE;
@@ -371,7 +373,7 @@ public:
 	 */
 	template<typename in1, typename in2, typename out>
 	Pipe& pair_with(const BinaryOperator<in1, in2, out> &a, const Pipe& pipe) {
-		assert(out_deg==1); // can not add new nodes if pipe is complete
+		assert(out_deg_==1); // can not add new nodes if pipe is complete
 		if(!DAG.empty()) {
 			assert(DAG.lastOp()->checkOutputTypeSanity(typeid(in1))
 					|| DAG.lastOp()->checkOutputTypeSanity(typeid(in2)));
@@ -409,8 +411,8 @@ public:
 		assert(same_data_type(pipe.out_dtype, out_dtype));
 
 		/* check structure types */
-		assert(out_deg == 1 && term_node_type_ != EMPTY);
-		assert(pipe.in_deg == 0);
+		assert(out_deg_ == 1 && term_node_type_ != EMPTY);
+		assert(pipe.in_deg_ == 0);
 		assert(struct_type_check(pipe.structure_types));
 
 		/* prepare the output term */
@@ -424,8 +426,8 @@ public:
 		res.out_dtype = pipe.out_dtype;
 		res.copy_struct_type(structure_types);
 		res.struct_type_intersection(pipe.structure_types);
-		res.in_deg = in_deg;
-		res.out_deg = 1;
+		res.in_deg_ = in_deg_;
+		res.out_deg_ = 1;
 
 		return res;
 	}
@@ -471,7 +473,7 @@ public:
 #ifdef DEBUG
 		std::cerr << "[PIPE] Running Pipe...\n";
 #endif
-		assert(in_deg == 0 && out_deg == 0);
+		assert(in_deg_ == 0 && out_deg_ == 0);
 
 		if(!executor)
 			executor = make_executor(*this);
@@ -499,6 +501,14 @@ public:
 
 	term_node_t term_node_type() const {
 		return term_node_type_;
+	}
+
+	unsigned in_deg() const {
+		return in_deg_;
+	}
+
+	unsigned out_deg() const {
+		return out_deg_;
 	}
 
 	const std::vector<Pipe *> &children() const {
@@ -564,7 +574,7 @@ private:
 	/* data and structure types */
 	TypeInfoRef in_dtype = typeid(void);
 	TypeInfoRef out_dtype = typeid(void);
-	unsigned in_deg, out_deg;
+	unsigned in_deg_, out_deg_;
 	bool structure_types[4];
 
 	/* term syntax tree */

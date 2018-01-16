@@ -79,6 +79,10 @@ private:
 			for(auto p_ : p.children())
 				res->add_stage(make_ff_term(*p_));
 			break;
+		case Pipe::MULTITO:
+			std::cerr << "not implemented yed\n";
+			assert(false);
+			break;
 		case Pipe::ITERATE:
 			assert(p.children().size() == 1);
 			res->add_stage(make_ff_term(*p.children()[0]));
