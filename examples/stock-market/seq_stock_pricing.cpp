@@ -32,6 +32,7 @@
 #include <cassert>
 #include <fstream>
 #include <unordered_map>
+#include <chrono>
 
 #include "defs.h"
 
@@ -51,7 +52,7 @@ int main(int argc, char** argv)
     /* read options from the input file */
     std::ifstream in_file(in_fname);
     assert(in_file.is_open());
-    duration_t wt(0);
+    std::chrono::seconds wt(0);
     std::unordered_map<std::string, StockAndPrice> red;
     while (in_file.good())
     {
@@ -61,8 +62,7 @@ int main(int argc, char** argv)
         /*
          * map + reduce
          */
-        time_point_t t0, t1;
-        hires_timer_ull(t0);
+        auto t0 = std::chrono::high_resolution_clock::now();
 
         std::string name;
         OptionData opt;
@@ -84,8 +84,8 @@ int main(int argc, char** argv)
         else
             red[name] = StockAndPrice(name, res);
 
-        hires_timer_ull(t1);
-        wt += get_duration(t0, t1);
+        auto t1 = std::chrono::high_resolution_clock::now();
+        wt += std::chrono::duration_cast<std::chrono::seconds>(t0 - t1);
     }
 
     /* print results */
@@ -93,7 +93,7 @@ int main(int argc, char** argv)
     for (auto item : red)
         out_file << item.second.to_string() << std::endl;
 
-    std::cerr << "map = " << time_count(wt) << " s" << std::endl;
+    std::cerr << "map = " << wt.count() << " s" << std::endl;
 
     return 0;
 }

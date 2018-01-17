@@ -26,10 +26,9 @@
 #include <string>
 #include <set>
 #include <unordered_map>
+#include <chrono>
 
-#include <pico/Internals/Types/KeyValue.hpp>
-
-#include "../include/timers.hpp"
+#include "defs.h"
 
 class TweetProcessor {
 public:
@@ -220,8 +219,7 @@ int main(int argc, char** argv)
     int server_port = atoi(argv[3]);
 
     /* start timer */
-    time_point_t t0, t1;
-    hires_timer_ull(t0);
+    auto t0 = std::chrono::high_resolution_clock::now();
 
     /* initialize the socket */
     int sockfd = sock_init(server_name, server_port);
@@ -236,10 +234,10 @@ int main(int argc, char** argv)
     sock_fini(sockfd);
 
     /* stop timer */
-    hires_timer_ull(t1);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    auto d = std::chrono::duration_cast<std::chrono::seconds>(t1 - t0);
 
-    duration_t elapsed = get_duration(t0, t1);
-    std::cout << "done in " << time_count(elapsed) << " s\n";
+    std::cout << "done in " << d.count() << " s\n";
 
     return 0;
 }

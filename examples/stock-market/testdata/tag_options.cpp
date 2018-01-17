@@ -13,11 +13,18 @@
 #include <stdlib.h>     /* srand, rand */
 #include <time.h>       /* time */
 
-#define IN_OPTIONS "options_10M.txt"
-#define IN_TAGS "nasdaq_europe.txt"
-#define OUT_TAGGED "tagged_options_10M.txt"
+int main(int argc, char** argv) {
+	/* parse command line */
+	if (argc < 4) {
+		std::cerr << "Usage: " << argv[0];
+		std::cerr << " <options file> <stock names file> <output file>\n";
+		return -1;
+	}
+	std::string IN_OPTIONS = argv[1];
+	std::string IN_TAGS = argv[2];
+	std::string OUT_TAGGED = argv[3];
 
-int main() {
+	/* open file streams */
 	std::ifstream tags_(IN_TAGS);
 	std::ifstream options(IN_OPTIONS);
 	std::ofstream tagged(OUT_TAGGED);
