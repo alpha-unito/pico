@@ -33,7 +33,8 @@
 #include <unordered_map>
 #include <fstream>
 
-#include <timers.hpp>
+#include <chrono>
+typedef std::chrono::high_resolution_clock::time_point time_point_t;
 
 #include <pico/pico.hpp>
 
@@ -51,9 +52,8 @@ int main(int argc, char** argv)
     /* prepare the output word-count map */
     std::unordered_map<std::string, unsigned> word_cnt;
 
-    /* prepare the timers */
-    time_point_t t0, t1;
-    hires_timer_ull(t0); //start
+    /* start measurement */
+    auto t0 = std::chrono::high_resolution_clock::now();
 
     /* read the input file line by line */
     std::ifstream infile(filename);
@@ -79,10 +79,12 @@ int main(int argc, char** argv)
         outfile << kv.to_string() << std::endl;
     }
 
-    hires_timer_ull(t1); //stop
+    /* stop measurement */
+    auto t1 = std::chrono::high_resolution_clock::now();
+    auto d = std::chrono::duration_cast<std::chrono::seconds>(t1 - t0);
 
     /* print the execution time */
-    std::cout << "done in " << time_count(get_duration(t0, t1)) << " s\n";
+    std::cout << "done in " << d.count() << " s\n";
 
     return 0;
 }
