@@ -273,7 +273,6 @@ public:
 	 *  - Structure Types are not compatible
 	 * @param pipes vector of references to Pipes
 	 */
-	template <typename in, typename out>
 	Pipe to(std::vector<Pipe*> pipes) const {
 #ifdef DEBUG
 		std::cerr << "[PIPE] Appending multiple Pipes \n";
@@ -293,7 +292,6 @@ public:
 
 		for(auto p : pipes) {
 			/* check data types */
-			assert(p->in_dtype.get() == typeid(in));
 			assert(same_data_type(p->in_dtype, out_dtype));
 
 			/* check structure types */
@@ -304,14 +302,13 @@ public:
 
 			/* typing at output side */
 			if(p->out_deg_) {
-				assert(p->out_dtype.get() == typeid(out));
 				if(res_out_dtype.get() != typeid(void))
 					assert(same_data_type(res_out_dtype, p->out_dtype));
 				else
 					res_out_dtype = p->out_dtype;
 			}
 
-			res.children_.push_back(new Pipe(p));
+			res.children_.push_back(new Pipe(*p));
 		}
 
 		/* infer types at output side */

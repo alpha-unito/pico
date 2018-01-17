@@ -76,12 +76,12 @@ private:
 			break;
 		case Pipe::TO:
 			//TODO PEG optimizations
-			for(auto p_ : p.children())
+			for (auto p_ : p.children())
 				res->add_stage(make_ff_term(*p_));
 			break;
 		case Pipe::MULTITO:
-			std::cerr << "not implemented yed\n";
-			assert(false);
+			res->add_stage(make_ff_term(*p.children().front()));
+			res->add_stage(make_multito_farm(p));
 			break;
 		case Pipe::ITERATE:
 			assert(p.children().size() == 1);
@@ -102,15 +102,28 @@ private:
 		res->add_emitter(new BCastEmitter(nw, res->getlb()));
 		res->add_collector(new MergeCollector(nw));
 		std::vector<ff::ff_node *> w;
-		for(auto p_ : p.children())
+		for (auto p_ : p.children())
 			w.push_back(make_ff_term(*p_));
 		res->add_workers(w);
 		res->cleanup_all();
 		return res;
 	}
 
+	ff::ff_farm<> *make_multito_farm(const Pipe &p) const {
+		auto *res = new ff::ff_farm<>();
+		auto nw = p.children().size() - 1;
+		res->add_emitter(new BCastEmitter(nw, res->getlb()));
+		res->add_collector(new MergeCollector(nw));
+		std::vector<ff::ff_node *> w;
+		for (auto it = p.children().begin() + 1; it != p.children().end(); ++it)
+			w.push_back(make_ff_term(**it));
+		res->add_workers(w);
+		res->cleanup_all();
+		return res;
+	}
+
 	void delete_ff_term() {
-		if(ff_pipe)
+		if (ff_pipe)
 			//ff recursively deletes the term (node cleanup)
 			delete ff_pipe; //TODO verify
 	}

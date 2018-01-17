@@ -98,13 +98,12 @@ private:
 		}
 	};
 
-	typedef std::map<SemGraphNode*, std::vector<SemGraphNode*>> adjList;
-	adjList graph;
+	std::map<SemGraphNode*, std::vector<SemGraphNode*>> graph;
 	SemGraphNode *lastdagnode = nullptr, *firstdagnode = nullptr;
 
 	SemanticGraph from_pipe(const Pipe &p) const {
 		SemanticGraph res;
-		std::vector<SemanticGraph> subgraphs;
+		std::vector<SemanticGraph> subg; //children graphs
 		SemGraphNode *node_;
 
 		switch (p.term_node_type()) {
@@ -119,32 +118,32 @@ private:
 		case Pipe::TO:
 			/* merge children graphs */
 			for (auto p_ : p.children()) {
-				subgraphs.push_back(from_pipe(*p_));
-				res.merge_with(subgraphs.back());
+				subg.push_back(from_pipe(*p_));
+				res.merge_with(subg.back());
 			}
 			/* link subgraphs */
-			for(std::vector<SemanticGraph>::size_type i = 0; i < subgraphs.size() - 1; ++i)
-				res.graph[subgraphs[i].lastdagnode].push_back(subgraphs[i+1].firstdagnode);
+			for(std::vector<SemanticGraph>::size_type i = 0; i < subg.size() - 1; ++i)
+				res.graph[subg[i].lastdagnode].push_back(subg[i+1].firstdagnode);
 			/* set first and last nodes */
-			res.firstdagnode = subgraphs[0].firstdagnode;
-			res.lastdagnode = subgraphs[subgraphs.size() - 1].lastdagnode;
+			res.firstdagnode = subg[0].firstdagnode;
+			res.lastdagnode = subg[subg.size() - 1].lastdagnode;
 			break;
 		case Pipe::MULTITO:
-			if(p.out_deg())
+			if(p.out_deg() == 1)
 				node_ = new SemGraphNode(); //merge
 			/* merge children graphs */
 			for (auto p_ : p.children()) {
-				subgraphs.push_back(from_pipe(*p_));
-				res.merge_with(subgraphs.back());
+				subg.push_back(from_pipe(*p_));
+				res.merge_with(subg.back());
 			}
 			/* link children (having output) with merge node */
 			if(p.out_deg())
-				for(auto it = subgraphs.begin() + 1; it != subgraphs.end(); ++it)
+				for(auto it = subg.begin() + 1; it != subg.end(); ++it)
 					if(it->lastdagnode->op->o_degree())
 						res.graph[it->lastdagnode].push_back(node_);
 			/* set first and last nodes */
-			res.firstdagnode = subgraphs[0].firstdagnode;
-			res.lastdagnode = p.out_deg() ? node_ : subgraphs.back().firstdagnode;
+			res.firstdagnode = subg[0].firstdagnode;
+			res.lastdagnode = p.out_deg() ? node_ : subg.back().lastdagnode;
 			break;
 		case Pipe::ITERATE:
 			/* add a feedback edge to child graph */
@@ -157,13 +156,13 @@ private:
 			node_ = new SemGraphNode();
 			/* merge children graphs */
 			for (auto p_ : p.children()) {
-				subgraphs.push_back(from_pipe(*p_));
-				res.merge_with(subgraphs.back());
+				subg.push_back(from_pipe(*p_));
+				res.merge_with(subg.back());
 				/* link with merge node */
-				res.graph[subgraphs.back().lastdagnode].push_back(node_);
+				res.graph[subg.back().lastdagnode].push_back(node_);
 			}
 			/* set first and last nodes */
-			res.firstdagnode = subgraphs[0].firstdagnode;
+			res.firstdagnode = subg[0].firstdagnode;
 			res.lastdagnode = node_;
 			break;
 		}
@@ -205,16 +204,15 @@ private:
 	}
 
 	void dot_(std::ofstream &dotfile) {
-		adjList::iterator it;
 		dotfile << "digraph sem {\n rankdir=LR;\n";
 
 		//preparing labels
-		for (it = graph.begin(); it != graph.end(); ++it) {
+		for (auto it = graph.begin(); it != graph.end(); ++it) {
 			dotfile << it->first->name() << " [label=" << "\""
 					<< it->first->name_short() << "\"]\n";
 		}
 		//printing graph
-		for (it = graph.begin(); it != graph.end(); ++it) {
+		for (auto it = graph.begin(); it != graph.end(); ++it) {
 			if (it->second.size() > 0) {
 				dotfile << it->first->name() << " -> {";
 				for (SemGraphNode* node : it->second) {
@@ -229,8 +227,7 @@ private:
 	void bfs(std::ostream &os) {
 		std::map<SemGraphNode*, int> distance;
 		std::map<SemGraphNode*, SemGraphNode*> parent;
-		adjList::iterator it;
-		for (it = graph.begin(); it != graph.end(); ++it) {
+		for (auto it = graph.begin(); it != graph.end(); ++it) {
 			distance[it->first] = -1;
 			parent[it->first] = nullptr;
 		}
@@ -242,12 +239,12 @@ private:
 			if (graph[n].size() > 0) {
 				os << "\n\t" << n->name() << " -> ";
 			}
-			for (adjList::size_type i = 0; i < graph[n].size(); ++i) {
-				if (distance[graph[n].at(i)] == -1) {
-					distance[graph[n].at(i)] = distance[n] + 1;
-					parent[graph[n].at(i)] = n;
-					queue.push(graph[n].at(i));
-					os << "\t " << graph[n].at(i)->name() << "\n\t";
+			for (auto gn : graph[n]) {
+				if (distance[gn] == -1) {
+					distance[gn] = distance[n] + 1;
+					parent[gn] = n;
+					queue.push(gn);
+					os << "\t " << gn->name() << "\n\t";
 				}
 			}
 		}
