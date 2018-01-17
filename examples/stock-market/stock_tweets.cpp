@@ -35,108 +35,103 @@
 #include <string>
 #include <sstream>
 
-#include <pico/Pipe.hpp>
-#include <pico/Operators/FlatMap.hpp>
-#include <pico/Operators/InOut/ReadFromSocket.hpp>
-#include <pico/Operators/InOut/WriteToStdOut.hpp>
+#include <pico/pico.hpp>
 
 #include "defs.h"
 
 /* the set of stock names to match tweets against */
 static std::set<std::string> stock_names;
 
-int main(int argc, char** argv)
-{
-    /* parse command line */
-    if (argc < 2)
-    {
-        std::cerr << "Usage: " << argv[0];
-        std::cerr << " -i <stock names file>"
-                << " -s <tweet socket host> -p <tweet socket port>\n";
-        return -1;
-    }
+/*
+ * define a generic operator that:
+ * - filters out all those tweets mentioning zero or multiple stock names
+ * - count the number of words for each remaining tweet
+ */
+auto filterTweets = FlatMap<std::string, StockAndCount>( //
+		[] (std::string& tweet, FlatMapCollector<StockAndCount>& collector)
+		{
+			StockName stock;
+			bool single_stock = false;
+			unsigned long long count = 0;
 
-    parse_PiCo_args(argc, argv);
+			/* tokenize the tweet */
+			std::istringstream f(tweet);
+			std::string s;
+			while (std::getline(f, s, ' '))
+			{
+				/* count token length + blank space */
+				count += s.size() + 1;
 
-    /* bring tags to memory */
-    std::ifstream stocks_file(Constants::INPUT_FILE);
-    std::string stock_name;
-    while (stocks_file.good())
-    {
-        stocks_file >> stock_name;
-        stock_names.insert(stock_name);
-    }
+				/* stock name occurrence */
+				if(stock_names.find(s) != stock_names.end())
+				{
 
-    /*
-     * define a generic pipeline that:
-     * - filters out all those tweets mentioning zero or multiple stock names
-     * - count the number of words for each remaining tweet
-     */
-    auto filterTweets = FlatMap<std::string, StockAndCount>( //
-            [] (std::string& tweet, FlatMapCollector<StockAndCount>& collector)
-            {
-                StockName stock;
-                bool single_stock = false;
-                unsigned long long count = 0;
+					if(!single_stock)
+					{
+						/* first stock name occurrence */
+						stock = s;
+						single_stock = true;
+					}
+					else if(s != stock)
+					{
+						/* multiple stock names, invalid record */
+						single_stock = false;
+						break;
+					}
+				}
+			}
 
-                /* tokenize the tweet */
-                std::istringstream f(tweet);
-                std::string s;
-                while (std::getline(f, s, ' '))
-                {
-                    /* count token length + blank space */
-                    count += s.size() + 1;
+			/* emit result if valid record  */
 
-                    /* stock name occurrence */
-                    if(stock_names.find(s) != stock_names.end())
-                    {
+			if(single_stock) {
 
-                        if(!single_stock)
-                        {
-                            /* first stock name occurrence */
-                            stock = s;
-                            single_stock = true;
-                        }
-                        else if(s != stock)
-                        {
-                            /* multiple stock names, invalid record */
-                            single_stock = false;
-                            break;
-                        }
-                    }
-                }
-
-                /* emit result if valid record  */
-
-                if(single_stock){
-
-                	collector.add(StockAndCount(stock, count));
+				collector.add(StockAndCount(stock, count));
 //                	std::cout << StockAndCount(stock, count).to_string() << std::endl;
-                }
-            });
-    /* define i/o operators from/to standard input/output */
-    ReadFromSocket readTweets('-');
+			}
+		});
 
-    WriteToStdOut<StockAndCount> writeCounts([](StockAndCount c) {return c.to_string();});
+int main(int argc, char** argv) {
+	/* parse command line */
+	if (argc < 2) {
+		std::cerr << "Usage: " << argv[0];
+		std::cerr << " -i <stock names file>"
+				<< " -s <tweet socket host> -p <tweet socket port>\n";
+		return -1;
+	}
 
-    /* compose the main pipeline */
-    Pipe stockTweets(readTweets);
-    stockTweets //
-    .add(filterTweets) //
+	parse_PiCo_args(argc, argv);
+
+	/* bring tags to memory */
+	std::ifstream stocks_file(Constants::INPUT_FILE);
+	std::string stock_name;
+	while (stocks_file.good()) {
+		stocks_file >> stock_name;
+		stock_names.insert(stock_name);
+	}
+
+	/* define i/o operators from/to standard input/output */
+	ReadFromSocket readTweets('-');
+
+	WriteToStdOut<StockAndCount> writeCounts(
+			[](StockAndCount c) {return c.to_string();});
+
+	/* compose the main pipeline */
+	auto stockTweets = Pipe(readTweets) //
+	.add(filterTweets) //
 	.add(PReduce<StockAndCount>([] (StockAndCount p1, StockAndCount p2)
-    {
-    	return std::max(p1,p2);
-    }).window(Constants::MICROBATCH_SIZE))
-    .add(writeCounts);
+	{
+		return std::max(p1,p2);
+	}).window(Constants::MICROBATCH_SIZE)).add(writeCounts);
 
-    /* generate dot file with the semantic graph */
-    stockTweets.to_dotfile("stock_tweets.dot");
+	/* print the semantic graph and generate dot file */
+	stockTweets.print_semantics();
+	stockTweets.to_dotfile("stock_tweets.dot");
 
-    /* execute the pipeline */
-    stockTweets.run();
+	/* execute the pipeline */
+	stockTweets.run();
 
-    /* print execution time */
-    std::cout << "done in " << stockTweets.pipe_time() << " ms\n";
+	/* print execution time */
+	std::cout << "done in " << stockTweets.pipe_time() << " ms\n";
 
-    return 0;
+	return 0;
 }

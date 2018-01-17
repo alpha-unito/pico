@@ -30,68 +30,61 @@
 #include <algorithm>
 #include <iomanip>
 
-#include <pico/Pipe.hpp>
-#include <pico/Operators/Map.hpp>
-#include <pico/Operators/PReduce.hpp>
-#include <pico/Operators/InOut/ReadFromFile.hpp>
-#include <pico/Operators/InOut/WriteToDisk.hpp>
+#include <pico/pico.hpp>
 
 #include "defs.h"
 #include "black_scholes.hpp"
 
-int main(int argc, char** argv)
-{
-    /* parse command line */
-    if (argc < 2)
-    {
-        std::cerr << "Usage: " << argv[0];
-        std::cerr << " -i <input-file> -o <output-file>\n";
-        return -1;
-    }
-    parse_PiCo_args(argc, argv);
+/*
+ * define a generic operator that computes the price of a bunch of
+ * stock options by applying the Black-Scholes formula
+ */
+Pipe blackScholes(Map<std::string, StockAndPrice>([]
+(const std::string& in) {
 
-    /*
-     * define a generic pipeline that computes the price of a bunch of
-     * stock options by applying the Black-Scholes formula
-     */
-    Pipe blackScholes(Map<std::string, StockAndPrice>([]
-    (const std::string& in) {
+	OptionData opt;
+	char otype, name[128];
+	sscanf(in.c_str(), "%s %lf %lf %lf %lf %lf %lf %c %lf %lf", name, //
+		&opt.s, &opt.strike, &opt.r, &opt.divq, &opt.v, &opt.t,//
+		&otype, &opt.divs, &opt.DGrefval);
+opt.OptionType = (otype == 'P');
 
-        OptionData opt;
-        char otype, name[128];
-        sscanf(in.c_str(), "%s %lf %lf %lf %lf %lf %lf %c %lf %lf", name, //
-            &opt.s, &opt.strike, &opt.r, &opt.divq, &opt.v, &opt.t,//
-            &otype, &opt.divs, &opt.DGrefval);
-        opt.OptionType = (otype == 'P');
+return StockAndPrice(std::string(name), black_scholes(opt));
+}));
 
-        return StockAndPrice(std::string(name), black_scholes(opt));
-    }));
+int main(int argc, char** argv) {
+	/* parse command line */
+	if (argc < 2) {
+		std::cerr << "Usage: " << argv[0];
+		std::cerr << " -i <input-file> -o <output-file>\n";
+		return -1;
+	}
+	parse_PiCo_args(argc, argv);
 
-    // blackScholes can now be used to build both batch and streaming pipelines.
+	/*
+	 * define a batch pipeline that:
+	 * 1. read options from file
+	 * 2. computes prices by means of the blackScholes pipeline
+	 * 3. extracts the maximum price for each stock name
+	 * 4. write prices to file
+	 */
+	auto stockPricing = Pipe(ReadFromFile()) //
+	.to(blackScholes). //
+	add(PReduce<StockAndPrice>([]
+	(StockAndPrice p1, StockAndPrice p2)
+	{	return std::max(p1,p2);})). //
+	add(WriteToDisk<StockAndPrice>([](StockAndPrice kv)
+	{	return kv.to_string();}));
 
-    /*
-     * define a batch pipeline that:
-     * 1. read options from file
-     * 2. computes prices by means of the blackScholes pipeline
-     * 3. extracts the maximum price for each stock name
-     * 4. write prices to file
-     */
-    Pipe stockPricing((ReadFromFile()));
-    stockPricing //
-    .to(blackScholes).add(PReduce<StockAndPrice>([]
-    (StockAndPrice p1, StockAndPrice p2)
-    {   return std::max(p1,p2);}))
-    .add(WriteToDisk<StockAndPrice>([](StockAndPrice kv)
-            {   return kv.to_string();}));
+	/* print the semantic graph and generate dot file */
+	stockPricing.print_semantics();
+	stockPricing.to_dotfile("stock_pricing.dot");
 
-    /* generate dot file with the semantic graph */
-    stockPricing.to_dotfile("stock_pricing.dot");
+	/* execute the pipeline */
+	stockPricing.run();
 
-    /* execute the pipeline */
-    stockPricing.run();
+	/* print execution time */
+	std::cout << "done in " << stockPricing.pipe_time() << " ms\n";
 
-    /* print execution time */
-    std::cout << "done in " << stockPricing.pipe_time() << " ms\n";
-
-    return 0;
+	return 0;
 }
