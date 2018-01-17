@@ -1,3 +1,5 @@
+*** TO BE REWRITTEN ***
+
 -- RUN STREAM ON PLAIN TAGGED OPTIONS
 
 eg: ./run_stream.sh testdata/tagged_options_10M.txt
