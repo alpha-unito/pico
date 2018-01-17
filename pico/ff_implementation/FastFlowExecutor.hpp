@@ -60,9 +60,6 @@ private:
 	const Pipe &pipe;
 	ff::ff_pipeline *ff_pipe = nullptr;
 
-	/*
-	 * TODO - simplify ff terms
-	 */
 	ff::ff_pipeline *make_ff_term(const Pipe &p) const {
 		/* create the ff pipeline with automatic node cleanup */
 		auto *res = new ff::ff_pipeline();
@@ -72,7 +69,8 @@ private:
 		case Pipe::EMPTY:
 			break;
 		case Pipe::OPERATOR:
-			res->add_stage(p.get_operator_ptr()->node_operator(1, nullptr)); //TODO par
+			auto op = p.get_operator_ptr();
+			res->add_stage(op->node_operator(Constants::PARALLELISM, nullptr));
 			break;
 		case Pipe::TO:
 			//TODO PEG optimizations
@@ -124,8 +122,8 @@ private:
 
 	void delete_ff_term() {
 		if (ff_pipe)
-			//ff recursively deletes the term (node cleanup)
-			delete ff_pipe; //TODO verify
+			//ff recursively deletes the term (by node cleanup)
+			delete ff_pipe;
 	}
 };
 
