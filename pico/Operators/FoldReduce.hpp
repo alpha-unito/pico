@@ -62,7 +62,7 @@ protected:
 
 
 	FoldReduce<In, Out, State>* clone(){
-		return new FoldReduce<In, Out, State> ();
+		return new FoldReduce<In, Out, State>(foldf, reducef);
 	}
 
 	const OperatorClass operator_class() {
