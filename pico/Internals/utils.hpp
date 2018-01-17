@@ -21,14 +21,15 @@
 #ifndef INTERNALS_UTILS_HPP_
 #define INTERNALS_UTILS_HPP_
 
+/*
+ * todo - move
+ */
 #include <utility>
 #include <typeinfo>
 
 #include <ff/config.hpp>
 
 #include "../defines/Global.hpp"
-
-#include "../../examples/include/timers.hpp" //todo fix reference
 
 using TypeInfoRef = std::reference_wrapper<const std::type_info>;
 
@@ -62,6 +63,45 @@ static void *PICO_EOS = (void*)P_EOS;
 
 static const size_t P_SYNC = (ff::FF_EOS-0x9);
 static void *PICO_SYNC = (void*)P_SYNC;
+
+/*
+ * progress bar
+ */
+#include <iostream>
+void print_progress(float progress)
+{
+    int barWidth = 70;
+    int pos = barWidth * progress;
+
+    std::cerr << "[";
+    for (int i = 0; i < barWidth; ++i)
+    {
+        if (i < pos)
+            std::cerr << "=";
+        else if (i == pos)
+            std::cerr << ">";
+        else
+            std::cerr << " ";
+    }
+    std::cerr << "] " << int(progress * 100.0) << " %\r";
+    std::cerr.flush();
+}
+
+/*
+ * execution-time measurement
+ */
+#include <chrono>
+using namespace std::chrono;
+
+typedef high_resolution_clock::time_point time_point_t;
+typedef duration<double> duration_t;
+
+#define max_duration duration_t::max()
+#define min_duration duration_t::min()
+
+#define hires_timer_ull(t) (t) = high_resolution_clock::now()
+#define get_duration(a,b) duration_cast<duration<double>>((b) - (a))
+#define time_count(d) (d).count()
 
 
 
