@@ -160,12 +160,14 @@ private:
 		/* apply PEG optimizations */
 		auto it = s.begin();
 		for (; it != s.end() - 1; ++it) {
+			/* try to add an optimized compound */
 			if (add_optimized(p, it, it + 1))
-				/* compound */
 				++it;
 			else
+				/* add a regular sub-term */
 				add_plain(p, it);
 		}
+		/* add last sub-term if any */
 		if(it != s.end())
 			add_plain(p, it);
 	}
