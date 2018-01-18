@@ -87,8 +87,8 @@ public:
 
 	virtual void run_kernel(In*)=0;
 
-const OperatorClass operator_class(){
-		return OperatorClass::OUTPUT;
+const OpClass operator_class(){
+		return OpClass::OUTPUT;
 	}
 
 protected:

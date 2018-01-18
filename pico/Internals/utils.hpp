@@ -47,14 +47,16 @@ enum StructureType {
 	UBAG
 };
 
-enum OperatorClass {
-	UMAP, //same as unary flatmap
-	BMAP, //same as binary flatmap
-	COMBINE,
+enum OpClass {
+	MAP,
+	FMAP,
+	BMAP,
+	BFMAP,
+	REDUCE,
+	FOLDREDUCE,
 	INPUT,
 	OUTPUT,
 	MERGE,
-	FOLDR,
 	none
 };
 

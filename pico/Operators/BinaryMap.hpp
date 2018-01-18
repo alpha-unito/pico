@@ -100,8 +100,8 @@ protected:
 		return raw_struct_type;
 	}
 
-	const OperatorClass operator_class(){
-		return OperatorClass::BMAP;
+	const OpClass operator_class(){
+		return OpClass::BMAP;
 	}
 
 	ff::ff_node* node_operator(int parallelism = 1) {

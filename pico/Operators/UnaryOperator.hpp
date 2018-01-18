@@ -72,7 +72,7 @@ protected:
         return typeid(Out).hash_code() == id.get().hash_code();
     }
 
-    virtual const OperatorClass operator_class()=0;
+    virtual const OpClass operator_class()=0;
 
 };
 
