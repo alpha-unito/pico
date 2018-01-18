@@ -78,16 +78,22 @@ private:
 			add_chain(res, p.children());
 			break;
 		case Pipe::MULTITO:
+			std::cerr << "MULTI-TO not implemented yet\n";
+			assert(false);
 			res->add_stage(make_ff_term(*p.children().front()));
 			res->add_stage(make_multito_farm(p));
 			break;
 		case Pipe::ITERATE:
+			std::cerr << "ITERATION not implemented yet\n";
+			assert(false);
 			assert(p.children().size() == 1);
 			res->add_stage(make_ff_term(*p.children()[0]));
 			//TODO add termination stage
 			res->wrap_around();
 			break;
 		case Pipe::MERGE:
+			std::cerr << "MERGE not implemented yet\n";
+			assert(false);
 			res->add_stage(make_merge_farm(p));
 			break;
 		}
