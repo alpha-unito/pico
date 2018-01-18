@@ -27,6 +27,7 @@
 
 #include "../Internals/utils.hpp"
 #include "../WindowPolicy.hpp"
+#include "../PEGOptimizations.hpp"
 
 /**
  * Base class defining a semantic dataflow operator.
@@ -51,7 +52,7 @@ public:
         return name_short() + address.str().erase(0, 2);
     }
 	virtual std::string name_short()=0;
-	virtual const OperatorClass operator_class()=0;
+	virtual const OpClass operator_class()=0;
 
 	/*
 	 * syntax-related functions
@@ -96,9 +97,13 @@ public:
 
 	virtual ff::ff_node* node_operator(int par_deg, Operator* nextop=nullptr)=0;
 
-protected:
-	virtual bool checkInputTypeSanity(TypeInfoRef id)=0;
-	virtual bool checkOutputTypeSanity(TypeInfoRef id)=0;
+	virtual ff::ff_node* opt_node(int, PEGOptimization_t, opt_args_t) {
+		assert(false);
+		return nullptr;
+	}
+
+	virtual bool partitioning() const {return false;}
+	virtual bool windowing() const {return false;}
 
 private:
 	size_t in_deg, out_deg;

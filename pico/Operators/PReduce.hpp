@@ -86,8 +86,16 @@ protected:
 		assert(false);
 	}
 
-	const OperatorClass operator_class(){
-		return OperatorClass::COMBINE;
+	const OpClass operator_class(){
+		return OpClass::REDUCE;
+	}
+
+	bool windowing() const {
+		return win;
+	}
+
+	bool partitioning() const {
+		return true;
 	}
 
 

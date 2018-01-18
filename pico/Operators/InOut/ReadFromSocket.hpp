@@ -92,8 +92,8 @@ protected:
 		assert(false);
 	}
 
-	const OperatorClass operator_class(){
-		return OperatorClass::INPUT;
+	const OpClass operator_class(){
+		return OpClass::INPUT;
 	}
 
 	ff::ff_node* node_operator(int parallelism, Operator* nextop=nullptr) {

@@ -32,6 +32,7 @@
 #include <ff/pipeline.hpp>
 #include <ff/farm.hpp>
 #include <ff/fftree.hpp>
+#include <pico/PEGOptimizations.hpp>
 #include "SupportFFNodes/BCastEmitter.hpp"
 #include "SupportFFNodes/MergeCollector.hpp"
 
@@ -64,18 +65,17 @@ private:
 		/* create the ff pipeline with automatic node cleanup */
 		auto *res = new ff::ff_pipeline();
 		res->cleanup_nodes();
+		Operator *op;
 
 		switch (p.term_node_type()) {
 		case Pipe::EMPTY:
 			break;
 		case Pipe::OPERATOR:
-			auto op = p.get_operator_ptr();
+			op = p.get_operator_ptr();
 			res->add_stage(op->node_operator(Constants::PARALLELISM, nullptr));
 			break;
 		case Pipe::TO:
-			//TODO PEG optimizations
-			for (auto p_ : p.children())
-				res->add_stage(make_ff_term(*p_));
+			add_chain(res, p.children());
 			break;
 		case Pipe::MULTITO:
 			res->add_stage(make_ff_term(*p.children().front()));
@@ -105,6 +105,69 @@ private:
 		res->add_workers(w);
 		res->cleanup_all();
 		return res;
+	}
+
+	/* apply PE optimization over two adjacent pipes  */
+	bool opt_match(Operator *op1, Operator *op2, PEGOptimization_t opt) const {
+		bool res = true;
+		auto opc1 = op1->operator_class(), opc2 = op2->operator_class();
+		switch (opt) {
+		case MAP_PREDUCE:
+			res = res && (opc1 == OpClass::MAP && opc2 == OpClass::REDUCE);
+			res = res && (!op1->windowing() && op2->partitioning());
+			break;
+		case FMAP_PREDUCE:
+			res = res && (opc1 == OpClass::FMAP && opc2 == OpClass::REDUCE);
+			res = res && (!op1->windowing() && op2->partitioning());
+			break;
+		}
+		return res;
+	}
+
+	template<typename ItType>
+	void add_plain(ff::ff_pipeline *p, ItType it) const {
+		if ((*it)->term_node_type() == Pipe::OPERATOR) {
+			/* standalone operator */
+			auto op = (*it)->get_operator_ptr();
+			p->add_stage(op->node_operator(Constants::PARALLELISM, nullptr));
+		} else
+			/* complex sub-term */
+			p->add_stage(make_ff_term(**it));
+	}
+
+	template<typename ItType>
+	bool add_optimized(ff::ff_pipeline *p, ItType it1, ItType it2) const {
+		/* get the operator pointers */
+		Operator *op1 = nullptr, *op2 = nullptr;
+		if ((**it1).term_node_type() == Pipe::OPERATOR)
+			op1 = (**it1).get_operator_ptr();
+		if ((**it2).term_node_type() == Pipe::OPERATOR)
+			op2 = (**it2).get_operator_ptr();
+		if(!op1 || !op2)
+			return false;
+
+		/* match with the optimization rules */
+		if (opt_match(op1, op2, MAP_PREDUCE))
+			p->add_stage(op1->opt_node(Constants::PARALLELISM, MAP_PREDUCE, opt_args_t{op2}));
+		else if (opt_match(op1, op2, FMAP_PREDUCE))
+			p->add_stage(op1->opt_node(Constants::PARALLELISM, FMAP_PREDUCE, opt_args_t{op2}));
+		else
+			return false;
+		return true;
+	}
+
+	void add_chain(ff::ff_pipeline *p, const std::vector<Pipe *> &s) const {
+		/* apply PEG optimizations */
+		auto it = s.begin();
+		for (; it != s.end() - 1; ++it) {
+			if (add_optimized(p, it, it + 1))
+				/* compound */
+				++it;
+			else
+				add_plain(p, it);
+		}
+		if(it != s.end())
+			add_plain(p, it);
 	}
 
 	ff::ff_farm<> *make_multito_farm(const Pipe &p) const {

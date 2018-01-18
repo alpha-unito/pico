@@ -98,8 +98,8 @@ public:
 
 
 //protected:
-	const OperatorClass operator_class() {
-		return OperatorClass::INPUT;
+	const OpClass operator_class() {
+		return OpClass::INPUT;
 	}
 
 };

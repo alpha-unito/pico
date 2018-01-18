@@ -55,7 +55,6 @@ public:
 	 */
 	FlatMap(std::function<void(In&, FlatMapCollector<Out> &)> flatmapf_) {
 		flatmapf = flatmapf_;
-		win = nullptr;
 		this->set_input_degree(1);
 		this->set_output_degree(1);
         this->set_stype(BOUNDED, true);
@@ -83,31 +82,31 @@ protected:
 #endif
 	}
 
-	const OperatorClass operator_class(){
-		return OperatorClass::UMAP;
+	const OpClass operator_class(){
+		return OpClass::FMAP;
 	}
 
-	ff::ff_node* node_operator(int parallelism, Operator* nextop) {
-//		if(parallelism==1){
-//			return new UnaryFlatMapFFNode<In, Out>(&flatmapf);
-//		}
-//
+	ff::ff_node* node_operator(int parallelism, Operator*) {
+		WindowPolicy* win;
 		if(this->data_stype()  == StructureType::STREAM){
 			win = new BatchWindow<Token<In>>();
 			return new FMapBatch<In, Out, ff_ofarm, Token<In>, Token<Out>>(parallelism, flatmapf, win);
 		}
 		win = new noWindow<Token<In>>();
-		if(nextop != nullptr){
-			return new FMapPReduceBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, flatmapf,
-					(dynamic_cast<PReduce<Out>*>(nextop))->kernel(), win);
-		}
 		return new FMapBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, flatmapf, win);
+	}
+
+	ff::ff_node *opt_node(int pardeg, PEGOptimization_t opt, opt_args_t a) {
+		assert(opt == FMAP_PREDUCE);
+		using t = FMapPReduceBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>;
+		auto win = new noWindow<Token<In>>();
+		auto nextop = dynamic_cast<PReduce<Out>*>(a.op);
+		return new t(pardeg, flatmapf, nextop->kernel(), win);
 	}
 
 
 private:
 	std::function<void(In&, FlatMapCollector<Out> &)> flatmapf;
-	WindowPolicy* win;
 };
 
 #endif /* OPERATORS_FLATMAP_HPP_ */

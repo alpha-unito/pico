@@ -68,8 +68,8 @@ protected:
 #endif
 	}
 
-	const OperatorClass operator_class(){
-		return OperatorClass::COMBINE;
+	const OpClass operator_class(){
+		return OpClass::REDUCE;
 	}
 
 

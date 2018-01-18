@@ -90,8 +90,8 @@ protected:
 		return new WriteToStdOut<In> (func);
 	}
 
-	const OperatorClass operator_class(){
-		return OperatorClass::OUTPUT;
+	const OpClass operator_class(){
+		return OpClass::OUTPUT;
 	}
 
 	ff::ff_node* node_operator(int parallelism, Operator* nextop=nullptr) {

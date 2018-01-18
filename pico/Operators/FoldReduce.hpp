@@ -65,8 +65,8 @@ protected:
 		return new FoldReduce<In, Out, State>(foldf, reducef);
 	}
 
-	const OperatorClass operator_class() {
-			return OperatorClass::FOLDR;
+	const OpClass operator_class() {
+			return OpClass::FOLDREDUCE;
 		}
 
 

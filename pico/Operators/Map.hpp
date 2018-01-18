@@ -25,6 +25,7 @@
 #include "PReduce.hpp"
 
 #include "../WindowPolicy.hpp"
+#include "../PEGOptimizations.hpp"
 
 #include "../Internals/Token.hpp"
 #include "../Internals/TimedToken.hpp"
@@ -56,7 +57,6 @@ public:
 	 */
 	Map(std::function<Out(In&)> mapf_){
 		mapf = mapf_;
-		win = nullptr;
 		this->set_input_degree(1);
 		this->set_output_degree(1);
 		this->set_stype(BOUNDED, true);
@@ -92,27 +92,41 @@ protected:
 		return new Map<In, Out> (mapf);
 	}
 
-	const OperatorClass operator_class(){
-		return OperatorClass::UMAP;
+	OpClass operator_class() const {
+		return OpClass::MAP;
+	}
+
+	bool partitioning() {
+		return false;
+	}
+
+	bool windowing() {
+		return this->data_stype() == (StructureType::STREAM);
 	}
 
 
-	ff::ff_node* node_operator(int parallelism, Operator* nextop){
+	ff::ff_node* node_operator(int parallelism, const Operator *){
+		WindowPolicy* win;
 		if (this->data_stype() == (StructureType::STREAM)){
+			using t = MapBatch<In, Out, ff_ofarm, Token<In>, Token<Out>>;
 			win = new BatchWindow<Token<In>>(Constants::MICROBATCH_SIZE);
-			return new MapBatch<In, Out, ff_ofarm, Token<In>, Token<Out>>(parallelism, mapf, win);
+			return new t(parallelism, mapf, win);
 		}
+		using t = MapBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>;
 		win = new noWindow<Token<In>>();
-		if(nextop != nullptr){
-			return new MapPReduceBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, mapf,
-					(dynamic_cast<PReduce<Out>*>(nextop))->kernel(), win);
-		}
-		return new MapBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, mapf, win);
+		return new t(parallelism, mapf, win);
+	}
+
+	ff::ff_node *opt_node(int parallelism, PEGOptimization_t opt, opt_args_t a) {
+		assert(opt == MAP_PREDUCE);
+		using t = MapPReduceBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>;
+		WindowPolicy* win = new noWindow<Token<In>>();
+		auto nextop = dynamic_cast<PReduce<Out>*>(a.op);
+		return new t(parallelism, mapf, nextop->kernel(), win);
 	}
 
 private:
 	std::function<Out(In&)> mapf;
-	WindowPolicy* win;
 };
 
 #endif /* MAPACTORNODE_HPP_ */
