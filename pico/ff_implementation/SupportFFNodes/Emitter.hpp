@@ -22,11 +22,8 @@
 #define INTERNALS_FFOPERATORS_EMITTER_HPP_
 
 #include <ff/node.hpp>
-#include <ff/lb.hpp>
 using namespace ff;
 
-class Emitter: public ff_node {
-
-};
+using Emitter = ff_node;
 
 #endif /* INTERNALS_FFOPERATORS_EMITTER_HPP_ */

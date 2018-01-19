@@ -38,6 +38,8 @@
 
 #include "../Pipe.hpp"
 
+using namespace pico;
+
 class FastFlowExecutor {
 public:
 	FastFlowExecutor(const Pipe &pipe_) :
@@ -72,7 +74,7 @@ private:
 			break;
 		case Pipe::OPERATOR:
 			op = p.get_operator_ptr();
-			res->add_stage(op->node_operator(Constants::PARALLELISM, nullptr));
+			res->add_stage(op->node_operator(global_params.PARALLELISM, nullptr));
 			break;
 		case Pipe::TO:
 			add_chain(res, p.children());
@@ -104,7 +106,7 @@ private:
 		auto *res = new ff::ff_farm<>();
 		auto nw = p.children().size();
 		res->add_emitter(new BCastEmitter(nw, res->getlb()));
-		res->add_collector(new MergeCollector(nw));
+		res->add_collector(new MergeCollector());
 		std::vector<ff::ff_node *> w;
 		for (auto p_ : p.children())
 			w.push_back(make_ff_term(*p_));
@@ -135,7 +137,7 @@ private:
 		if ((*it)->term_node_type() == Pipe::OPERATOR) {
 			/* standalone operator */
 			auto op = (*it)->get_operator_ptr();
-			p->add_stage(op->node_operator(Constants::PARALLELISM, nullptr));
+			p->add_stage(op->node_operator(global_params.PARALLELISM, nullptr));
 		} else
 			/* complex sub-term */
 			p->add_stage(make_ff_term(**it));
@@ -154,9 +156,9 @@ private:
 
 		/* match with the optimization rules */
 		if (opt_match(op1, op2, MAP_PREDUCE))
-			p->add_stage(op1->opt_node(Constants::PARALLELISM, MAP_PREDUCE, opt_args_t{op2}));
+			p->add_stage(op1->opt_node(global_params.PARALLELISM, MAP_PREDUCE, opt_args_t{op2}));
 		else if (opt_match(op1, op2, FMAP_PREDUCE))
-			p->add_stage(op1->opt_node(Constants::PARALLELISM, FMAP_PREDUCE, opt_args_t{op2}));
+			p->add_stage(op1->opt_node(global_params.PARALLELISM, FMAP_PREDUCE, opt_args_t{op2}));
 		else
 			return false;
 		return true;
@@ -182,7 +184,7 @@ private:
 		auto *res = new ff::ff_farm<>();
 		auto nw = p.children().size() - 1;
 		res->add_emitter(new BCastEmitter(nw, res->getlb()));
-		res->add_collector(new MergeCollector(nw));
+		res->add_collector(new MergeCollector());
 		std::vector<ff::ff_node *> w;
 		for (auto it = p.children().begin() + 1; it != p.children().end(); ++it)
 			w.push_back(make_ff_term(**it));

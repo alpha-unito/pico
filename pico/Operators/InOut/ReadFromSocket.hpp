@@ -28,6 +28,8 @@
 #include "../../ff_implementation/OperatorsFFNodes/InOut/ReadFromSocketFFNode.hpp"
 #include "InputOperator.hpp"
 
+namespace pico {
+
 /**
  * Defines an operator that reads data from a socket and produces a Stream.
  *
@@ -50,8 +52,8 @@ public:
 	*/
 	ReadFromSocket(char delimiter_)
 			: InputOperator<std::string>(StructureType::STREAM) {
-		server_name = Constants::SERVER_NAME;
-		port = Constants::PORT;
+		server_name = global_params.SERVER_NAME;
+		port = global_params.PORT;
 		delimiter = delimiter_;
 	}
 
@@ -108,5 +110,7 @@ private:
 	std::string filename;
 
 };
+
+} /* namespace pico */
 
 #endif /* OPERATORS_INOUT_READFROMSOCKET_HPP_ */

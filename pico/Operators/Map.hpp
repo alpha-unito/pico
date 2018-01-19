@@ -1,16 +1,16 @@
 /*
-    This file is part of PiCo.
-    PiCo is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    PiCo is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-    You should have received a copy of the GNU Lesser General Public License
-    along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ This file is part of PiCo.
+ PiCo is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ PiCo is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+ You should have received a copy of the GNU Lesser General Public License
+ along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
+ */
 /*
  * MapActorNode.hpp
  *
@@ -34,6 +34,8 @@
 #include "../ff_implementation/OperatorsFFNodes/MapPReduceBatch.hpp"
 #include "../ff_implementation/SupportFFNodes/FarmWrapper.hpp"
 
+namespace pico {
+
 /**
  * Defines an operator performing a Map function, taking in input one element from
  * the input source and producing one in output.
@@ -43,10 +45,8 @@
  *
  * The kernel is applied independently to all the elements of the collection (either bounded or unbounded).
  */
-template <typename In, typename Out>
-class Map : public UnaryOperator<In, Out> {
-	friend class Pipe;
-	friend class ParExecDF;
+template<typename In, typename Out>
+class Map: public UnaryOperator<In, Out> {
 public:
 
 	/**
@@ -55,7 +55,7 @@ public:
 	 * Constructor. Creates a new Map operator by defining its kernel function  mapf: In->Out
 	 * @param mapf std::function<Out(In)> Map kernel function with input type In producing an element of type Out
 	 */
-	Map(std::function<Out(In&)> mapf_){
+	Map(std::function<Out(In&)> mapf_) {
 		mapf = mapf_;
 		this->set_input_degree(1);
 		this->set_output_degree(1);
@@ -68,7 +68,7 @@ public:
 	/**
 	 * Returns the name of the operator, consisting in the name of the class.
 	 */
-	std::string name_short(){
+	std::string name_short() {
 		return "Map";
 	}
 
@@ -79,7 +79,7 @@ public:
 
 protected:
 
-	Out run_kernel(In* in_task){
+	Out run_kernel(In* in_task) {
 
 		return mapf(*in_task);
 	}
@@ -88,28 +88,19 @@ protected:
 	 * Duplicates a Map with a copy of the Map kernel function.
 	 * @return new Map pointer
 	 */
-	Map<In, Out>* clone(){
-		return new Map<In, Out> (mapf);
+	Map<In, Out>* clone() {
+		return new Map<In, Out>(mapf);
 	}
 
-	OpClass operator_class() const {
+	const OpClass operator_class() {
 		return OpClass::MAP;
 	}
 
-	bool partitioning() {
-		return false;
-	}
-
-	bool windowing() {
-		return this->data_stype() == (StructureType::STREAM);
-	}
-
-
-	ff::ff_node* node_operator(int parallelism, const Operator *){
+	ff::ff_node* node_operator(int parallelism, Operator *) {
 		WindowPolicy* win;
-		if (this->data_stype() == (StructureType::STREAM)){
+		if (this->data_stype() == (StructureType::STREAM)) {
 			using t = MapBatch<In, Out, ff_ofarm, Token<In>, Token<Out>>;
-			win = new BatchWindow<Token<In>>(Constants::MICROBATCH_SIZE);
+			win = new BatchWindow<Token<In>>(global_params.MICROBATCH_SIZE);
 			return new t(parallelism, mapf, win);
 		}
 		using t = MapBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>;
@@ -117,7 +108,8 @@ protected:
 		return new t(parallelism, mapf, win);
 	}
 
-	ff::ff_node *opt_node(int parallelism, PEGOptimization_t opt, opt_args_t a) {
+	ff::ff_node *opt_node(int parallelism, PEGOptimization_t opt,
+			opt_args_t a) {
 		assert(opt == MAP_PREDUCE);
 		using t = MapPReduceBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>;
 		WindowPolicy* win = new noWindow<Token<In>>();
@@ -128,5 +120,7 @@ protected:
 private:
 	std::function<Out(In&)> mapf;
 };
+
+} /* namespace pico */
 
 #endif /* MAPACTORNODE_HPP_ */

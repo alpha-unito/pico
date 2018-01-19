@@ -33,6 +33,8 @@
 
 #include "Pipe.hpp"
 
+namespace pico {
+
 enum SemNodeRole {
 	Processing, Merge
 };
@@ -47,7 +49,7 @@ public:
 	}
 
 	void destroy() {
-		for(auto adj : graph)
+		for (auto adj : graph)
 			delete adj.first;
 	}
 
@@ -122,14 +124,16 @@ private:
 				res.merge_with(subg.back());
 			}
 			/* link subgraphs */
-			for(std::vector<SemanticGraph>::size_type i = 0; i < subg.size() - 1; ++i)
-				res.graph[subg[i].lastdagnode].push_back(subg[i+1].firstdagnode);
+			for (std::vector<SemanticGraph>::size_type i = 0;
+					i < subg.size() - 1; ++i)
+				res.graph[subg[i].lastdagnode].push_back(
+						subg[i + 1].firstdagnode);
 			/* set first and last nodes */
 			res.firstdagnode = subg[0].firstdagnode;
 			res.lastdagnode = subg[subg.size() - 1].lastdagnode;
 			break;
 		case Pipe::MULTITO:
-			if(p.out_deg() == 1)
+			if (p.out_deg() == 1)
 				node_ = new SemGraphNode(); //merge
 			/* merge children graphs */
 			for (auto p_ : p.children()) {
@@ -137,9 +141,9 @@ private:
 				res.merge_with(subg.back());
 			}
 			/* link children (having output) with merge node */
-			if(p.out_deg())
-				for(auto it = subg.begin() + 1; it != subg.end(); ++it)
-					if(it->lastdagnode->op->o_degree())
+			if (p.out_deg())
+				for (auto it = subg.begin() + 1; it != subg.end(); ++it)
+					if (it->lastdagnode->op->o_degree())
 						res.graph[it->lastdagnode].push_back(node_);
 			/* set first and last nodes */
 			res.firstdagnode = subg[0].firstdagnode;
@@ -267,5 +271,7 @@ void print_semantic_graph(SemanticGraph &g, std::ostream &os) {
 void print_dot_semantic_graph(SemanticGraph &g, std::string fname) {
 	g.dot(fname);
 }
+
+} /* namespace pico */
 
 #endif /* PICO_SEMANTICGRAPH_HPP_ */

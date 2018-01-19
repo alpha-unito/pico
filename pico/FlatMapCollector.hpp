@@ -26,6 +26,8 @@
 #include "Internals/Microbatch.hpp"
 #include "Internals/Token.hpp"
 
+namespace pico {
+
 /**
  * \ingroup op-api
  *
@@ -34,12 +36,11 @@
 template<typename Out>
 class FlatMapCollector {
 public:
-    virtual void add(const Out &) = 0;
-    virtual void add(Out &&) = 0;
+	virtual void add(const Out &) = 0;
+	virtual void add(Out &&) = 0;
 
-    virtual ~FlatMapCollector()
-    {
-    }
+	virtual ~FlatMapCollector() {
+	}
 };
 
 /**
@@ -47,98 +48,90 @@ public:
  */
 template<typename DataType>
 class TokenCollector: public FlatMapCollector<DataType> {
-    typedef Microbatch<Token<DataType>> mb_t;
+	typedef Microbatch<Token<DataType>> mb_t;
 
 public:
-    TokenCollector()
-    {
-        clear();
-    }
+	TokenCollector() {
+		clear();
+	}
 
-    /**
-     * Add a token by copying a DataType value
-     */
-    inline void add(const DataType &x)
-    {
-        make_room();
+	/**
+	 * Add a token by copying a DataType value
+	 */
+	inline void add(const DataType &x) {
+		make_room();
 
-        /* insert the element and its token decoration */
-        new (head->mb->allocate()) DataType(x);
-        //TokenType *t = new (mb_t::token_desc(item)) TokenType(*item);
-        head->mb->commit();
-    }
+		/* insert the element and its token decoration */
+		new (head->mb->allocate()) DataType(x);
+		//TokenType *t = new (mb_t::token_desc(item)) TokenType(*item);
+		head->mb->commit();
+	}
 
-    /**
-     * Add a token by moving a DataType value
-     */
-    inline void add(DataType &&x)
-    {
-        make_room();
+	/**
+	 * Add a token by moving a DataType value
+	 */
+	inline void add(DataType &&x) {
+		make_room();
 
-        /* insert the element and its token decoration */
-        new (head->mb->allocate()) DataType(std::move(x));
-        //TokenType *t = new (mb_t::token_desc(item)) TokenType(*item);
-        head->mb->commit();
-    }
+		/* insert the element and its token decoration */
+		new (head->mb->allocate()) DataType(std::move(x));
+		//TokenType *t = new (mb_t::token_desc(item)) TokenType(*item);
+		head->mb->commit();
+	}
 
-    /**
-     * Clear the list without destroying it.
-     */
-    inline void clear()
-    {
-        first = head = nullptr;
-    }
+	/**
+	 * Clear the list without destroying it.
+	 */
+	inline void clear() {
+		first = head = nullptr;
+	}
 
-    /**
-     * A collector is stored as a list of Microbatch objects.
-     * They travel together in order to guarantee the semantics of FlatMap
-     * when processed.
-     *
-     * The list type is exposed since it is freed externally.
-     */
-    struct cnode {
-        mb_t *mb;
-        struct cnode *next;
-    };
+	/**
+	 * A collector is stored as a list of Microbatch objects.
+	 * They travel together in order to guarantee the semantics of FlatMap
+	 * when processed.
+	 *
+	 * The list type is exposed since it is freed externally.
+	 */
+	struct cnode {
+		mb_t *mb;
+		struct cnode *next;
+	};
 
-    cnode* begin()
-    {
-        return first;
-    }
+	cnode* begin() {
+		return first;
+	}
 
 private:
-    cnode *first, *head;
+	cnode *first, *head;
 
-    /*
-     * ensure there is an available slot in the head node
-     */
-    inline void make_room()
-    {
-        if (first)
-        {
-            if (head->mb->full())
-            {
-                assert(head->next == nullptr);
-                head->next = allocate();
-                head = head->next;
-            }
-        }
+	/*
+	 * ensure there is an available slot in the head node
+	 */
+	inline void make_room() {
+		if (first) {
+			if (head->mb->full()) {
+				assert(head->next == nullptr);
+				head->next = allocate();
+				head = head->next;
+			}
+		}
 
-        else
-        {
-            /* initializes the list */
-            first = allocate();
-            head = first;
-        }
-    }
+		else {
+			/* initializes the list */
+			first = allocate();
+			head = first;
+		}
+	}
 
-    inline cnode * allocate()
-    {
-        cnode *res = (cnode *)MALLOC(sizeof(cnode));
-        res->next = nullptr;
-        NEW(res->mb, mb_t, Constants::MICROBATCH_SIZE);
-        return res;
-    }
+	inline cnode * allocate() {
+		cnode *res = (cnode *) MALLOC(sizeof(cnode));
+		res->next = nullptr;
+		NEW(res->mb, mb_t, global_params.MICROBATCH_SIZE);
+		return res;
+	}
 };
+
+} /* namespace pico */
 
 #endif /* INTERNALS_TYPES_FLATMAPCOLLECTOR_HPP_ */

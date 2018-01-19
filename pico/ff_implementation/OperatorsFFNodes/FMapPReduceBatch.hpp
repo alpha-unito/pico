@@ -35,6 +35,7 @@
 #include "../SupportFFNodes/FarmEmitter.hpp"
 
 using namespace ff;
+using namespace pico;
 
 /*
  * TODO only works with non-decorating token
@@ -113,13 +114,13 @@ private:
 				fprintf(stderr, "[UNARYFLATMAP-PREDUCE-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
 #endif
 				mb_out *mb;
-				NEW(mb, mb_out, Constants::MICROBATCH_SIZE);
+				NEW(mb, mb_out, global_params.MICROBATCH_SIZE);
 				for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
 					new (mb->allocate()) Out(it->second);
 					mb->commit();
 					if (mb->full()) {
 						ff_send_out(reinterpret_cast<void*>(mb));
-						NEW(mb, mb_out, Constants::MICROBATCH_SIZE);
+						NEW(mb, mb_out, global_params.MICROBATCH_SIZE);
 					}
 				}
 

@@ -1,16 +1,16 @@
 /*
-    This file is part of PiCo.
-    PiCo is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    PiCo is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-    You should have received a copy of the GNU Lesser General Public License
-    along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ This file is part of PiCo.
+ PiCo is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ PiCo is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+ You should have received a copy of the GNU Lesser General Public License
+ along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
+ */
 /*
  * PReduce.hpp
  *
@@ -29,6 +29,7 @@
 #include "../Internals/TimedToken.hpp"
 #include "../Internals/Token.hpp"
 
+namespace pico {
 
 /**
  * Defines a PReduce operator performing a tree reduce function on partitioned input (i.e. reduce by key).
@@ -60,7 +61,7 @@ public:
 	/**
 	 * Returns the name of the operator, consisting in the name of the class.
 	 */
-	std::string name_short(){
+	std::string name_short() {
 		return "PReduce";
 	}
 
@@ -73,9 +74,9 @@ public:
 		return *this;
 	}
 
-	std::function<In(In&, In&)> kernel(){
-			return reducef;
-		}
+	std::function<In(In&, In&)> kernel() {
+		return reducef;
+	}
 
 protected:
 	PReduce<In> *clone() {
@@ -86,7 +87,7 @@ protected:
 		assert(false);
 	}
 
-	const OpClass operator_class(){
+	const OpClass operator_class() {
 		return OpClass::REDUCE;
 	}
 
@@ -98,13 +99,13 @@ protected:
 		return true;
 	}
 
-
-	ff::ff_node* node_operator(int parallelism, Operator* nextop=nullptr) {
+	ff::ff_node* node_operator(int parallelism, Operator* nextop = nullptr) {
 		//if(parallelism == 1)
 //			return new PReduceFFNode<In>(&reducef);
-		if(this->data_stype() == (StructureType::STREAM)){
+		if (this->data_stype() == (StructureType::STREAM)) {
 			assert(win != nullptr);
-			return new PReduceWin<In, Token<In>, FarmWrapper/*ff_ofarm not needed*/>(parallelism, reducef, win);
+			return new PReduceWin<In, Token<In>, FarmWrapper/*ff_ofarm not needed*/>(
+					parallelism, reducef, win);
 		} // else preducemb with regular farm and window NoWindow
 //		win =  new ByKeyWindow<Token<In>>(MICROBATCH_SIZE);
 //		return new PReduceBatch<In, Token<In>, FarmWrapper>(parallelism, reducef, win);
@@ -116,5 +117,6 @@ private:
 	WindowPolicy* win;
 };
 
+} /* namespace pico */
 
 #endif /* PREDUCE_HPP_ */

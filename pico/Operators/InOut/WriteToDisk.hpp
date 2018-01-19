@@ -27,6 +27,8 @@
 #include "../../ff_implementation/OperatorsFFNodes/InOut/WriteToDiskFFNode.hpp"
 #include "OutputOperator.hpp"
 
+namespace pico {
+
 /**
  * Defines an operator that writes data to a text file.
  *
@@ -75,7 +77,7 @@ public:
 	 * Returns the name of the operator, consisting in the name of the class.
 	 */
 	std::string name_short() {
-		return "WriteToDisk\n[" + Constants::OUTPUT_FILE + "]";
+		return "WriteToDisk\n[" + global_params.OUTPUT_FILE + "]";
 	}
 
 protected:
@@ -98,5 +100,7 @@ protected:
 private:
 	std::function<std::string(In)> func;
 };
+
+} /* namespace pico */
 
 #endif /* ACTORS_INOUT_READFROMFILE_HPP_ */

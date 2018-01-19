@@ -29,6 +29,8 @@
 #include "../ff_config.hpp"
 #include "../../Internals/Token.hpp"
 
+using namespace pico;
+
 template<typename In, typename State, typename Farm, typename TokenTypeIn,
 		typename TokenTypeState>
 class FoldReduceBatch: public Farm {
@@ -39,7 +41,7 @@ public:
 
 		this->setEmitterF(
 				new ByKeyEmitter<TokenTypeIn>(parallelism, this->getlb(),
-						Constants::MICROBATCH_SIZE));
+						global_params.MICROBATCH_SIZE));
 		this->setCollectorF(new Collector(parallelism, reducef_));
 		std::vector<ff_node *> w;
 		for (int i = 0; i < parallelism; ++i) {
@@ -111,7 +113,7 @@ private:
 			if (task == PICO_EOS) {
 				if (++picoEOSrecv == nworkers) {
 					mb_out * out_microbatch;
-					NEW(out_microbatch, mb_out, Constants::MICROBATCH_SIZE);
+					NEW(out_microbatch, mb_out, global_params.MICROBATCH_SIZE);
 					new (out_microbatch->allocate()) State(state);
 					out_microbatch->commit();
 					ff_send_out(PICO_SYNC);

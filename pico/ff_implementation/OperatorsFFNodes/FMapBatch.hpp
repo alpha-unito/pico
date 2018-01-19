@@ -31,6 +31,7 @@
 #include "../../FlatMapCollector.hpp"
 
 using namespace ff;
+using namespace pico;
 
 
 template<typename In, typename Out, typename Farm, typename TokenTypeIn, typename TokenTypeOut>

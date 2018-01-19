@@ -36,6 +36,7 @@
 #include "../ff_config.hpp"
 
 using namespace ff;
+using namespace pico;
 
 template<typename In, typename TokenType, typename FarmType = ff_farm<>>
 class PReduceWin: public FarmType {
@@ -66,7 +67,7 @@ private:
 	class PReduceFFNode: public ff_node {
 	public:
 		PReduceFFNode(std::function<In(In&, In&)>& reducef_, size_t mb_size_ =
-				Constants::MICROBATCH_SIZE) :
+				global_params.MICROBATCH_SIZE) :
 				kernel(reducef_), mb_size(mb_size_) {
 		}
 

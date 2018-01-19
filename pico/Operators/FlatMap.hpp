@@ -32,6 +32,8 @@
 #include "../ff_implementation/OperatorsFFNodes/FMapPReduceBatch.hpp"
 #include "../ff_implementation/SupportFFNodes/FarmWrapper.hpp"
 
+namespace pico {
+
 /**
  * Defines an operator performing a FlatMap, taking in input one element from
  * the input source and producing zero, one or more elements in output.
@@ -108,5 +110,7 @@ protected:
 private:
 	std::function<void(In&, FlatMapCollector<Out> &)> flatmapf;
 };
+
+} /* namespace pico */
 
 #endif /* OPERATORS_FLATMAP_HPP_ */

@@ -1,19 +1,19 @@
 /*
-    This file is part of PiCo.
+ This file is part of PiCo.
 
-    PiCo is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+ PiCo is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
 
-    PiCo is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
+ PiCo is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
 
-    You should have received a copy of the GNU Lesser General Public License
-    along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ You should have received a copy of the GNU Lesser General Public License
+ along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /*
  * TerminationCondition.hpp
@@ -25,13 +25,17 @@
 #ifndef PICO_TERMINATIONCONDITION_HPP_
 #define PICO_TERMINATIONCONDITION_HPP_
 
+namespace pico {
+
 class TerminationCondition {
 
 };
 
-class FixedIterations : public TerminationCondition {
+class FixedIterations: public TerminationCondition {
 public:
-	FixedIterations(unsigned iters_) : iters(iters_) {}
+	FixedIterations(unsigned iters_) :
+			iters(iters_) {
+	}
 
 private:
 	unsigned iters;
@@ -42,6 +46,6 @@ private:
 	}
 };
 
-
+} /* namespace pico */
 
 #endif /* PICO_TERMINATIONCONDITION_HPP_ */

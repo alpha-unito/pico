@@ -1,16 +1,16 @@
 /*
-    This file is part of PiCo.
-    PiCo is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    PiCo is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-    You should have received a copy of the GNU Lesser General Public License
-    along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ This file is part of PiCo.
+ PiCo is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ PiCo is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+ You should have received a copy of the GNU Lesser General Public License
+ along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
+ */
 /*
  * BinaryMap.hpp
  *
@@ -23,6 +23,8 @@
 
 #include "BinaryOperator.hpp"
 
+namespace pico {
+
 /**
  * Defines an operator performing a binary Map, taking in input two elements from
  * two different input sources and producing a single output.
@@ -33,8 +35,8 @@
  *
  * The kernel is applied independently to all the elements of both collections (either bounded or unbounded).
  */
-template <typename In1, typename In2, typename Out>
-class BinaryMap : public BinaryOperator<In1, In2, Out> {
+template<typename In1, typename In2, typename Out>
+class BinaryMap: public BinaryOperator<In1, In2, Out> {
 	friend class Pipe;
 public:
 	/**
@@ -44,34 +46,30 @@ public:
 	 * @param bmapf std::function<Out(In1, In2)> BinaryMap kernel function with input types In1, In2 and
 	 * producing an element of type Out
 	 */
-	BinaryMap(std::function<Out(In1, In2)> bmapf_):bmapf(bmapf_), iDegree(2), oDegree(1){
+	BinaryMap(std::function<Out(In1, In2)> bmapf_) :
+			bmapf(bmapf_), iDegree(2), oDegree(1) {
 		raw_struct_type[BOUNDED] = true;
 		raw_struct_type[UNBOUNDED] = false;
 		raw_struct_type[ORDERED] = true;
 		raw_struct_type[UNORDERED] = true;
-	};
-
+	}
 
 	/**
 	 * Returns a unique name for the operator.
 	 */
-	std::string name(){
+	std::string name() {
 		std::string name("BinaryMap");
 		std::ostringstream address;
-		address << (void const *)this;
-		return name+address.str().erase(0,2);
+		address << (void const *) this;
+		return name + address.str().erase(0, 2);
 	}
 
 	/**
 	 * Returns the name of the operator, consisting in the name of the class.
 	 */
-	std::string name_short(){
+	std::string name_short() {
 		return "BinaryMap";
 	}
-
-	~BinaryMap() {};
-
-
 
 protected:
 	void run() {
@@ -88,11 +86,11 @@ protected:
 		return new BinaryMap<In1, In2, Out>(bmapf);
 	}
 
-	size_t i_degree(){
-			return iDegree;
-		}
+	size_t i_degree() {
+		return iDegree;
+	}
 
-	size_t o_degree(){
+	size_t o_degree() {
 		return oDegree;
 	}
 
@@ -100,7 +98,7 @@ protected:
 		return raw_struct_type;
 	}
 
-	const OpClass operator_class(){
+	const OpClass operator_class() {
 		return OpClass::BMAP;
 	}
 
@@ -108,13 +106,12 @@ protected:
 		return nullptr;
 	}
 
-
 private:
 	std::function<Out(In1, In2)> bmapf;
 	size_t iDegree, oDegree;
 	bool raw_struct_type[4];
 };
 
-
+} /* namespace pico */
 
 #endif /* OPERATORS_BINARYMAP_HPP_ */

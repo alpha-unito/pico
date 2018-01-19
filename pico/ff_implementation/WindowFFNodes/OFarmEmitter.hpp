@@ -26,6 +26,8 @@
 
 #include "../SupportFFNodes/Emitter.hpp"
 
+using namespace pico;
+
 template<typename TokenType>
 class OFarmEmitter: public Emitter {
 public:

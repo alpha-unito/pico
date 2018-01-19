@@ -28,6 +28,7 @@
 #include "../../../Internals/utils.hpp"
 
 using namespace ff;
+using namespace pico;
 
 /*
  * TODO only works with non-decorating token
@@ -40,7 +41,7 @@ public:
 			kernel(kernel_), recv_sync(false) {};
 
 	int svc_init(){
-		outfile.open(Constants::OUTPUT_FILE);
+		outfile.open(global_params.OUTPUT_FILE);
 		return 0;
 	}
 	void* svc(void* task){

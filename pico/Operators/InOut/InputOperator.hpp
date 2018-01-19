@@ -23,6 +23,8 @@
 
 #include "../UnaryOperator.hpp"
 
+namespace pico {
+
 /**
  * Defines an operator performing the policy for generating input (i.e. read from file).
  *
@@ -73,13 +75,12 @@ public:
 		}
 		this->set_data_stype(st_);
 	}
-	;
 
 	/**
 	 * Copy constructor
 	 */
 	InputOperator(const InputOperator &copy) :
-		UnaryOperator<void, Out>(copy) {
+			UnaryOperator<void, Out>(copy) {
 
 	}
 
@@ -92,10 +93,8 @@ public:
 
 	virtual ~InputOperator() {
 	}
-	;
 
 	virtual void run_kernel()=0;
-
 
 //protected:
 	const OpClass operator_class() {
@@ -103,5 +102,7 @@ public:
 	}
 
 };
+
+} /* namespace pico */
 
 #endif /* ACTORS_INPUTACTORNODE_HPP_ */

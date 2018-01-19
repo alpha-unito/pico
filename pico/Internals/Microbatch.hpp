@@ -25,6 +25,8 @@
 
 #include "../ff_implementation/ff_config.hpp"
 
+namespace pico {
+
 /**
  * Microbatch is the atomic storage of PiCo collections.
  * Each collection item is decorated with a token descriptor of type TokenType,
@@ -62,19 +64,15 @@
 
 template<typename TokenType>
 class Microbatch {
-    typedef typename TokenType::datatype DataType;
+	typedef typename TokenType::datatype DataType;
 
 public:
-    /**
-     * The constructor only allocates the chunk, it does not initialize items.
-     */
-	Microbatch(unsigned int slots_) : slots(slots_) {
-#if 0
-	    void **ptr = (void **)&chunk;
-	    POSIX_MEMALIGN(ptr, 64, slots * slot_size);
-#else
-	    chunk = (char *)MALLOC(slots * slot_size);
-#endif
+	/**
+	 * The constructor only allocates the chunk, it does not initialize items.
+	 */
+	Microbatch(unsigned int slots_) :
+			slots(slots_) {
+		chunk = (char *) MALLOC(slots * slot_size);
 		allocated = committed = 0;
 	}
 
@@ -82,22 +80,20 @@ public:
 	 * The destructor destroy items and free memory.
 	 */
 	~Microbatch() {
-	    clear();
-	    FREE(chunk);
+		clear();
+		FREE(chunk);
 	}
 
 	/**
-     * destroys all allocated items.
-     */
-    void clear()
-    {
-        for (; allocated > 0; --allocated)
-        {
-            char *slot_ptr = chunk + (allocated - 1) * slot_size;
-            ((DataType *) (slot_ptr + desc_size))->~DataType();
-            ((TokenType *) (slot_ptr))->~TokenType();
-        }
-    }
+	 * destroys all allocated items.
+	 */
+	void clear() {
+		for (; allocated > 0; --allocated) {
+			char *slot_ptr = chunk + (allocated - 1) * slot_size;
+			((DataType *) (slot_ptr + desc_size))->~DataType();
+			((TokenType *) (slot_ptr))->~TokenType();
+		}
+	}
 
 	/**
 	 * Allocates a slot from the Microbatch.
@@ -107,24 +103,24 @@ public:
 	 * - nullptr if the chunk is full
 	 */
 	inline DataType *allocate() {
-	    if(!full())
-	        return (DataType *)(chunk + (allocated++ * slot_size) + desc_size);
-	    return nullptr;
+		if (!full())
+			return (DataType *) (chunk + (allocated++ * slot_size) + desc_size);
+		return nullptr;
 	}
 
 	/**
 	 * Commits the last allocated item.
 	 */
 	inline void commit() {
-	    assert(committed < slots);
-	    ++committed;
+		assert(committed < slots);
+		++committed;
 	}
 
 	/**
 	 * Return a pointer to the token descriptor for a data slot.
 	 */
 	static TokenType *token_desc(DataType *data_slot) {
-	    return (TokenType *)(((char *)(data_slot)) - desc_size);
+		return (TokenType *) (((char *) (data_slot)) - desc_size);
 	}
 
 	inline bool full() const {
@@ -138,38 +134,33 @@ public:
 	/*
 	 * Microbatch iterator over committed items.
 	 */
-    class iterator: public std::iterator<std::input_iterator_tag, DataType> {
-        char* p;
-    public:
-        iterator(char *x)
-                : p(x)
-        {
-        }
-        iterator& operator++()
-        {
-            p += slot_size;
-            return *this;
-        }
-        bool operator==(const iterator& rhs)
-        {
-            return p == rhs.p;
-        }
-        bool operator!=(const iterator& rhs)
-        {
-            return p != rhs.p;
-        }
-        DataType& operator*()
-        {
-            return *(DataType *)(p + desc_size);
-        }
-    };
+	class iterator: public std::iterator<std::input_iterator_tag, DataType> {
+		char* p;
+	public:
+		iterator(char *x) :
+				p(x) {
+		}
+		iterator& operator++() {
+			p += slot_size;
+			return *this;
+		}
+		bool operator==(const iterator& rhs) {
+			return p == rhs.p;
+		}
+		bool operator!=(const iterator& rhs) {
+			return p != rhs.p;
+		}
+		DataType& operator*() {
+			return *(DataType *) (p + desc_size);
+		}
+	};
 
 	iterator begin() {
-	    return iterator(chunk);
+		return iterator(chunk);
 	}
 
 	iterator end() {
-	    return iterator(chunk + committed * slot_size);
+		return iterator(chunk + committed * slot_size);
 	}
 
 private:
@@ -179,5 +170,7 @@ private:
 	const unsigned int slots;
 	unsigned int allocated, committed;
 };
+
+} /* namespace pico */
 
 #endif /* INTERNALS_TYPES_MICROBATCH_HPP_ */

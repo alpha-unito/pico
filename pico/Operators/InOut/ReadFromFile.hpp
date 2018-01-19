@@ -1,16 +1,16 @@
 /*
-    This file is part of PiCo.
-    PiCo is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    PiCo is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-    You should have received a copy of the GNU Lesser General Public License
-    along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ This file is part of PiCo.
+ PiCo is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ PiCo is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+ You should have received a copy of the GNU Lesser General Public License
+ along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
+ */
 /*
  * ReadFromFile.hpp
  *
@@ -26,6 +26,9 @@
 
 #include "../../ff_implementation/OperatorsFFNodes/InOut/ReadFromFileFFNode.hpp"
 #include "InputOperator.hpp"
+
+namespace pico {
+
 /**
  * Defines an operator that reads data from a text file and produces an Ordered+Bounded collection (i.e. LIST).
  *
@@ -34,23 +37,24 @@
  * The operator is global and unique for the Pipe it refers to.
  */
 
-class ReadFromFile : public InputOperator<std::string>{
+class ReadFromFile: public InputOperator<std::string> {
 public:
 
 	/**
 	 * \ingroup op-api
 	 *
 	 * Constructor. Creates a new ReadFromFile operator by defining its kernel function: std::string -> Out
-     * operating on each line of the textfile specified.
+	 * operating on each line of the textfile specified.
 	 */
-	ReadFromFile()
-			: InputOperator<std::string>(StructureType::BAG) {
+	ReadFromFile() :
+			InputOperator<std::string>(StructureType::BAG) {
 	}
 
 	/**
 	 * Copy constructor.
 	 */
-	ReadFromFile(const ReadFromFile &copy) : InputOperator<std::string>(copy) {
+	ReadFromFile(const ReadFromFile &copy) :
+			InputOperator<std::string>(copy) {
 	}
 
 	/**
@@ -59,16 +63,15 @@ public:
 	std::string name() {
 		std::string name("ReadFromFile");
 		std::ostringstream address;
-		address << (void const *)this;
-		return name+address.str().erase(0,2);
+		address << (void const *) this;
+		return name + address.str().erase(0, 2);
 	}
 
 	/**
 	 * Returns the name of the operator, consisting in the name of the class.
 	 */
-	std::string name_short(){
-		return "ReadFromFile\n["
-				+Constants::INPUT_FILE+"]";
+	std::string name_short() {
+		return "ReadFromFile\n[" + global_params.INPUT_FILE + "]";
 	}
 
 protected:
@@ -76,16 +79,16 @@ protected:
 		return new ReadFromFile(*this);
 	}
 
-	void run_kernel(){
+	void run_kernel() {
 		assert(false);
 	}
 
-	ff::ff_node* node_operator(int parallelism, Operator* nextop=nullptr) {
+	ff::ff_node* node_operator(int parallelism, Operator* nextop = nullptr) {
 		return new ReadFromFileFFNode<std::string>();
 	}
 
 };
 
-
+} /* namespace pico */
 
 #endif /* OPERATORS_INOUT_READFROMFILE_HPP_ */

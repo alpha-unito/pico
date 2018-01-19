@@ -24,6 +24,8 @@
 #include "Emitter.hpp"
 #include "../../Internals/utils.hpp"
 
+using namespace pico;
+
 class MergeEmitter: public Emitter {
 public:
 	MergeEmitter(int nworkers_, ff_loadbalancer * const lb_) :

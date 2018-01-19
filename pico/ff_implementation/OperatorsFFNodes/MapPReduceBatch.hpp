@@ -34,6 +34,7 @@
 #include "../../WindowPolicy.hpp"
 
 using namespace ff;
+using namespace pico;
 
 /*
  * TODO only works with non-decorating token
@@ -90,7 +91,7 @@ public:
 
 #if 0
 	// stateless variant
-	out_microbatch = new Microbatch<TokenTypeOut>(Constants::MICROBATCH_SIZE);
+	out_microbatch = new Microbatch<TokenTypeOut>(global_params.MICROBATCH_SIZE);
 	for (auto it=kvmap.begin(); it!=kvmap.end(); ++it){
 			out_microbatch->push_back(std::move(it->second));
 	}
@@ -104,13 +105,13 @@ public:
 	fprintf(stderr, "[MAP-PREDUCE-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
 #endif
 	        mb_out *out_microbatch;
-	        NEW(out_microbatch, mb_out, Constants::MICROBATCH_SIZE);
+	        NEW(out_microbatch, mb_out, global_params.MICROBATCH_SIZE);
 			for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
 			    new (out_microbatch->allocate()) Out(std::move(it->second));
 			    out_microbatch->commit();
 			    if(out_microbatch->full()) {
 			       ff_send_out(reinterpret_cast<void*>(out_microbatch));
-			       NEW(out_microbatch, mb_out, Constants::MICROBATCH_SIZE);
+			       NEW(out_microbatch, mb_out, global_params.MICROBATCH_SIZE);
 			    }
 			}
 			if(!out_microbatch->empty()) {
