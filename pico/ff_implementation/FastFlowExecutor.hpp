@@ -49,7 +49,7 @@ public:
 		delete_ff_term();
 	}
 
-	void run() {
+	void run() const {
 		ff_pipe->run_and_wait_end();
 	}
 
