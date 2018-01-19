@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
 	 */
 	auto stockPricing = Pipe(ReadFromFile()) //
 	.to(blackScholes). //
-	add(PReduce<StockAndPrice>([]
+	add(ReduceByKey<StockAndPrice>([]
 	(StockAndPrice p1, StockAndPrice p2)
 	{	return std::max(p1,p2);})). //
 	add(WriteToDisk<StockAndPrice>([](StockAndPrice kv)

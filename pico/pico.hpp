@@ -8,6 +8,7 @@
 #ifndef PICO_PICO_HPP_
 #define PICO_PICO_HPP_
 
+#include <pico/Operators/ReduceByKey.hpp>
 #include "Pipe.hpp"
 #include "SemanticGraph.hpp"
 #include "ff_implementation/FastFlowExecutor.hpp"
@@ -21,7 +22,6 @@
 #include "Operators/Map.hpp"
 #include "Operators/FlatMap.hpp"
 #include "Operators/Reduce.hpp"
-#include "Operators/PReduce.hpp"
 #include "Operators/FoldReduce.hpp"
 #include "Operators/BinaryMap.hpp"
 #include "Operators/InOut/ReadFromFile.hpp"

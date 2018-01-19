@@ -21,9 +21,8 @@
 #ifndef MAPACTORNODE_HPP_
 #define MAPACTORNODE_HPP_
 
+#include <pico/Operators/ReduceByKey.hpp>
 #include "UnaryOperator.hpp"
-#include "PReduce.hpp"
-
 #include "../WindowPolicy.hpp"
 #include "../PEGOptimizations.hpp"
 
@@ -113,7 +112,7 @@ protected:
 		assert(opt == MAP_PREDUCE);
 		using t = MapPReduceBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>;
 		WindowPolicy* win = new noWindow<Token<In>>();
-		auto nextop = dynamic_cast<PReduce<Out>*>(a.op);
+		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);
 		return new t(parallelism, mapf, nextop->kernel(), win);
 	}
 
