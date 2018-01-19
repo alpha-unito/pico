@@ -45,9 +45,9 @@ public:
 
 	/**
 	 * \ingroup op-api
+	 * WriteToStdOut Constructor
 	 *
-	 * Constructor. Creates a new WriteToStdOut operator by defining its kernel function In -> std::string
-	 * writing to standard output.
+	 * Creates a new WriteToStdOut operator by defining its kernel function.
 	 */
 	WriteToStdOut(std::function<std::string(In)> func_) :
 			OutputOperator<In>(StructureType::STREAM) {

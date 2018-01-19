@@ -34,6 +34,10 @@ class FoldReduce: public UnaryOperator<In, Out> {
 public:
 	/**
 	 * \ingroup op-api
+	 *
+	 * FoldReduce Constructor
+	 *
+	 * Creates a new FoldReduce operator by defining its kernel function.
 	 */
 	FoldReduce(std::function<void(const In&, State&)> foldf_,
 			std::function<void(const State&, State&)> reducef_) {

@@ -39,8 +39,9 @@ class Reduce: public UnaryOperator<In, In> {
 public:
 	/**
 	 * \ingroup op-api
+	 * Reduce Constructor
 	 *
-	 * Constructor. Creates a new Reduce operator by defining its kernel function reducef: <In, In> -> In
+	 * Creates a new Reduce operator by defining its kernel function.
 	 */
 	Reduce(std::function<In(In, In)> reducef_) :
 			reducef(reducef_) {

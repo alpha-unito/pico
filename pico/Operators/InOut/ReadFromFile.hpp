@@ -43,8 +43,9 @@ public:
 	/**
 	 * \ingroup op-api
 	 *
-	 * Constructor. Creates a new ReadFromFile operator by defining its kernel function: std::string -> Out
-	 * operating on each line of the textfile specified.
+	 * ReadFromFile Constructor
+	 *
+	 * Creates a new ReadFromFile operator by defining its kernel function.
 	 */
 	ReadFromFile() :
 			InputOperator<std::string>(StructureType::BAG) {

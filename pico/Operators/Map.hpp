@@ -50,9 +50,9 @@ public:
 
 	/**
 	 * \ingroup op-api
+	 * Map Constructor
 	 *
-	 * Constructor. Creates a new Map operator by defining its kernel function  mapf: In->Out
-	 * @param mapf std::function<Out(In)> Map kernel function with input type In producing an element of type Out
+	 * Creates a new Map operator by defining its kernel function.
 	 */
 	Map(std::function<Out(In&)> mapf_) {
 		mapf = mapf_;
