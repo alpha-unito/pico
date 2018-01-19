@@ -47,8 +47,9 @@ public:
 	/**
 	 * \ingroup op-api
 	 *
-	 * Constructor. Creates a new WriteToDisk operator by defining its kernel function: In -> void
-	 * writing to the textfile specified.
+	 * WritetoDisk Constructor
+	 *
+	 * Creates a new WriteToDisk operator by defining its kernel function.
 	 */
 	WriteToDisk(std::function<std::string(In)> func_) :
 			OutputOperator<In>(StructureType::BAG) {

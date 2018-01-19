@@ -41,9 +41,9 @@ class ReadFromHDFS: public InputOperator<std::string> {
 public:
 	/**
 	 * \ingroup op-api
+	 * ReadFromHDFS Constructor
 	 *
-	 * Constructor. Creates a new ReadFromHDFS operator by defining its kernel function: std::string -> Out
-	 * operating on each line of the HDFS file specified.
+	 * Creates a new ReadFromHDFS operator by defining its kernel function.
 	 */
 	ReadFromHDFS() :
 			InputOperator<std::string>(StructureType::BAG) {

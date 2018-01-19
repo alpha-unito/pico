@@ -45,8 +45,9 @@ class ReduceByKey: public UnaryOperator<In, In> {
 public:
 	/**
 	 * \ingroup op-api
+	 * ReduceByKey Constructor
 	 *
-	 * Constructor. Creates a new PReduce operator by defining its kernel function reducef: <In, In> -> In
+	 * Creates a ReduceByKey operator by defining its kernel function.
 	 */
 	ReduceByKey(std::function<In(In&, In&)> reducef_) :
 			reducef(reducef_), win(nullptr) {

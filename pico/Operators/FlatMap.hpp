@@ -51,9 +51,9 @@ public:
 	/**
 	 * \ingroup op-api
 	 *
-	 * Constructor.
-	 * Creates a new FlatMap operator by defining its kernel function  flatMapf: In->Out
-	 * @param flatmapf std::function<Out(In)> FlatMap kernel function with input type In producing zero, one or more element of type Out
+	 * FlatMap Constructor
+	 *
+	 * Creates a new FlatMap operator by defining its kernel function.
 	 */
 	FlatMap(std::function<void(In&, FlatMapCollector<Out> &)> flatmapf_) {
 		flatmapf = flatmapf_;

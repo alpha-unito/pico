@@ -1,16 +1,16 @@
 /*
-    This file is part of PiCo.
-    PiCo is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    PiCo is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-    You should have received a copy of the GNU Lesser General Public License
-    along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ This file is part of PiCo.
+ PiCo is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ PiCo is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+ You should have received a copy of the GNU Lesser General Public License
+ along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
+ */
 /*
  * ReadFromSocket.hpp
  *
@@ -20,7 +20,6 @@
 
 #ifndef OPERATORS_INOUT_READFROMSOCKET_HPP_
 #define OPERATORS_INOUT_READFROMSOCKET_HPP_
-
 
 #include <iostream>
 #include <fstream>
@@ -41,17 +40,18 @@ namespace pico {
  * The operator is global and unique for the Pipe it refers to.
  */
 
-class ReadFromSocket : public InputOperator<std::string>{
+class ReadFromSocket: public InputOperator<std::string> {
 public:
 
 	/**
 	 * \ingroup op-api
+	 * ReadFromSocket Constructor
 	 *
-	* Constructor. Creates a new ReadFromSocket operator by defining its kernel function: std::string -> Out
-    * operating on each token of the stream, delimited by the delimiter value.
-	*/
-	ReadFromSocket(char delimiter_)
-			: InputOperator<std::string>(StructureType::STREAM) {
+	 * Creates a new ReadFromSocket operator by defining its kernel function,
+	 * operating on each token of the stream, delimited by the delimiter value.
+	 */
+	ReadFromSocket(char delimiter_) :
+			InputOperator<std::string>(StructureType::STREAM) {
 		server_name = global_params.SERVER_NAME;
 		port = global_params.PORT;
 		delimiter = delimiter_;
@@ -60,7 +60,8 @@ public:
 	/**
 	 * Copy constructor.
 	 */
-	ReadFromSocket(const ReadFromSocket &copy) : InputOperator<std::string>(copy) {
+	ReadFromSocket(const ReadFromSocket &copy) :
+			InputOperator<std::string>(copy) {
 		server_name = copy.server_name;
 		port = copy.port;
 		delimiter = copy.delimiter;
@@ -73,16 +74,15 @@ public:
 	std::string name() {
 		std::string name("ReadFromSocket");
 		std::ostringstream address;
-		address << (void const *)this;
-		return name+address.str().erase(0,2);
+		address << (void const *) this;
+		return name + address.str().erase(0, 2);
 	}
 
 	/**
 	 * Returns the name of the operator, consisting in the name of the class.
 	 */
-	std::string name_short(){
-		return "ReadFromSocket\n["
-				+server_name+"]";
+	std::string name_short() {
+		return "ReadFromSocket\n[" + server_name + "]";
 	}
 
 protected:
@@ -90,18 +90,18 @@ protected:
 		return new ReadFromSocket(*this);
 	}
 
-	void run_kernel(){
+	void run_kernel() {
 		assert(false);
 	}
 
-	const OpClass operator_class(){
+	const OpClass operator_class() {
 		return OpClass::INPUT;
 	}
 
-	ff::ff_node* node_operator(int parallelism, Operator* nextop=nullptr) {
-		return new ReadFromSocketFFNode<Token<std::string>>(server_name, port, delimiter);
+	ff::ff_node* node_operator(int parallelism, Operator* nextop = nullptr) {
+		return new ReadFromSocketFFNode<Token<std::string>>(server_name, port,
+				delimiter);
 	}
-
 
 private:
 	std::string server_name;
