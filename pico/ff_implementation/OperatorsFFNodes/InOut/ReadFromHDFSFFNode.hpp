@@ -32,7 +32,9 @@
 #include "../../../Internals/Token.hpp"
 
 #include "../../ff_config.hpp"
+
 using namespace ff;
+using namespace pico;
 
 /*
  * TODO only works with non-decorating token
@@ -62,9 +64,9 @@ public:
 		}
 
 		mb_t *mb;
-		NEW(mb, mb_t, Constants::MICROBATCH_SIZE);
+		NEW(mb, mb_t, global_params.MICROBATCH_SIZE);
 
-		const char *rfile = Constants::INPUT_FILE.c_str();
+		const char *rfile = global_params.INPUT_FILE.c_str();
 
 		readFile = hdfsOpenFile(fs, rfile, O_RDONLY, 0, 0, 0);
 		if (!readFile) {
@@ -119,7 +121,7 @@ public:
 				/* send out micro-batch if complete */
 				if (mb->full()) {
 					ff_send_out(reinterpret_cast<void*>(mb));
-					NEW(mb, mb_t, Constants::MICROBATCH_SIZE);
+					NEW(mb, mb_t, global_params.MICROBATCH_SIZE);
 				}
 
 				/* UPDATING START */
@@ -139,7 +141,7 @@ public:
 			/* send out micro-batch if complete */
 			if (mb->full()) {
 				ff_send_out(reinterpret_cast<void*>(mb));
-				NEW(mb, mb_t, Constants::MICROBATCH_SIZE);
+				NEW(mb, mb_t, global_params.MICROBATCH_SIZE);
 			}
 		} // end reading
 

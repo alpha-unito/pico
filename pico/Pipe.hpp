@@ -49,6 +49,7 @@
 
 #include "TerminationCondition.hpp"
 
+namespace pico {
 /*
  * forward declarations for semantic graph
  */
@@ -58,18 +59,20 @@ SemanticGraph *make_semantic_graph(const Pipe &);
 void destroy_semantic_graph(SemanticGraph *);
 void print_semantic_graph(SemanticGraph &, std::ostream &os);
 void print_dot_semantic_graph(SemanticGraph &, std::string);
+}
 
 /*
  * forward declarations for execution
  */
 class FastFlowExecutor;
-FastFlowExecutor *make_executor(const Pipe &);
+FastFlowExecutor *make_executor(const pico::Pipe &);
 void destroy_executor(FastFlowExecutor *);
 void run_pipe(FastFlowExecutor &);
 double run_time(FastFlowExecutor &);
 void print_executor_info(FastFlowExecutor &, std::ostream &os);
 void print_executor_trace(FastFlowExecutor &, std::ostream &os);
 
+namespace pico {
 
 /**
  * A Pipe is a single entity composed by operators.
@@ -169,7 +172,7 @@ public:
 			destroy_semantic_graph(semantic_graph);
 
 		/* destroy the executor */
-		if(executor)
+		if (executor)
 			destroy_executor(executor);
 	}
 
@@ -277,7 +280,7 @@ public:
 #ifdef DEBUG
 		std::cerr << "[PIPE] Appending multiple Pipes \n";
 #endif
-		assert(out_deg_==1 && term_node_type_ != EMPTY); // can not add new nodes if pipe is complete or pipe is empty
+		assert(out_deg_ == 1 && term_node_type_ != EMPTY); // can not add new nodes if pipe is complete or pipe is empty
 		TypeInfoRef res_out_dtype = typeid(void);
 
 		/* prepare the result pipe */
@@ -290,7 +293,7 @@ public:
 		res.in_deg_ = in_deg_;
 		copy_struct_type(res, structure_types);
 
-		for(auto p : pipes) {
+		for (auto p : pipes) {
 			/* check data types */
 			assert(same_data_type(p->in_dtype, out_dtype));
 
@@ -301,8 +304,8 @@ public:
 			struct_type_intersection(res, p->structure_types);
 
 			/* typing at output side */
-			if(p->out_deg_) {
-				if(res_out_dtype.get() != typeid(void))
+			if (p->out_deg_) {
+				if (res_out_dtype.get() != typeid(void))
 					assert(same_data_type(res_out_dtype, p->out_dtype));
 				else
 					res_out_dtype = p->out_dtype;
@@ -436,7 +439,7 @@ public:
 		std::cerr << "[PIPE] Printing semantic graph\n";
 #endif
 		std::cout << "=== Semantic Graph\n";
-		if(!semantic_graph)
+		if (!semantic_graph)
 			semantic_graph = make_semantic_graph(*this);
 		print_semantic_graph(*semantic_graph, std::cout);
 	}
@@ -467,7 +470,7 @@ public:
 #endif
 		assert(in_deg_ == 0 && out_deg_ == 0);
 
-		if(!executor)
+		if (!executor)
 			executor = make_executor(*this);
 		std::cout << "=== Executor Info\n";
 		print_executor_info(*executor, std::cout);
@@ -526,7 +529,8 @@ private:
 		}
 	}
 
-	inline void struct_type_intersection(Pipe &res, const bool raw_st[4]) const {
+	inline void struct_type_intersection(Pipe &res,
+			const bool raw_st[4]) const {
 		for (int i = 0; i < 4; ++i) {
 			res.structure_types[i] = raw_st[i] && structure_types[i];
 		}
@@ -536,15 +540,14 @@ private:
 		Pipe *fresh = new Pipe(to_be_added);
 
 		/* apply TO associativity */
-		if(fresh->term_node_type_ == TO) {
+		if (fresh->term_node_type_ == TO) {
 			/* steal fresh children */
-			for(auto p : fresh->children_)
+			for (auto p : fresh->children_)
 				res.children_.push_back(p);
 			/* prevent children to be deleted */
 			fresh->children_.clear();
 			delete fresh;
-		}
-		else
+		} else
 			res.children_.push_back(fresh);
 	}
 
@@ -572,7 +575,9 @@ private:
 	/* term syntax tree */
 	term_node_t term_node_type_;
 	union term_value_t {
-		term_value_t(Operator *op_) : op(op_) {}
+		term_value_t(Operator *op_) :
+				op(op_) {
+		}
 		Operator *op;
 		TerminationCondition cond;
 	} term_value;
@@ -584,6 +589,8 @@ private:
 	/* executor */
 	FastFlowExecutor *executor = nullptr;
 };
+
+} /* namespace pico */
 
 #endif /* PIPE_HPP_ */
 

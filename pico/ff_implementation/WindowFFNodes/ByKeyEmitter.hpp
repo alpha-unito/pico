@@ -29,13 +29,15 @@
 #include "../ff_config.hpp"
 #include "../SupportFFNodes/Emitter.hpp"
 
+using namespace pico;
+
 template<typename TokenType>
 class ByKeyEmitter: public Emitter {
 public:
 	ByKeyEmitter(int nworkers_, ff_loadbalancer * const lb_, size_t w_size_) :
 			nworkers(nworkers_), lb(lb_), w_size(w_size_){
 		for(int i = 0; i < nworkers; ++i){
-			NEW(w_win_map[i], mb_t, Constants::MICROBATCH_SIZE);
+			NEW(w_win_map[i], mb_t, global_params.MICROBATCH_SIZE);
 		}
 	}
 
@@ -55,7 +57,7 @@ public:
 				w_win_map[dst]->commit();
 				if(w_win_map[dst]->full()){
 					lb->ff_send_out_to(reinterpret_cast<void*>(w_win_map[dst]), dst);
-					NEW(w_win_map[dst], mb_t, Constants::MICROBATCH_SIZE);
+					NEW(w_win_map[dst], mb_t, global_params.MICROBATCH_SIZE);
 				}
 			}
 			DELETE(in_microbatch, mb_t);

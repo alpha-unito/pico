@@ -1,16 +1,16 @@
 /*
-    This file is part of PiCo.
-    PiCo is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    PiCo is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-    You should have received a copy of the GNU Lesser General Public License
-    along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ This file is part of PiCo.
+ PiCo is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ PiCo is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+ You should have received a copy of the GNU Lesser General Public License
+ along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
+ */
 /*
  * Operator.hpp
  *
@@ -29,6 +29,8 @@
 #include "../WindowPolicy.hpp"
 #include "../PEGOptimizations.hpp"
 
+namespace pico {
+
 /**
  * Base class defining a semantic dataflow operator.
  * An operator has an input and output cardinality <I-degree, O-degree>, where
@@ -40,19 +42,30 @@
 
 class Operator {
 public:
-	virtual ~Operator(){};
+	virtual ~Operator() {
+	}
 
-    /*
-     * naming
-     */
-    virtual std::string name()
-    {
-        std::ostringstream address;
-        address << (void const *) this;
-        return name_short() + address.str().erase(0, 2);
-    }
+	/*
+	 * naming
+	 */
+	virtual std::string name() {
+		std::ostringstream address;
+		address << (void const *) this;
+		return name_short() + address.str().erase(0, 2);
+	}
 	virtual std::string name_short()=0;
 	virtual const OpClass operator_class()=0;
+
+	/*
+	 * structural properties
+	 */
+	virtual bool partitioning() const {
+		return false;
+	}
+
+	virtual bool windowing() const {
+		return false;
+	}
 
 	/*
 	 * syntax-related functions
@@ -95,15 +108,13 @@ public:
 		st = st_;
 	}
 
-	virtual ff::ff_node* node_operator(int par_deg, Operator* nextop=nullptr)=0;
+	virtual ff::ff_node* node_operator(int par_deg,
+			Operator* nextop = nullptr)=0;
 
 	virtual ff::ff_node* opt_node(int, PEGOptimization_t, opt_args_t) {
 		assert(false);
 		return nullptr;
 	}
-
-	virtual bool partitioning() const {return false;}
-	virtual bool windowing() const {return false;}
 
 private:
 	size_t in_deg, out_deg;
@@ -111,6 +122,6 @@ private:
 	StructureType st;
 };
 
-
+} /* namespace pico */
 
 #endif /* ACTORNODE_HPP_ */

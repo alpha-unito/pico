@@ -24,6 +24,10 @@
 #include "Emitter.hpp"
 #include "../../Internals/utils.hpp"
 
+#include "ff/lb.hpp"
+
+using namespace pico;
+
 template<typename TokenType>
 class FarmEmitter: public Emitter {
 public:

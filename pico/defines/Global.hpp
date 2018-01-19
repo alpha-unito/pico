@@ -16,6 +16,8 @@
  *
  *  Created on: Dec 28, 2016
  *      Author: misale
+ *
+ *   TODO - remove app-specific arguments from globals
  */
 
 #ifndef DEFINES_GLOBAL_HPP_
@@ -28,22 +30,17 @@
 
 #include <ff/mapper.hpp>
 
+namespace pico {
 
-namespace Constants {
-// forward declarations only
-	int PARALLELISM(1);
-	int MICROBATCH_SIZE(8);
+struct {
+	int PARALLELISM = 1;
+	int MICROBATCH_SIZE = 8;
 	std::string INPUT_FILE;
 	std::string OUTPUT_FILE;
 	int PORT;
 	std::string SERVER_NAME;
 	const char* MAPPING;
-	void swap(){
-			std::string tmp = INPUT_FILE;
-			INPUT_FILE = OUTPUT_FILE;
-			OUTPUT_FILE = tmp;
-		}
-}
+} global_params;
 
 /**
  * Parses default arguments.
@@ -56,36 +53,30 @@ int parse_PiCo_args(int& argc, char** argv) {
 	while ((opt = getopt(argc, argv, "w:b:i:o:s:p:m:")) != -1) {
 		switch (opt) {
 		case 'w':
-			Constants::PARALLELISM = atoi(optarg);
-//			fprintf(stderr, "Parallelism set to %d\n", Constants::PARALLELISM);
+			global_params.PARALLELISM = atoi(optarg);
 			break;
 		case 'b':
-			Constants::MICROBATCH_SIZE = atoi(optarg);
+			global_params.MICROBATCH_SIZE = atoi(optarg);
 			break;
 		case 'i':
-			Constants::INPUT_FILE = std::string(optarg);
-//			fprintf(stderr, "Input file %s\n", Constants::input_file.c_str());
+			global_params.INPUT_FILE = std::string(optarg);
 			in = true;
 			break;
 		case 'o':
-			Constants::OUTPUT_FILE = std::string(optarg);
-//			fprintf(stderr, "Input file %s\n", Constants::output_file.c_str());
+			global_params.OUTPUT_FILE = std::string(optarg);
 			out = true;
 			break;
 		case 'p':
-			Constants::PORT = atoi(optarg);
-//			fprintf(stderr, "Port %d\n", Constants::port);
+			global_params.PORT = atoi(optarg);
 			break;
 		case 's':
-			Constants::SERVER_NAME = optarg;
-//			fprintf(stderr, "Input file %s\n", Constants::server_name.c_str());
+			global_params.SERVER_NAME = optarg;
 			in = true;
 			out = true;
 			break;
 		case 'm':
-			Constants::MAPPING = optarg;
-//			fprintf(stderr, "Mapping list %s\n", Constants::MAPPING);
-			ff::threadMapper::instance()->setMappingList(Constants::MAPPING);
+			global_params.MAPPING = optarg;
+			ff::threadMapper::instance()->setMappingList(global_params.MAPPING);
 			break;
 		default: /* '?' */
 			fprintf(stderr,
@@ -104,5 +95,7 @@ int parse_PiCo_args(int& argc, char** argv) {
 
 	return 0;
 }
+
+} /* namespace pico */
 
 #endif /* DEFINES_GLOBAL_HPP_ */

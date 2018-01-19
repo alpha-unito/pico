@@ -1,16 +1,16 @@
 /*
-    This file is part of PiCo.
-    PiCo is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    PiCo is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-    You should have received a copy of the GNU Lesser General Public License
-    along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ This file is part of PiCo.
+ PiCo is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ PiCo is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+ You should have received a copy of the GNU Lesser General Public License
+ along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
+ */
 /*
  * WindowPolicy.hpp
  *
@@ -25,71 +25,92 @@
 #include "ff_implementation/WindowFFNodes/ByKeyEmitter.hpp"
 #include "ff_implementation/WindowFFNodes/OFarmEmitter.hpp"
 
+namespace pico {
+
 class WindowPolicy {
 public:
-	WindowPolicy(): w_size(1), w_slide(1){};
-	WindowPolicy(size_t w_size_, size_t w_slide_) : w_size(w_size_), w_slide(w_slide_){};
-	WindowPolicy(const WindowPolicy &w) : w_size(w.w_size), w_slide(w.w_slide){};
-	WindowPolicy(WindowPolicy &&w) : w_size(w.w_size), w_slide(w.w_slide){};
-	WindowPolicy& operator=(const WindowPolicy &w){
+	WindowPolicy() :
+			w_size(1), w_slide(1) {
+	}
+
+	WindowPolicy(size_t w_size_, size_t w_slide_) :
+			w_size(w_size_), w_slide(w_slide_) {
+	}
+
+	WindowPolicy(const WindowPolicy &w) :
+			w_size(w.w_size), w_slide(w.w_slide) {
+	}
+
+	WindowPolicy& operator=(const WindowPolicy &w) {
 		w_slide = w.w_slide;
 		w_size = w.w_size;
 		return *this;
 	}
-	WindowPolicy& operator=(WindowPolicy &&w){
-			w_slide = w.w_slide;
-			w_size = w.w_size;
-			return *this;
-		}
-	size_t slide_factor(){
+
+	size_t slide_factor() {
 		return w_slide;
 	}
-	size_t win_size(){
+
+	size_t win_size() {
 		return w_size;
 	}
 
-	virtual	ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const lb_)=0;
+	virtual ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const)=0;
 
-	virtual ~WindowPolicy(){};
+	virtual ~WindowPolicy() {
+	}
 
 protected:
-	 size_t w_size;
-	 size_t w_slide;
+	size_t w_size;
+	size_t w_slide;
 };
 
-template <typename TokenType>
-class BatchWindow : public WindowPolicy {
+template<typename TokenType>
+class BatchWindow: public WindowPolicy {
 
 public:
-	BatchWindow() : WindowPolicy(){};
-	BatchWindow (size_t w_size_) : WindowPolicy(w_size_, w_size_){};
+	BatchWindow() :
+			WindowPolicy() {
+	}
 
-	 ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const lb_) {
+	BatchWindow(size_t w_size_) :
+			WindowPolicy(w_size_, w_size_) {
+	}
+
+	ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const lb_) {
 		return new OFarmEmitter<TokenType>(nworkers_, lb_);
 	}
 };
 
-template <typename TokenType>
-class ByKeyWindow : public WindowPolicy {
+template<typename TokenType>
+class ByKeyWindow: public WindowPolicy {
 
 public:
-	ByKeyWindow() : WindowPolicy(){};
-	ByKeyWindow (size_t w_size_) : WindowPolicy(w_size_, w_size_){};
+	ByKeyWindow() :
+			WindowPolicy() {
+	}
 
-	 ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const lb_) {
+	ByKeyWindow(size_t w_size_) :
+			WindowPolicy(w_size_, w_size_) {
+	}
+
+	ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const lb_) {
 		return new ByKeyEmitter<TokenType>(nworkers_, lb_, w_size);
 	}
 };
 
-
-template <typename TokenType>
-class noWindow : public WindowPolicy {
+template<typename TokenType>
+class noWindow: public WindowPolicy {
 public:
-	noWindow() : WindowPolicy(Constants::MICROBATCH_SIZE, 1){};
+	noWindow() :
+			WindowPolicy(global_params.MICROBATCH_SIZE, 1) {
+	}
 
-	 ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const lb_) {
-			return new FarmEmitter<TokenType>(nworkers_, lb_);
-		}
+	ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const lb_) {
+		return new FarmEmitter<TokenType>(nworkers_, lb_);
+	}
 };
+
+} /* namespace pico */
 
 #endif /* INTERNALS_WINDOWPOLICY_HPP_ */

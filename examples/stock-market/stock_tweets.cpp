@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
 	parse_PiCo_args(argc, argv);
 
 	/* bring tags to memory */
-	std::ifstream stocks_file(Constants::INPUT_FILE);
+	std::ifstream stocks_file(pico::global_params.INPUT_FILE);
 	std::string stock_name;
 	while (stocks_file.good()) {
 		stocks_file >> stock_name;
@@ -121,7 +121,7 @@ int main(int argc, char** argv) {
 	.add(PReduce<StockAndCount>([] (StockAndCount p1, StockAndCount p2)
 	{
 		return std::max(p1,p2);
-	}).window(Constants::MICROBATCH_SIZE)).add(writeCounts);
+	}).window(8)).add(writeCounts);
 
 	/* print the semantic graph and generate dot file */
 	stockTweets.print_semantics();

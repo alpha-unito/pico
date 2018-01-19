@@ -21,25 +21,24 @@
 #ifndef INTERNALS_TYPES_TOKEN_HPP_
 #define INTERNALS_TYPES_TOKEN_HPP_
 
+namespace pico {
+
 /**
  * Token descriptor for decorating collection data items with meta-data.
  */
 template<typename T>
 class Token {
 public:
-    typedef T datatype;
+	typedef T datatype;
 
-    /*
-     * create Token as decoration of a T value
-     */
-    Token(const T&) {
+	/*
+	 * create Token as decoration of a T value
+	 */
+	Token(const T&) {
 
-    }
-
-private:
-    /*
-     * Token meta-data
-     */
+	}
 };
+
+} /* namespace pico */
 
 #endif /* INTERNALS_TYPES_TOKENMD_HPP_ */

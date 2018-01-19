@@ -27,15 +27,16 @@
 #include "../ff_implementation/SupportFFNodes/FarmWrapper.hpp"
 #include "../Internals/Token.hpp"
 
-template <typename In, typename Out, typename State>
-class FoldReduce : public UnaryOperator<In, Out> {
-	friend class Pipe;
-	friend class ParExecDF;
+namespace pico {
+
+template<typename In, typename Out, typename State>
+class FoldReduce: public UnaryOperator<In, Out> {
 public:
 	/**
 	 * \ingroup op-api
 	 */
-	FoldReduce(std::function<void(const In&, State&)> foldf_, std::function<void(const State&, State&)> reducef_)  {
+	FoldReduce(std::function<void(const In&, State&)> foldf_,
+			std::function<void(const State&, State&)> reducef_) {
 		foldf = foldf_;
 		reducef = reducef_;
 		this->set_input_degree(1);
@@ -55,23 +56,22 @@ public:
 
 protected:
 
-	Out run_kernel(In* in_task){
+	Out run_kernel(In* in_task) {
 
 		return nullptr;
 	}
 
-
-	FoldReduce<In, Out, State>* clone(){
+	FoldReduce<In, Out, State>* clone() {
 		return new FoldReduce<In, Out, State>(foldf, reducef);
 	}
 
 	const OpClass operator_class() {
-			return OpClass::FOLDREDUCE;
-		}
-
+		return OpClass::FOLDREDUCE;
+	}
 
 	ff::ff_node* node_operator(int parallelism, Operator* nextop) {
-		return new FoldReduceBatch<In, State, FarmWrapper, Token<In>, Token<State>>(parallelism, foldf, reducef);
+		return new FoldReduceBatch<In, State, FarmWrapper, Token<In>,
+				Token<State>>(parallelism, foldf, reducef);
 	}
 
 private:
@@ -79,6 +79,6 @@ private:
 	std::function<void(const State&, State&)> reducef;
 };
 
-
+} /* namespace pico */
 
 #endif /* OPERATORS_FOLDREDUCE_HPP_ */

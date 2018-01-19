@@ -33,6 +33,7 @@
 #include "../../Internals/Token.hpp"
 
 using namespace ff;
+using namespace pico;
 
 /*
  * TODO only works with non-decorating token
@@ -49,7 +50,7 @@ public:
 #endif
 			outmb_size = win->win_size();
 		} else {
-			outmb_size = Constants::MICROBATCH_SIZE;
+			outmb_size = global_params.MICROBATCH_SIZE;
 		}
 	}
 

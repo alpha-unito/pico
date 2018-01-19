@@ -75,7 +75,7 @@ int main(int argc, char** argv)
     for (auto it = word_cnt.begin(); it != word_cnt.end(); ++it)
     {
         assert(it->second != 0);
-        KeyValue<std::string, unsigned> kv(it->first, it->second);
+        pico::KeyValue<std::string, unsigned> kv(it->first, it->second);
         outfile << kv.to_string() << std::endl;
     }
 

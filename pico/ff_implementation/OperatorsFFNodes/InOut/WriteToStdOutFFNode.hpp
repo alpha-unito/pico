@@ -29,6 +29,7 @@
 #include "../../../Internals/Token.hpp"
 
 using namespace ff;
+using namespace pico;
 
 /*
  * TODO only works with non-decorating token

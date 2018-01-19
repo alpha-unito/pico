@@ -22,36 +22,6 @@
 #define INTERNALS_FFOPERATORS_SUPPORTFFNODES_MERGECOLLECTOR_HPP_
 
 #include "Collector.hpp"
-#include "../../Internals/utils.hpp"
-
-class MergeCollector: public Collector {
-public:
-	MergeCollector(int nworkers_) {
-	}
-
-	void* svc(void* task) {
-//		if (task == PICO_EOS) {
-//			if (++picoEOSrecv == nworkers) {
-//				printf("mergecollector sending eos\n");
-//				return task;
-//			}
-//		}
-//		else if (task != PICO_SYNC) {
-//			printf("mergecollector sending task\n");
-//			return task; //forward regular task
-//		}
-
-		//if(task != PICO_EOS && task != PICO_SYNC) {
-		//	printf("mergecollector sending task\n");
-//			        return task;
-		//	    }
-		ff_send_out(task);
-		return GO_ON;
-	}
-
-private:
-//	int nworkers;
-//	int picoEOSrecv;
-};
+using MergeCollector = Collector;
 
 #endif /* INTERNALS_FFOPERATORS_SUPPORTFFNODES_MERGECOLLECTOR_HPP_ */

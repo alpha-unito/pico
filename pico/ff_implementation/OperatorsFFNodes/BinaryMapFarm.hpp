@@ -23,6 +23,8 @@
 
 #include "../../Operators/BinaryOperator.hpp"
 
+using namespace pico;
+
 
 
 #endif /* INTERNALS_FFOPERATORS_BINARYMAPFARM_HPP_ */

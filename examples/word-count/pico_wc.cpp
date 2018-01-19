@@ -30,6 +30,7 @@
 #include <string>
 
 #include <pico/pico.hpp>
+using namespace pico;
 
 typedef KeyValue<std::string, int> KV;
 

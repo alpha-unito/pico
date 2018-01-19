@@ -40,6 +40,8 @@
 #include "../../ff_config.hpp"
 
 using namespace ff;
+using namespace pico;
+
 #define CHUNK_SIZE 512
 
 /*
@@ -78,7 +80,7 @@ public:
 		}
 		bzero(buffer, sizeof(buffer));
 		mb_t *microbatch;
-		NEW(microbatch, mb_t, Constants::MICROBATCH_SIZE);
+		NEW(microbatch, mb_t, global_params.MICROBATCH_SIZE);
 		std::string *line = new (microbatch->allocate()) std::string();
 
 		while ((n = read(sockfd, buffer, sizeof(buffer))) > 0) {
@@ -90,7 +92,7 @@ public:
 					microbatch->commit();
 					if (microbatch->full()) {
 						ff_send_out(reinterpret_cast<void*>(microbatch));
-						NEW(microbatch, mb_t, Constants::MICROBATCH_SIZE);
+						NEW(microbatch, mb_t, global_params.MICROBATCH_SIZE);
 					}
 					tail.clear();
 					line = new (microbatch->allocate()) std::string();

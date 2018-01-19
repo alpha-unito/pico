@@ -32,6 +32,7 @@
 #include "../../WindowPolicy.hpp"
 
 using namespace ff;
+using namespace pico;
 
 /*
  * TODO only works with non-decorating token
@@ -72,7 +73,7 @@ private:
 //				hires_timer_ull(t0);
 				auto in_microbatch = reinterpret_cast<mb_in*>(task);
 				mb_out *out_microbatch;
-				NEW(out_microbatch, mb_out, Constants::MICROBATCH_SIZE);
+				NEW(out_microbatch, mb_out, global_params.MICROBATCH_SIZE);
 				// iterate over microbatch
 				for (In &in : *in_microbatch) {
 					/* build item and enable copy elision */

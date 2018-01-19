@@ -21,20 +21,18 @@
 #ifndef INTERNALS_FFOPERATORS_SUPPORTFFNODES_FARMWRAPPER_HPP_
 #define INTERNALS_FFOPERATORS_SUPPORTFFNODES_FARMWRAPPER_HPP_
 
-
 #include <ff/farm.hpp>
 
-class FarmWrapper : public ff::ff_farm<>{
+class FarmWrapper: public ff::ff_farm<> {
 public:
 
-	void setEmitterF(ff_node* f){
+	void setEmitterF(ff_node* f) {
 		this->add_emitter(f);
 	}
 
-	void setCollectorF(ff_node* f){
+	void setCollectorF(ff_node* f) {
 		this->add_collector(f);
 	}
 };
-
 
 #endif /* INTERNALS_FFOPERATORS_SUPPORTFFNODES_FARMWRAPPER_HPP_ */

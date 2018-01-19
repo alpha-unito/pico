@@ -29,9 +29,8 @@
 
 #include "../../ff_config.hpp"
 
-
-
 using namespace ff;
+using namespace pico;
 
 /*
  * TODO only works with non-decorating token
@@ -48,10 +47,10 @@ public:
 		time_point_t t0, t1;
 		hires_timer_ull(t0);
 #endif
-		std::ifstream infile(Constants::INPUT_FILE);
+		std::ifstream infile(global_params.INPUT_FILE);
 		std::string line;
 		mb_t *mb;
-		NEW(mb, mb_t, Constants::MICROBATCH_SIZE);
+		NEW(mb, mb_t, global_params.MICROBATCH_SIZE);
 		if (infile.is_open()) {
 			while (true) {
 
@@ -64,7 +63,7 @@ public:
 					/* send out micro-batch if complete */
 					if (mb->full()) {
 						ff_send_out(reinterpret_cast<void*>(mb));
-						NEW(mb, mb_t, Constants::MICROBATCH_SIZE);
+						NEW(mb, mb_t, global_params.MICROBATCH_SIZE);
 					}
 				} else
 					break;
@@ -79,7 +78,7 @@ public:
 			}
 		} else {
 			fprintf(stderr, "Unable to open input file %s\n",
-					Constants::INPUT_FILE.c_str());
+					global_params.INPUT_FILE.c_str());
 		}
 #ifdef DEBUG
 		fprintf(stderr, "[READ FROM FILE MB-%p] In SVC: SEND OUT PICO_EOS\n", this);

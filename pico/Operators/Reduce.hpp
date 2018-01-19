@@ -1,16 +1,16 @@
 /*
-    This file is part of PiCo.
-    PiCo is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    PiCo is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-    You should have received a copy of the GNU Lesser General Public License
-    along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ This file is part of PiCo.
+ PiCo is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ PiCo is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+ You should have received a copy of the GNU Lesser General Public License
+ along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
+ */
 /*
  * ReduceActorNode.hpp
  *
@@ -22,6 +22,8 @@
 #define OPERATORS_REDUCE_HPP_
 
 #include "UnaryOperator.hpp"
+
+namespace pico {
 
 /**
  * Defines a Reduce operator performing a tree reduce function.
@@ -42,18 +44,18 @@ public:
 	 */
 	Reduce(std::function<In(In, In)> reducef_) :
 			reducef(reducef_) {
-	    this->set_input_degree(1);
-	    this->set_output_degree(1);
-	    this->set_stype(BOUNDED, true);
-	    this->set_stype(UNBOUNDED, false);
-	    this->set_stype(ORDERED, true);
-	    this->set_stype(UNORDERED, true);
-	};
+		this->set_input_degree(1);
+		this->set_output_degree(1);
+		this->set_stype(BOUNDED, true);
+		this->set_stype(UNBOUNDED, false);
+		this->set_stype(ORDERED, true);
+		this->set_stype(UNORDERED, true);
+	}
 
 	/**
 	 * Returns the name of the operator, consisting in the name of the class.
 	 */
-	std::string name_short(){
+	std::string name_short() {
 		return "Reduce";
 	}
 
@@ -68,14 +70,14 @@ protected:
 #endif
 	}
 
-	const OpClass operator_class(){
+	const OpClass operator_class() {
 		return OpClass::REDUCE;
 	}
-
-
 
 private:
 	std::function<In(In, In)> reducef;
 };
+
+} /* namespace pico */
 
 #endif /* OPERATORS_REDUCE_HPP_ */
