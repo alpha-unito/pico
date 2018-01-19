@@ -140,6 +140,7 @@ public:
 	}
 
 	/**
+	 * \ingroup pipe-api
 	 * Copy Constructor
 	 */
 	Pipe(const Pipe& pipe) :
@@ -206,7 +207,7 @@ public:
 
 	/**
 	 * \ingroup pipe-api
-	 * Add a new stage to the Pipe.
+	 * Create a Pipe by appending a new stage
 	 *
 	 * If the Pipe is not empty, it fails if:
 	 *  - the current O-Degree of the Pipe is zero
@@ -220,6 +221,7 @@ public:
 
 	/**
 	 * \ingroup pipe-api
+	 * Create a Pipe by appending another Pipe
 	 *
 	 * Append a Pipe to the current one.
 	 * Operators in the Pipe to append are copied into the current one.
@@ -266,6 +268,9 @@ public:
 	}
 
 	/**
+	 * \ingroup pipe-api
+	 * Create a Pipe by appending a set of Pipes
+	 *
 	 * Append a series of independent pipes taking input from the current one. The template parameters
 	 * identify input and output types that must be equal for all pipes with O-degree 1.
 	 * All the O-Degrees of the pipes must be at most 1.
@@ -323,6 +328,7 @@ public:
 
 	/**
 	 * \ingroup pipe-api
+	 * Create a Pipe by iterating the subject Pipe
 	 *
 	 * Iterate the Pipe, by feeding output to input channel,
 	 * until a termination condition is met.
@@ -386,6 +392,7 @@ public:
 
 	/**
 	 * \ingroup pipe-api
+	 * Create a pipe by merging with another Pipe
 	 *
 	 * Merges data coming from the current Pipe and the one passed as argument.
 	 * The resulting collection is the union of the collection of the two Pipes.
@@ -461,7 +468,6 @@ public:
 
 	/**
 	 * \ingroup pipe-api
-	 *
 	 * Executes the Pipe
 	 */
 	void run() {
@@ -479,8 +485,7 @@ public:
 
 	/**
 	 * \ingroup pipe-api
-	 *
-	 * Return execution time of the application in milliseconds.
+	 * Return execution time of the application in milliseconds
 	 */
 	double pipe_time() {
 		return run_time(*executor);
