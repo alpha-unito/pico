@@ -82,11 +82,8 @@ auto filterTweets = FlatMap<std::string, StockAndCount>( //
 			}
 
 			/* emit result if valid record  */
-
 			if(single_stock) {
-
 				collector.add(StockAndCount(stock, count));
-//                	std::cout << StockAndCount(stock, count).to_string() << std::endl;
 			}
 		});
 
