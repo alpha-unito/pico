@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
 	/* compose the main pipeline */
 	auto stockTweets = Pipe(readTweets) //
 	.add(filterTweets) //
-	.add(PReduce<StockAndCount>([] (StockAndCount p1, StockAndCount p2)
+	.add(ReduceByKey<StockAndCount>([] (StockAndCount p1, StockAndCount p2)
 	{
 		return std::max(p1,p2);
 	}).window(8)).add(writeCounts);

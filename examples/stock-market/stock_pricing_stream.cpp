@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
 	 */
 	auto stockPricing = Pipe(ReadFromSocket('\n')) //
 	.add(blackScholes). //
-	add(PReduce<StockAndPrice>([]
+	add(ReduceByKey<StockAndPrice>([]
 	(StockAndPrice p1, StockAndPrice p2) {
 		return std::max(p1,p2);
 	}).window(8)) //batch-windowing reduce

@@ -21,7 +21,7 @@
 #ifndef OPERATORS_FLATMAP_HPP_
 #define OPERATORS_FLATMAP_HPP_
 
-#include "PReduce.hpp"
+#include <pico/Operators/ReduceByKey.hpp>
 #include "UnaryOperator.hpp"
 
 #include "../WindowPolicy.hpp"
@@ -102,7 +102,7 @@ protected:
 		assert(opt == FMAP_PREDUCE);
 		using t = FMapPReduceBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>;
 		auto win = new noWindow<Token<In>>();
-		auto nextop = dynamic_cast<PReduce<Out>*>(a.op);
+		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);
 		return new t(pardeg, flatmapf, nextop->kernel(), win);
 	}
 

@@ -18,8 +18,8 @@
  *      Author: misale
  */
 
-#ifndef PREDUCE_HPP_
-#define PREDUCE_HPP_
+#ifndef REDUCEBYKEY_HPP_
+#define REDUCEBYKEY_HPP_
 
 #include "../ff_implementation/OperatorsFFNodes/PReduceSeqFFNode.hpp"
 #include "../ff_implementation/OperatorsFFNodes/PReduceWin.hpp"
@@ -40,7 +40,7 @@ namespace pico {
  * It implements a tree reduce operator where input and output value are the same.
  */
 template<typename In>
-class PReduce: public UnaryOperator<In, In> {
+class ReduceByKey: public UnaryOperator<In, In> {
 	friend class Pipe;
 public:
 	/**
@@ -48,7 +48,7 @@ public:
 	 *
 	 * Constructor. Creates a new PReduce operator by defining its kernel function reducef: <In, In> -> In
 	 */
-	PReduce(std::function<In(In&, In&)> reducef_) :
+	ReduceByKey(std::function<In(In&, In&)> reducef_) :
 			reducef(reducef_), win(nullptr) {
 		this->set_input_degree(1);
 		this->set_output_degree(1);
@@ -69,7 +69,7 @@ public:
 	 * Sets a fixed size for windows when operating on streams.
 	 * Windowing is applied on partitioning basis: each window contains only items belonging to a single partition.
 	 */
-	PReduce& window(size_t size) {
+	ReduceByKey& window(size_t size) {
 		win = new ByKeyWindow<Token<In>>(size);
 		return *this;
 	}
@@ -79,8 +79,8 @@ public:
 	}
 
 protected:
-	PReduce<In> *clone() {
-		return new PReduce<In>(reducef);
+	ReduceByKey<In> *clone() {
+		return new ReduceByKey<In>(reducef);
 	}
 
 	void run() {
@@ -100,15 +100,11 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism, Operator* nextop = nullptr) {
-		//if(parallelism == 1)
-//			return new PReduceFFNode<In>(&reducef);
 		if (this->data_stype() == (StructureType::STREAM)) {
 			assert(win != nullptr);
 			return new PReduceWin<In, Token<In>, FarmWrapper/*ff_ofarm not needed*/>(
 					parallelism, reducef, win);
-		} // else preducemb with regular farm and window NoWindow
-//		win =  new ByKeyWindow<Token<In>>(MICROBATCH_SIZE);
-//		return new PReduceBatch<In, Token<In>, FarmWrapper>(parallelism, reducef, win);
+		}
 		return new PReduceSeqFFNode<In, Token<In>>(reducef);
 	}
 
