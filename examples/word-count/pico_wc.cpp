@@ -55,6 +55,7 @@ int main(int argc, char** argv) {
 	}
 
 	parse_PiCo_args(argc, argv);
+
 	/* define a generic word-count pipeline */
 	auto countWords = Pipe() //the empty pipeline
 	.add(FlatMap<std::string, KV>(tokenizer)) //
@@ -72,20 +73,20 @@ int main(int argc, char** argv) {
 	});
 
 	/* compose the pipeline */
-	auto p2 = Pipe() //the empty pipeline
+	auto wc = Pipe() //the empty pipeline
 	.add(reader) //
 	.to(countWords) //
 	.add(writer);
 
 	/* print the semantic graph and generate dot file */
-	p2.print_semantics();
-	p2.to_dotfile("pico_wc.dot");
+	wc.print_semantics();
+	wc.to_dotfile("pico_wc.dot");
 
 	/* execute the pipeline */
-	p2.run();
+	wc.run();
 
 	/* print the execution time */
-	std::cout << "done in " << p2.pipe_time() << " ms\n";
+	std::cout << "done in " << wc.pipe_time() << " ms\n";
 
 	return 0;
 }
