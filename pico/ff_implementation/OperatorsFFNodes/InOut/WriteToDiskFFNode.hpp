@@ -37,11 +37,11 @@ using namespace pico;
 template <typename In>
 class WriteToDiskFFNode: public ff_node{
 public:
-	WriteToDiskFFNode(std::function<std::string(In)> kernel_):
-			kernel(kernel_), recv_sync(false) {};
+	WriteToDiskFFNode(std::string fname_, std::function<std::string(In)> kernel_):
+			fname(fname_), kernel(kernel_), recv_sync(false) {};
 
 	int svc_init(){
-		outfile.open(global_params.OUTPUT_FILE);
+		outfile.open(fname);
 		return 0;
 	}
 	void* svc(void* task){
@@ -72,6 +72,7 @@ public:
 	}
 
 private:
+	std::string fname;
 	std::function<std::string(In)> kernel;
     std::ofstream outfile;
     bool recv_sync;
