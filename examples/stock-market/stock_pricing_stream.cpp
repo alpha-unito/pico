@@ -71,13 +71,17 @@ return StockAndPrice(std::string(name), variance);
 });
 
 int main(int argc, char** argv) {
-	/* parse command line */
-	if (argc < 2) {
-		std::cerr << "Usage: " << argv[0];
-		std::cerr << " -s <server> -p <port>\n";
+	// parse global parameters
+	auto app_args = parse_PiCo_args(argc, argv);
+
+	// parse command line
+	if (app_args.argc < 2) {
+		std::cerr << "Usage: " << argv[0] << " [conf] ";
+		std::cerr << "<server> <port> \n";
 		return -1;
 	}
-	parse_PiCo_args(argc, argv);
+	std::string server(app_args.argv[0]);
+	int port = atoi(app_args.argv[1]);
 
 	/*
 	 * define a batch pipeline that:
@@ -86,7 +90,7 @@ int main(int argc, char** argv) {
 	 * 3. extracts the maximum price for each stock name
 	 * 4. write prices to file
 	 */
-	auto stockPricing = Pipe(ReadFromSocket('\n')) //
+	auto stockPricing = Pipe(ReadFromSocket(server, port, '\n')) //
 	.add(blackScholes). //
 	add(ReduceByKey<StockAndPrice>([]
 	(StockAndPrice p1, StockAndPrice p2) {

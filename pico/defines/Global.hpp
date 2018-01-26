@@ -32,11 +32,14 @@
 
 namespace pico {
 
+struct app_args_t {
+	int argc;
+	char **argv;
+};
+
 struct {
 	int PARALLELISM = 1;
 	int MICROBATCH_SIZE = 8;
-	std::string INPUT_FILE;
-	std::string OUTPUT_FILE;
 	int PORT;
 	std::string SERVER_NAME;
 	const char* MAPPING;
@@ -46,54 +49,44 @@ struct {
  * Parses default arguments.
  * @return 0 if parsing succeeds
  */
-int parse_PiCo_args(int& argc, char** argv) {
+app_args_t parse_PiCo_args(int argc, char** argv) {
+	app_args_t res{argc - 1, nullptr};
 	int opt;
-	bool in = false;
-	bool out = false;
-	while ((opt = getopt(argc, argv, "w:b:i:o:s:p:m:")) != -1) {
+	while ((opt = getopt(argc, argv, "w:b:s:p:m:")) != -1) {
 		switch (opt) {
 		case 'w':
 			global_params.PARALLELISM = atoi(optarg);
+			res.argc -= 2;
 			break;
 		case 'b':
 			global_params.MICROBATCH_SIZE = atoi(optarg);
-			break;
-		case 'i':
-			global_params.INPUT_FILE = std::string(optarg);
-			in = true;
-			break;
-		case 'o':
-			global_params.OUTPUT_FILE = std::string(optarg);
-			out = true;
+			res.argc -= 2;
 			break;
 		case 'p':
 			global_params.PORT = atoi(optarg);
+			res.argc -= 2;
 			break;
 		case 's':
 			global_params.SERVER_NAME = optarg;
-			in = true;
-			out = true;
+			res.argc -= 2;
 			break;
 		case 'm':
 			global_params.MAPPING = optarg;
 			ff::threadMapper::instance()->setMappingList(global_params.MAPPING);
+			//todo check commas
+			res.argc -= 2;
 			break;
 		default: /* '?' */
-			fprintf(stderr,
-					"Usage: %s [-w workers] [-b batch-size] [-i input-file]\n"
-							"\t\t [-o output-file] [-s server] [-p port] [-m mapping node list]\n",
+			fprintf(stderr, "Usage: %s [-w workers] [-b batch-size] \n"
+					"\t\t [-s server] [-p port] [-m mapping node list]\n",
 					argv[0]);
-			exit (EXIT_FAILURE);
+			exit(EXIT_FAILURE);
 		}
+
+		res.argv = argv + (argc - res.argc);
 	}
 
-	if (!(in && out)) {
-		fprintf(stderr, "Missing argument -i or -o \n");
-		exit (EXIT_FAILURE);
-	}
-
-
-	return 0;
+	return res;
 }
 
 } /* namespace pico */

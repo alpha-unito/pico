@@ -39,7 +39,7 @@ using namespace pico;
 template<typename Out>
 class ReadFromFileFFNode: public ff_node {
 public:
-	ReadFromFileFFNode() {
+	ReadFromFileFFNode(std::string fname_) : fname(fname_) {
 	}
 
 	void* svc(void* in) {
@@ -47,7 +47,7 @@ public:
 		time_point_t t0, t1;
 		hires_timer_ull(t0);
 #endif
-		std::ifstream infile(global_params.INPUT_FILE);
+		std::ifstream infile(fname);
 		std::string line;
 		mb_t *mb;
 		NEW(mb, mb_t, global_params.MICROBATCH_SIZE);
@@ -77,8 +77,7 @@ public:
 				DELETE(mb, mb_t);
 			}
 		} else {
-			fprintf(stderr, "Unable to open input file %s\n",
-					global_params.INPUT_FILE.c_str());
+			fprintf(stderr, "Unable to open input file %s\n", fname.c_str());
 		}
 #ifdef DEBUG
 		fprintf(stderr, "[READ FROM FILE MB-%p] In SVC: SEND OUT PICO_EOS\n", this);
@@ -96,6 +95,8 @@ private:
 	 * emits Microbatches of non-decorated data items
 	 */
 	typedef Microbatch<Token<Out>> mb_t;
+
+	std::string fname;
 
 #ifdef TRACE_FASTFLOW
 	duration_t user_svc;

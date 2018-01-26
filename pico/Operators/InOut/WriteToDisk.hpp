@@ -51,17 +51,15 @@ public:
 	 *
 	 * Creates a new WriteToDisk operator by defining its kernel function.
 	 */
-	WriteToDisk(std::function<std::string(In)> func_) :
-			OutputOperator<In>(StructureType::BAG) {
-		func = func_;
+	WriteToDisk(std::string fname_, std::function<std::string(In)> func_) :
+			OutputOperator<In>(StructureType::BAG), fname(fname_), func(func_) {
 	}
 
 	/**
 	 * Copy constructor.
 	 */
 	WriteToDisk(const WriteToDisk &copy) :
-			OutputOperator<In>(copy) {
-		func = copy.func;
+			OutputOperator<In>(copy), fname(copy.fname), func(copy.func) {
 	}
 
 	/**
@@ -78,7 +76,7 @@ public:
 	 * Returns the name of the operator, consisting in the name of the class.
 	 */
 	std::string name_short() {
-		return "WriteToDisk\n[" + global_params.OUTPUT_FILE + "]";
+		return "WriteToDisk\n[" + fname + "]";
 	}
 
 protected:
@@ -91,14 +89,15 @@ protected:
 	 * @return new WriteToDisk pointer
 	 */
 	WriteToDisk<In>* clone() {
-		return new WriteToDisk<In>(func);
+		return new WriteToDisk<In>(*this);
 	}
 
 	ff::ff_node* node_operator(int parallelism, Operator* nextop = nullptr) {
-		return new WriteToDiskFFNode<In>(func);
+		return new WriteToDiskFFNode<In>(fname, func);
 	}
 
 private:
+	std::string fname;
 	std::function<std::string(In)> func;
 };
 

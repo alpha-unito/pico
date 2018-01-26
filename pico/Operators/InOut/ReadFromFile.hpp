@@ -47,15 +47,15 @@ public:
 	 *
 	 * Creates a new ReadFromFile operator by defining its kernel function.
 	 */
-	ReadFromFile() :
-			InputOperator<std::string>(StructureType::BAG) {
+	ReadFromFile(std::string fname_) :
+			InputOperator<std::string>(StructureType::BAG), fname(fname_) {
 	}
 
 	/**
 	 * Copy constructor.
 	 */
 	ReadFromFile(const ReadFromFile &copy) :
-			InputOperator<std::string>(copy) {
+			InputOperator<std::string>(copy), fname(copy.fname) {
 	}
 
 	/**
@@ -72,7 +72,7 @@ public:
 	 * Returns the name of the operator, consisting in the name of the class.
 	 */
 	std::string name_short() {
-		return "ReadFromFile\n[" + global_params.INPUT_FILE + "]";
+		return "ReadFromFile\n[" + fname + "]";
 	}
 
 protected:
@@ -85,8 +85,11 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism, Operator* nextop = nullptr) {
-		return new ReadFromFileFFNode<std::string>();
+		return new ReadFromFileFFNode<std::string>(fname);
 	}
+
+private:
+	std::string fname;
 
 };
 
