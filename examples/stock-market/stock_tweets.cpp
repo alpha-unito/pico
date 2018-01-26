@@ -88,18 +88,21 @@ auto filterTweets = FlatMap<std::string, StockAndCount>( //
 		});
 
 int main(int argc, char** argv) {
+	/* parse global parameters */
+	auto app_args = parse_PiCo_args(argc, argv);
+
 	/* parse command line */
-	if (argc < 2) {
-		std::cerr << "Usage: " << argv[0];
-		std::cerr << " -i <stock names file>"
-				<< " -s <tweet socket host> -p <tweet socket port>\n";
+	if (app_args.argc < 3) {
+		std::cerr << "Usage: " << argv[0] << " [conf] ";
+		std::cerr << "<stock names file> <tweet server> <port> \n";
 		return -1;
 	}
-
-	parse_PiCo_args(argc, argv);
+	std::string stock_fname(app_args.argv[0]);
+	std::string server(app_args.argv[1]);
+	int port = atoi(app_args.argv[2]);
 
 	/* bring tags to memory */
-	std::ifstream stocks_file(pico::global_params.INPUT_FILE);
+	std::ifstream stocks_file(stock_fname);
 	std::string stock_name;
 	while (stocks_file.good()) {
 		stocks_file >> stock_name;
@@ -107,7 +110,7 @@ int main(int argc, char** argv) {
 	}
 
 	/* define i/o operators from/to standard input/output */
-	ReadFromSocket readTweets('-');
+	ReadFromSocket readTweets(server, port, '-');
 
 	WriteToStdOut<StockAndCount> writeCounts(
 			[](StockAndCount c) {return c.to_string();});

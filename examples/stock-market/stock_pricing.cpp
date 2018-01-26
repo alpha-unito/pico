@@ -53,13 +53,16 @@ return StockAndPrice(std::string(name), black_scholes(opt));
 }));
 
 int main(int argc, char** argv) {
-	/* parse command line */
-	if (argc < 2) {
-		std::cerr << "Usage: " << argv[0];
-		std::cerr << " -i <input-file> -o <output-file>\n";
+	// parse global parameters
+	auto app_args = parse_PiCo_args(argc, argv);
+
+	// parse command line
+	if (app_args.argc < 2) {
+		std::cerr << "Usage: " << argv[0] << " [conf] ";
+		std::cerr << "<input file> <output file> \n";
 		return -1;
 	}
-	parse_PiCo_args(argc, argv);
+	std::string in_fname(app_args.argv[0]), out_fname(app_args.argv[1]);
 
 	/*
 	 * define a batch pipeline that:
@@ -68,13 +71,15 @@ int main(int argc, char** argv) {
 	 * 3. extracts the maximum price for each stock name
 	 * 4. write prices to file
 	 */
-	auto stockPricing = Pipe(ReadFromFile()) //
-	.to(blackScholes). //
-	add(ReduceByKey<StockAndPrice>([]
-	(StockAndPrice p1, StockAndPrice p2)
-	{	return std::max(p1,p2);})). //
-	add(WriteToDisk<StockAndPrice>([](StockAndPrice kv)
-	{	return kv.to_string();}));
+	auto stockPricing = //
+			Pipe(ReadFromFile(in_fname)) //
+			.to(blackScholes) //
+			.add(ReduceByKey<StockAndPrice>( //
+					[] (StockAndPrice p1, StockAndPrice p2)
+					{	return std::max(p1,p2);})) //
+			.add(WriteToDisk<StockAndPrice>(out_fname, //
+					[] (StockAndPrice kv)
+					{	return kv.to_string();}));
 
 	/* print the semantic graph and generate dot file */
 	stockPricing.print_semantics();
