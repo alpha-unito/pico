@@ -10,7 +10,7 @@ LIBS                 = -lpthread
 ROOT                 = ..
 
 INCLUDES             = -I$(ROOT) -Icommon -Iinclude
-TARGET               = input_output_file
+TARGET               = input_output_file reduce_by_key
 
 
 .PHONY: all clean cleanall
@@ -26,12 +26,12 @@ test_driver.o: common/test_driver.cpp
 	$(CXX) $(INCLUDES) $(CCFLAGS) $(OPTIMIZE_FLAGS) -c -o $@ $<
 
 #executables
-%: %.o $(OBJS)
+%: %.o
 	$(CXX) $^ -o $@ $(LDFLAGS) $(LIBS)
 
 #dependencies
 input_output_file: input_output_file.o test_driver.o
-
+reduce_by_key: reduce_by_key.o test_driver.o
 
 clean:
 	rm -rf *.o *~
