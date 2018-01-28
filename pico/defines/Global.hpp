@@ -17,7 +17,7 @@
  *  Created on: Dec 28, 2016
  *      Author: misale
  *
- *   TODO - remove app-specific arguments from globals
+ *   TODO - user-friendly argc/argv
  */
 
 #ifndef DEFINES_GLOBAL_HPP_
@@ -40,8 +40,6 @@ struct app_args_t {
 struct {
 	int PARALLELISM = 1;
 	int MICROBATCH_SIZE = 8;
-	int PORT;
-	std::string SERVER_NAME;
 	const char* MAPPING;
 } global_params;
 
@@ -52,7 +50,7 @@ struct {
 app_args_t parse_PiCo_args(int argc, char** argv) {
 	app_args_t res{argc - 1, nullptr};
 	int opt;
-	while ((opt = getopt(argc, argv, "w:b:s:p:m:")) != -1) {
+	while ((opt = getopt(argc, argv, "w:b:s:p:m:h")) != -1) {
 		switch (opt) {
 		case 'w':
 			global_params.PARALLELISM = atoi(optarg);
@@ -62,14 +60,6 @@ app_args_t parse_PiCo_args(int argc, char** argv) {
 			global_params.MICROBATCH_SIZE = atoi(optarg);
 			res.argc -= 2;
 			break;
-		case 'p':
-			global_params.PORT = atoi(optarg);
-			res.argc -= 2;
-			break;
-		case 's':
-			global_params.SERVER_NAME = optarg;
-			res.argc -= 2;
-			break;
 		case 'm':
 			global_params.MAPPING = optarg;
 			ff::threadMapper::instance()->setMappingList(global_params.MAPPING);
@@ -77,8 +67,8 @@ app_args_t parse_PiCo_args(int argc, char** argv) {
 			res.argc -= 2;
 			break;
 		default: /* '?' */
-			fprintf(stderr, "Usage: %s [-w workers] [-b batch-size] \n"
-					"\t\t [-s server] [-p port] [-m mapping node list]\n",
+			fprintf(stderr, "Usage: %s [-w workers] [-b batch-size]"
+					" [-m mapping node list] <app arguments>\n",
 					argv[0]);
 			exit(EXIT_FAILURE);
 		}
