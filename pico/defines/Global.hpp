@@ -72,10 +72,9 @@ app_args_t parse_PiCo_args(int argc, char** argv) {
 					argv[0]);
 			exit(EXIT_FAILURE);
 		}
-
-		res.argv = argv + (argc - res.argc);
 	}
 
+	res.argv = argv + (argc - res.argc);
 	return res;
 }
 
