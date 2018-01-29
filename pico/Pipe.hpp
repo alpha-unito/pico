@@ -451,6 +451,13 @@ public:
 		print_semantic_graph(*semantic_graph, std::cout);
 	}
 
+	void print_executor() {
+		if (!executor)
+			executor = make_executor(*this);
+		std::cout << "=== Executor Info\n";
+		print_executor_info(*executor, std::cout);
+	}
+
 	/**
 	 * \ingroup pipe-api
 	 *
@@ -478,8 +485,6 @@ public:
 
 		if (!executor)
 			executor = make_executor(*this);
-		std::cout << "=== Executor Info\n";
-		print_executor_info(*executor, std::cout);
 		run_pipe(*executor);
 	}
 
