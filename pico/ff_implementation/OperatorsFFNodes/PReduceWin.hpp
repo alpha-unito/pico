@@ -40,8 +40,11 @@ using namespace pico;
 
 template<typename In, typename TokenType, typename FarmType = ff_farm<>>
 class PReduceWin: public FarmType {
+	typedef typename In::keytype K;
+	typedef typename In::valuetype V;
+
 public:
-	PReduceWin(int parallelism, std::function<In(In&, In&)>& preducef,
+	PReduceWin(int parallelism, std::function<V(V&, V&)>& preducef,
 			WindowPolicy* win_) {
 		win = win_;
 		this->setEmitterF(win->window_farm(parallelism, this->getlb()));
@@ -66,7 +69,7 @@ private:
 
 	class PReduceFFNode: public ff_node {
 	public:
-		PReduceFFNode(std::function<In(In&, In&)>& reducef_, size_t mb_size_ =
+		PReduceFFNode(std::function<V(V&, V&)>& reducef_, size_t mb_size_ =
 				global_params.MICROBATCH_SIZE) :
 				kernel(reducef_), mb_size(mb_size_) {
 		}
@@ -84,7 +87,7 @@ private:
 				auto in_microbatch = reinterpret_cast<mb_t*>(task);
 				for (In& kv : *in_microbatch) {
 					if (kvmap.find(kv.Key()) != kvmap.end()) {
-						kvmap[kv.Key()] = kernel(kvmap[kv.Key()], kv);
+						kvmap[kv.Key()] = In(kv.Key(), kernel(kvmap[kv.Key()].Value(), kv.Value()));
 //						std::cout << "mb_size " << mb_size << " key " << kvcountmap[kv.Key()] << std::endl;
 						kvcountmap[kv.Key()]++;
 						if (kvcountmap[kv.Key()] == mb_size) {
@@ -121,13 +124,13 @@ private:
 
 	private:
 		typedef Microbatch<TokenType> mb_t;
-		std::function<In(In&, In&)> kernel;
+		std::function<V(V&, V&)> kernel;
 		// map containing, for each key, the partial reduced value plus the counter of how many
 		// elements entered the window.
 		// It works only for tumbling windows
 //		std::unordered_map<typename In::keytype, std::pair<In, size_t>> kvmap;
-		std::unordered_map<typename In::keytype, In> kvmap;
-		std::unordered_map<typename In::keytype, size_t> kvcountmap;
+		std::unordered_map<K, In> kvmap;
+		std::unordered_map<K, size_t> kvcountmap;
 		size_t mb_size;
 //		duration_t wt;
 	};

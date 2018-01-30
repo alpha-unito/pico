@@ -43,10 +43,12 @@ using namespace pico;
 template<typename In, typename Out, typename Farm, typename TokenTypeIn,
 		typename TokenTypeOut>
 class MapPReduceBatch: public Farm {
-public:
+	typedef typename Out::keytype OutK;
+	typedef typename Out::valuetype OutV;
 
+public:
 	MapPReduceBatch(int parallelism, std::function<Out(In&)>& mapf,
-			std::function<Out(Out&, Out&)> reducef, WindowPolicy* win) {
+			std::function<OutV(OutV&, OutV&)> reducef, WindowPolicy* win) {
 
 		this->setEmitterF(win->window_farm(parallelism, this->getlb()));
 		this->setCollectorF(new FarmCollector(parallelism));
@@ -65,7 +67,7 @@ private:
 class Worker: public ff_node {
 public:
 	Worker(std::function<Out(In&)>& kernel_,
-			std::function<Out(Out&, Out&)>& reducef_kernel_) :
+			std::function<OutV(OutV&, OutV&)>& reducef_kernel_) :
 			kernel(kernel_), reducef_kernel(reducef_kernel_)
 #ifdef TRACE_FASTFLOW
     , user_svc(0)
@@ -83,7 +85,7 @@ public:
 			for(In &x : *in_microbatch) {
 			    Out kv = kernel(x);
 			    if (kvmap.find(kv.Key()) != kvmap.end()) {
-					kvmap[kv.Key()] = reducef_kernel(kv, kvmap[kv.Key()]);
+					kvmap[kv.Key()] = Out(kv.Key(), reducef_kernel(kv.Value(), kvmap[kv.Key()].Value()));
 				} else {
 					kvmap[kv.Key()] = kv;
 				}
@@ -134,8 +136,8 @@ public:
         typedef Microbatch<TokenTypeIn> mb_in;
         typedef Microbatch<TokenTypeOut> mb_out;
         std::function<Out(In&)> kernel;
-        std::function<Out(Out&, Out&)> reducef_kernel;
-        std::unordered_map<typename Out::keytype, Out> kvmap;
+        std::function<OutV(OutV&, OutV&)> reducef_kernel;
+        std::unordered_map<OutK, Out> kvmap;
 
 #ifdef TRACE_FASTFLOW
         duration_t user_svc;
