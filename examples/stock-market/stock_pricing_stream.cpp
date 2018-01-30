@@ -52,17 +52,17 @@ auto blackScholes = Map<std::string, StockAndPrice>([]
 		&otype, &opt.divs, &opt.DGrefval);
 opt.OptionType = (otype == 'P');
 int iMax=4, jMax=4, steps=10, size = 3;
-StockPriceValue res[size];
+StockPrice res[size];
 res[0] = black_scholes(opt);
 res[1] = binomial_tree(opt, steps);
 res[2] = explicit_finite_difference(opt, iMax, jMax);
 //        res[3] = monte_carlo(opt, 0.75, N);
-StockPriceValue mean = 0;
+StockPrice mean = 0;
 for(int i = 0; i < size; ++i) {
 	mean+=res[i];
 }
 mean /= size;
-StockPriceValue variance = 0;
+StockPrice variance = 0;
 for(int i = 0; i < size; ++i) {
 	variance+=(res[i]-mean)*(res[i]-mean);
 }
@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
 	auto stockPricing = Pipe(ReadFromSocket(server, port, '\n')) //
 	.add(blackScholes). //
 	add(ReduceByKey<StockAndPrice>([]
-	(StockAndPrice p1, StockAndPrice p2) {
+	(StockPrice p1, StockPrice p2) {
 		return std::max(p1,p2);
 	}).window(8)) //batch-windowing reduce
 	.add(WriteToStdOut<StockAndPrice>([](StockAndPrice kv)
