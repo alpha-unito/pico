@@ -77,7 +77,7 @@ int main(int argc, char** argv)
         ins >> opt.v >> opt.t >> otype >> opt.divs >> opt.DGrefval;
         opt.OptionType = (otype == 'P');
 
-        StockPriceValue res = black_scholes(opt);
+        StockPrice res = black_scholes(opt);
 
         if (red.find(name) != red.end())
             red[name] = std::max(StockAndPrice(name, res), red[name]);

@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
 			Pipe(ReadFromFile(in_fname)) //
 			.to(blackScholes) //
 			.add(ReduceByKey<StockAndPrice>( //
-					[] (StockAndPrice p1, StockAndPrice p2)
+					[] (StockPrice p1, StockPrice p2)
 					{	return std::max(p1,p2);})) //
 			.add(WriteToDisk<StockAndPrice>(out_fname, //
 					[] (StockAndPrice kv)
