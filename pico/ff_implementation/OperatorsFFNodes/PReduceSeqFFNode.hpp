@@ -41,8 +41,11 @@ using namespace pico;
 
 template<typename In, typename TokenType>
 class PReduceSeqFFNode: public ff_node {
+	typedef typename In::keytype K;
+	typedef typename In::valuetype V;
+
 public:
-	PReduceSeqFFNode(std::function<In(In&, In&)>& reducef_, WindowPolicy* win=nullptr) :
+	PReduceSeqFFNode(std::function<V(V&, V&)>& reducef_, WindowPolicy* win=nullptr) :
 			reducef(reducef_) {
 		if(win){
 #ifdef DEBUG
@@ -62,7 +65,7 @@ public:
             for (In &kv : *in_microbatch)
             { // reduce on microbatch
                 if (kvmap.find(kv.Key()) != kvmap.end())
-                    kvmap[kv.Key()] = reducef(kv, kvmap[kv.Key()]);
+                    kvmap[kv.Key()] = In(kv.Key(), reducef(kv.Value(), kvmap[kv.Key()].Value()));
                 else
                     kvmap[kv.Key()] = kv;
             }
@@ -101,8 +104,8 @@ public:
 
 private:
     typedef Microbatch<TokenType> mb_t;
-	std::function<In(In&, In&)> reducef;
-	std::unordered_map<typename In::keytype, In> kvmap;
+	std::function<V(V&, V&)> reducef;
+	std::unordered_map<K, In> kvmap;
 	unsigned int outmb_size;
 };
 
