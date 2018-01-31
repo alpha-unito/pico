@@ -21,7 +21,7 @@
 #ifndef INTERNALS_FFOPERATORS_INOUT_READFROMFILEFFNODE_HPP_
 #define INTERNALS_FFOPERATORS_INOUT_READFROMFILEFFNODE_HPP_
 
-#include <ff/node.hpp>
+#include <ff/farm.hpp>
 
 #include "../../../Internals/Microbatch.hpp"
 #include "../../../Internals/Token.hpp"
@@ -33,78 +33,268 @@ using namespace ff;
 using namespace pico;
 
 /*
- * TODO only works with non-decorating token
+ *******************************************************************************
+ * some variants of reading a text file line by line
+ *******************************************************************************
  */
+/*
+ * Buffer granularity in number of OS memory pages.
+ */
+#define BUFFERING_PAGES 4
 
-template<typename Out>
-class ReadFromFileFFNode: public ff_node {
+/*
+ * file-range to be read
+ */
+struct prange {
+	prange(off_t begin_, off_t end_) :
+			begin(begin_), end(end_) {
+	}
+	off_t begin, end;
+};
+
+/*
+ *******************************************************************************
+ * getline-based implementation.
+ *
+ * Based on the C++ interface for stream buffering:
+ * http://www.cplusplus.com/reference/istream/istream/
+ *
+ * In C:
+ * https://www.gnu.org/software/libc/manual/html_node/Stream-Buffering.html
+ *******************************************************************************
+ */
+class getline_textfile: public ff_node {
+	typedef Microbatch<Token<std::string>> mb_t;
+
 public:
-	ReadFromFileFFNode(std::string fname_) : fname(fname_) {
+	getline_textfile(std::string fname) :
+			file(fname) {
+		assert(file.is_open());
 	}
 
-	void* svc(void* in) {
-#ifdef TRACE_FASTFLOW
-		time_point_t t0, t1;
-		hires_timer_ull(t0);
-#endif
-		std::ifstream infile(fname);
-		std::string line;
-		mb_t *mb;
-		NEW(mb, mb_t, global_params.MICROBATCH_SIZE);
-		if (infile.is_open()) {
-			while (true) {
+	~getline_textfile() {
+		file.close();
+	}
 
-				/* initialize a new string within the micro-batch */
-				std::string *line = new (mb->allocate()) std::string();
+	/*
+	 * read a file-range line by line
+	 */
+	void *svc(void *r_) {
+		if (r_ == PICO_EOS)
+			return r_;
 
-				/* get a line */
-				if (getline(infile, *line)) {
-					mb->commit();
-					/* send out micro-batch if complete */
-					if (mb->full()) {
-						ff_send_out(reinterpret_cast<void*>(mb));
-						NEW(mb, mb_t, global_params.MICROBATCH_SIZE);
-					}
-				} else
-					break;
-			}
-			infile.close();
-
-			/* send out the remainder micro-batch or destroy if spurious */
-			if (!mb->empty()) {
-				ff_send_out(reinterpret_cast<void*>(mb));
-			} else {
-				DELETE(mb, mb_t);
-			}
-		} else {
-			fprintf(stderr, "Unable to open input file %s\n", fname.c_str());
+		prange *r = (prange *) r_;
+		file.seekg(r->begin);
+		mb_t *mb = new mb_t(global_params.MICROBATCH_SIZE);
+		while (file.tellg() < r->end) {
+			/* initialize a new string within the micro-batch */
+			std::string *line = new (mb->allocate()) std::string();
+			/* get a line */
+			if (getline(file, *line)) {
+				mb->commit();
+				/* create next micro-batch if complete */
+				if (mb->full()) {
+					ff_send_out(reinterpret_cast<void*>(mb));
+					mb = new mb_t(global_params.MICROBATCH_SIZE);
+				}
+			} else
+				assert(false);
 		}
-#ifdef DEBUG
-		fprintf(stderr, "[READ FROM FILE MB-%p] In SVC: SEND OUT PICO_EOS\n", this);
-#endif
-#ifdef TRACE_FASTFLOW
-		hires_timer_ull(t1);
-		user_svc = get_duration(t0, t1);
-#endif
-		ff_send_out(PICO_EOS);
-		return EOS;
+		assert(file.tellg() == r->end);
+
+		/* remainder micro-batch */
+		if (!mb->empty())
+			ff_send_out(reinterpret_cast<void*>(mb));
+		else
+			delete (mb);
+
+		/* clean up */
+		delete r;
+
+		return GO_ON;
 	}
 
 private:
+	std::ifstream file;
+};
+
+/*
+ *******************************************************************************
+ * read-based implementation.
+ *
+ * Based on low-level C primitives for I/O:
+ * https://www.gnu.org/software/libc/manual/html_node/Low_002dLevel-I_002fO.html
+ *******************************************************************************
+ */
+class read_textfile: public ff_node {
+	typedef Microbatch<Token<std::string>> mb_t;
+
+public:
+	read_textfile(std::string fname) {
+		fd = fopen(fname.c_str(), "rb");
+		assert(fd);
+		bufsize = BUFFERING_PAGES * getpagesize();
+		buf = (char *) malloc(bufsize);
+	}
+
+	~read_textfile() {
+		free(buf);
+		fclose(fd);
+	}
+
+	void *svc(void *r_) {
+		if (r_ == PICO_EOS)
+			return r_;
+
+		prange *r = (prange *) r_;
+		fseek(fd, r->begin, SEEK_SET);
+		ssize_t remainder = r->end - r->begin;
+		mb_t *mb = new mb_t(global_params.MICROBATCH_SIZE);
+		std::string *line = new (mb->allocate()) std::string();
+		bool continued = false;
+		do {
+			/* read some data */
+			ssize_t read_ = fread(buf, 1, std::min(bufsize, remainder), fd);
+
+			/* tokenize */
+			std::streamsize portion_start, i;
+			for (i = 0, portion_start = 0; i < read_; ++i) {
+				if (buf[i] == '\n') {
+					if (i > portion_start || continued) {
+						line->append(buf + portion_start, i - portion_start);
+						mb->commit();
+						/* create next micro-batch if complete */
+						if (mb->full()) {
+							ff_send_out(reinterpret_cast<void*>(mb));
+							mb = new mb_t(global_params.MICROBATCH_SIZE);
+						}
+						line = new (mb->allocate()) std::string();
+					}
+					portion_start = i + 1;
+					continued = false;
+				}
+			}
+			if (i > portion_start) {
+				line->append(buf + portion_start, i - portion_start);
+				continued = true;
+			}
+
+			/* check end-of-file */
+			if (read_ < bufsize) {
+				if (!line->empty())
+					mb->commit();
+				break;
+			}
+
+			remainder -= read_;
+		} while (remainder);
+		assert(ftell(fd) == r->end);
+
+		/* remainder micro-batch */
+		if (!mb->empty())
+			ff_send_out(reinterpret_cast<void*>(mb));
+		else
+			delete mb;
+
+		/* clean up */
+		delete r;
+
+		return GO_ON;
+	}
+
+private:
+	FILE *fd;
+	ssize_t bufsize;
+	char *buf;
+};
+
+/*
+ *******************************************************************************
+ *
+ * The ReadFromFile farm
+ *
+ *******************************************************************************
+ */
+template<typename Farm>
+class ReadFromFileFFNode: public Farm {
+	/* select implementation for line-based file reading */
+	using Worker = getline_textfile;
+	//using Worker = read_textfile;
+
+public:
+	ReadFromFileFFNode(std::string fname_) :
+			fname(fname_) {
+		std::vector<ff_node *> workers;
+		for (unsigned i = 0; i < global_params.PARALLELISM; ++i)
+			workers.push_back(new Worker(fname));
+		this->setEmitterF(new Partitioner(fname, global_params.PARALLELISM));
+		this->add_workers(workers);
+		this->setCollectorF(new Collector());
+		this->cleanup_all();
+	}
+
+private:
+
 	/*
-	 * emits Microbatches of non-decorated data items
+	 * the emitter partitions the input file and creates read-ranges
 	 */
-	typedef Microbatch<Token<Out>> mb_t;
+	class Partitioner: public ff_node {
+	public:
+		Partitioner(std::string fname, unsigned partitions_) :
+				partitions(partitions_) {
+			fd = fopen(fname.c_str(), "rb");
+			assert(fd); //todo - better reporting
+		}
+
+		~Partitioner() {
+			fclose(fd);
+		}
+
+		void *svc(void *) {
+			/* get file size */
+			fseek(fd, 0, SEEK_END);
+			off_t fsize = ftell(fd);
+			off_t pstep = (off_t) std::ceil((float) fsize / partitions);
+			off_t rbegin = 0, rend;
+			char buf;
+			for (unsigned p = 0; p < partitions - 1; ++p) {
+				/* search for first \n after partition boundary */
+				rend = (p + 1) * pstep;
+				fseek(fd, rend - 1, SEEK_SET);
+				while (true) {
+					assert(buf = getc(fd)); //todo - better reporting
+					if (buf == '\n')
+						break;
+					++rend;
+				}
+				assert(rend > rbegin); //todo - better partitioning?
+				ff_send_out(new prange(rbegin, rend));
+				rbegin = rend + 1;
+
+			}
+			assert(fsize > rbegin); //todo - better partitioning?
+			ff_send_out(new prange(rbegin, fsize));
+
+#ifdef DEBUG
+			fprintf(stderr, "[READ FROM FILE MB-%p] In SVC: SEND OUT PICO_EOS\n", this);
+#endif
+
+			ff_send_out(PICO_EOS);
+			return EOS;
+		}
+
+	private:
+		FILE *fd;
+		unsigned partitions;
+	};
 
 	std::string fname;
 
 #ifdef TRACE_FASTFLOW
-	duration_t user_svc;
-
 	virtual void print_pico_stats(std::ostream & out)
 	{
 		out << "*** PiCo stats ***\n";
-		out << "user svc (ms) : " << time_count(user_svc) * 1000 << std::endl;
+		out << "user svc (ms) : " << this->ffTime() << std::endl;
 	}
 #endif
 };
