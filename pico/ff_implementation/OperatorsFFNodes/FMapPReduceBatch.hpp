@@ -44,11 +44,13 @@ using namespace pico;
 template<typename In, typename Out, typename Farm, typename TokenTypeIn,
 		typename TokenTypeOut>
 class FMapPReduceBatch: public Farm {
-public:
+	typedef typename Out::keytype OutK;
+	typedef typename Out::valuetype OutV;
 
+public:
 	FMapPReduceBatch(int parallelism,
 			std::function<void(In&, FlatMapCollector<Out> &)>& flatmapf,
-			std::function<Out(Out&, Out&)> reducef, WindowPolicy* win) {
+			std::function<OutV(OutV&, OutV&)> reducef, WindowPolicy* win) {
 
 		this->setEmitterF(win->window_farm(parallelism, this->getlb()));
 		this->setCollectorF(new FarmCollector(parallelism));
@@ -66,7 +68,7 @@ private:
 	class Worker: public ff_node {
 	public:
 		Worker(std::function<void(In&, FlatMapCollector<Out> &)>& kernel_, //
-				std::function<Out(Out&, Out&)>& reducef_kernel_) :
+				std::function<OutV(OutV&, OutV&)>& reducef_kernel_) :
 				kernel(kernel_), reducef_kernel(reducef_kernel_)
 #ifdef TRACE_FASTFLOW
 		, user_svc(0)
@@ -94,7 +96,7 @@ private:
 					for (Out &kv : *it->mb) {
 						const typename Out::keytype & k(kv.Key());
 						if (kvmap.find(k) != kvmap.end()) {
-							kvmap[k] = reducef_kernel(kv, kvmap[k]);
+							kvmap[k] = Out(k, reducef_kernel(kv.Value(), kvmap[k].Value()));
 						} else
 							kvmap[k] = kv;
 					}
@@ -150,8 +152,8 @@ private:
 
 		TokenCollector<Out> collector;
 		std::function<void(In&, FlatMapCollector<Out> &)> kernel;
-		std::function<Out(Out&, Out&)> reducef_kernel;
-		std::unordered_map<typename Out::keytype, Out> kvmap;
+		std::function<OutV(OutV&, OutV&)> reducef_kernel;
+		std::unordered_map<OutK, Out> kvmap;
 
 #ifdef TRACE_FASTFLOW
 		duration_t user_svc;

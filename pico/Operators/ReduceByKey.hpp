@@ -41,7 +41,9 @@ namespace pico {
  */
 template<typename In>
 class ReduceByKey: public UnaryOperator<In, In> {
-	friend class Pipe;
+	typedef typename In::keytype K;
+	typedef typename In::valuetype V;
+
 public:
 	/**
 	 * \ingroup op-api
@@ -49,7 +51,7 @@ public:
 	 *
 	 * Creates a ReduceByKey operator by defining its kernel function.
 	 */
-	ReduceByKey(std::function<In(In&, In&)> reducef_) :
+	ReduceByKey(std::function<V(V&, V&)> reducef_) :
 			reducef(reducef_), win(nullptr) {
 		this->set_input_degree(1);
 		this->set_output_degree(1);
@@ -75,7 +77,7 @@ public:
 		return *this;
 	}
 
-	std::function<In(In&, In&)> kernel() {
+	std::function<V(V&, V&)> kernel() {
 		return reducef;
 	}
 
@@ -110,7 +112,7 @@ protected:
 	}
 
 private:
-	std::function<In(In&, In&)> reducef;
+	std::function<V(V&, V&)> reducef;
 	WindowPolicy* win;
 };
 
