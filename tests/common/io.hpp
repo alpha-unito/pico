@@ -1,0 +1,30 @@
+/*
+ * io.hpp
+ *
+ *  Created on: Jan 25, 2018
+ *      Author: drocco
+ */
+
+#ifndef TESTS_COMMON_IO_HPP_
+#define TESTS_COMMON_IO_HPP_
+
+#include <vector>
+#include <fstream>
+#include <iostream>
+#include <cassert>
+
+/*
+ * read a file line by line into a vector of lines
+ */
+std::vector<std::string> read_lines(std::string fname) {
+	std::vector<std::string> res;
+	std::ifstream in(fname);
+	assert(in.is_open());
+
+	for (std::string line; std::getline(in, line);)
+		res.push_back(line);
+
+	return res;
+}
+
+#endif /* TESTS_COMMON_IO_HPP_ */
