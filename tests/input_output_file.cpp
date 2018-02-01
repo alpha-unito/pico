@@ -10,6 +10,7 @@
 #include <pico/pico.hpp>
 #include <catch.hpp>
 #include <io.hpp>
+#include <unordered_set>
 
 using namespace pico;
 
@@ -33,8 +34,9 @@ TEST_CASE( "read and write", "read and write tag" ){
 	io_file_pipe.run();
 
 	std::vector<std::string> input_lines = read_lines(input_file);
+	std::unordered_multiset<std::string> unordered_input_lines(input_lines.begin(), input_lines.end());
 	std::vector<std::string> output_lines = read_lines(output_file);
-
-	REQUIRE(input_lines == output_lines);
+	std::unordered_multiset<std::string> unordered_output_lines(output_lines.begin(), output_lines.end());
+	REQUIRE(unordered_input_lines == unordered_output_lines);
 }
 
