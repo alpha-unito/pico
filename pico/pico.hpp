@@ -25,6 +25,7 @@
 #include "Operators/FoldReduce.hpp"
 #include "Operators/BinaryMap.hpp"
 #include "Operators/InOut/ReadFromFile.hpp"
+#include "Operators/InOut/ReadFromStdIn.hpp"
 //#include "Operators/InOut/ReadFromHDFS.hpp"
 #include "Operators/InOut/ReadFromSocket.hpp"
 #include "Operators/InOut/WriteToDisk.hpp"
