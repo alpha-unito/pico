@@ -27,7 +27,6 @@
 
 #include <ff/node.hpp>
 
-#include "../../../Internals/TimedToken.hpp"
 #include "../../../Internals/Microbatch.hpp"
 #include "../../../Internals/utils.hpp"
 
@@ -45,7 +44,7 @@ using namespace pico;
 template<typename TokenType>
 class ReadFromStdInFFNode: public ff_node {
 public:
-	ReadFromStdInFFNode(std::string& server_name_, int port_, char delimiter_) :
+	ReadFromStdInFFNode(char delimiter_) :
 			delimiter(delimiter_) {
 	}
 
