@@ -52,7 +52,7 @@ TEST_CASE("reduce by key", "reduce by key tag" ){
 	.add(Map<std::string, KV>([&key_gen](std::string line) {//creates the pairs
 		return KV(key_gen.next_key(), std::stoi(line));
 	}))
-	.add(ReduceByKey<KV>([](KV& v1, KV& v2) {return v1+v2;}))
+	.add(ReduceByKey<KV>([](int v1, int v2) {return v1+v2;}))
 	.add(writer);
 
 	test_pipe.run();
