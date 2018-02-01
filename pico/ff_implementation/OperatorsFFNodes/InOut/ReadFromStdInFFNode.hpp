@@ -49,7 +49,7 @@ public:
 			delimiter(delimiter_) {
 	}
 
-	void* svc(void* in) {
+	void* svc(void*) {
 		std::string tail;
 		char buffer[CHUNK_SIZE];
 		mb_t *microbatch;

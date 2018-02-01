@@ -46,7 +46,7 @@ public:
 	ReadFromHDFSFFNode() {
 	}
 
-	void* svc(void* in) {
+	void* svc(void*) {
 #ifdef TRACE_FASTFLOW
 		time_point_t t0, t1;
 		hires_timer_ull(t0);
