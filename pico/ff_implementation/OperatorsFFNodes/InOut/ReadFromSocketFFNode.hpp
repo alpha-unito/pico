@@ -71,7 +71,7 @@ public:
 		serv_addr.sin_port = htons(port);
 	}
 
-	void* svc(void* in) {
+	void* svc(void*) {
 		std::string tail;
 		char buffer[CHUNK_SIZE];
 		if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))
