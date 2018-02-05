@@ -8,33 +8,12 @@
 #include <catch.hpp>
 #include <pico/pico.hpp>
 #include <io.hpp>
-#include <Key_generator.hpp>
-#include <unordered_set>
 
-typedef KeyValue<std::string, int> KV;
-
-/*
- * input pairs
- * (A, -2)
- * (A, 3)
- * (B, 40)
- * (E, 4)
- * (C, 0)
- * (A, 5)
- * (B, 2)
- * (B, -4)
- * (F, -2)
- * (D, -2)
- * (C, -5)
- * (D, 2)
- *
- */
-
-
+typedef KeyValue<char, int> KV;
 
 TEST_CASE("reduce by key", "reduce by key tag" ){
 
-	std::string input_file = "numbers_file.txt";
+	std::string input_file = "./common/occurrences.txt";
 	std::string output_file = "output.txt";
 
 	/* define i/o operators from/to file */
@@ -44,25 +23,35 @@ TEST_CASE("reduce by key", "reduce by key tag" ){
 			return in.to_string();
 	});
 
-	Key_generator key_gen{"A", "A", "B", "E", "C", "A", "B", "B", "F", "D", "C", "D"};
-
 	/* compose the pipeline */
 	auto test_pipe = Pipe() //the empty pipeline
 	.add(reader)
-	.add(Map<std::string, KV>([&key_gen](std::string line) {//creates the pairs
-		return KV(key_gen.next_key(), std::stoi(line));
+	.add(Map<std::string, KV>([](std::string line) {//creates the pairs
+		auto res = KV::from_string(line);
+		return res;
 	}))
 	.add(ReduceByKey<KV>([](int v1, int v2) {return v1+v2;}))
 	.add(writer);
 
 	test_pipe.run();
 
-	std::vector<std::string> output_pairs_str = read_lines(output_file);
-	std::unordered_multiset<std::string> output_pairs(output_pairs_str.begin(), output_pairs_str.end());
+	/* parse output into sym-cnt pairs */
+	std::unordered_map<char, int> observed;
+	char sym;
+	int cnt;
+	auto output_pairs_str = read_lines(output_file);
+	for(auto pair : output_pairs_str) {
+		auto kv = KV::from_string(pair);
+		observed[kv.Key()] = kv.Value();
+	}
 
-	std::unordered_multiset<std::string> expected_pairs {KV("A",6).to_string(),
-		KV("B", 38).to_string(), KV("C", -5).to_string(), KV("D", 0).to_string(),
-		KV("E", 4).to_string(), KV("F", -2).to_string()};
+	/* compute expected output */
+	std::unordered_map<char, int> expected;
+	auto input_pairs_str = read_lines(input_file);
+	for (auto pair : input_pairs_str) {
+		auto kv = KV::from_string(pair);
+		expected[kv.Key()] += kv.Value();
+	}
 
-	REQUIRE(expected_pairs == output_pairs);
+	REQUIRE(expected == observed);
 }
