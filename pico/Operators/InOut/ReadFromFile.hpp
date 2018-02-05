@@ -85,7 +85,7 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism, Operator* nextop = nullptr) {
-		return new ReadFromFileFFNode<FarmWrapper>(fname);
+		return new ReadFromFileFFNode<FarmWrapper>(parallelism, fname);
 	}
 
 private:
