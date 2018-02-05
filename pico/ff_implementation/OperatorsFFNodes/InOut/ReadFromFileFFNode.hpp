@@ -232,18 +232,19 @@ private:
 template<typename Farm>
 class ReadFromFileFFNode: public Farm {
 	/* select implementation for line-based file reading */
-	//using Worker = getline_textfile;
-	using Worker = read_textfile;
+	using Worker = getline_textfile;
+	//using Worker = read_textfile;
 
 public:
-	ReadFromFileFFNode(std::string fname_) :
+	ReadFromFileFFNode(int parallelism, std::string fname_) :
 			fname(fname_) {
 		std::vector<ff_node *> workers;
-		for (unsigned i = 0; i < global_params.PARALLELISM; ++i)
+		for (unsigned i = 0; i < parallelism; ++i)
 			workers.push_back(new Worker(fname));
-		this->setEmitterF(new Partitioner(fname, global_params.PARALLELISM));
+		auto e = new Partitioner(*this, fname, parallelism);
+		this->setEmitterF(e);
 		this->add_workers(workers);
-		this->setCollectorF(new Collector());
+		this->setCollectorF(new FarmCollector(parallelism));
 		this->cleanup_all();
 	}
 
@@ -254,8 +255,8 @@ private:
 	 */
 	class Partitioner: public ff_node {
 	public:
-		Partitioner(std::string fname, unsigned partitions_) :
-				partitions(partitions_) {
+		Partitioner(const Farm &f_, std::string fname, unsigned partitions_) :
+				farm(f_), partitions(partitions_) {
 			fd = fopen(fname.c_str(), "rb");
 			assert(fd); //todo - better reporting
 		}
@@ -293,11 +294,12 @@ private:
 			fprintf(stderr, "[READ FROM FILE MB-%p] In SVC: SEND OUT PICO_EOS\n", this);
 #endif
 
-			ff_send_out(PICO_EOS);
+			farm.getlb()->broadcast_task(PICO_EOS);
 			return EOS;
 		}
 
 	private:
+		const Farm &farm;
 		FILE *fd;
 		unsigned partitions;
 	};
