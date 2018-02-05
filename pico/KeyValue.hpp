@@ -137,10 +137,21 @@ public:
 	}
 
 	std::string to_string() const {
-		std::string value = "<";
-		value.append(key).append(", ").append(std::to_string(val));
-		value.append(">");
-		return value;
+		std::stringstream res;
+		res << "<" << key << ", " << val << ">";
+		return res.str();
+	}
+
+	static KeyValue from_string(std::string s) {
+		KeyValue res;
+		std::stringstream in(s);
+		assert(in.get() == '<');
+		in >> res.key;
+		assert(in.get() == ',');
+		assert(in.get() == ' ');
+		in >> res.val;
+		assert(in.get() == '>');
+		return res;
 	}
 
 private:
