@@ -67,12 +67,17 @@ class getline_textfile: public ff_node {
 	typedef Microbatch<Token<std::string>> mb_t;
 
 public:
-	getline_textfile(std::string fname) :
-			file(fname) {
-		assert(file.is_open());
+	getline_textfile(std::string fname_) :
+			fname(fname_) {
 	}
 
-	~getline_textfile() {
+	int svc_init() {
+		file.open(fname);
+		assert(file.is_open());
+		return 0;
+	}
+
+	void svc_end() {
 		file.close();
 	}
 
@@ -86,21 +91,29 @@ public:
 		prange *r = (prange *) r_;
 		file.seekg(r->begin);
 		mb_t *mb = new mb_t(global_params.MICROBATCH_SIZE);
-		while (file.tellg() < r->end) {
-			/* initialize a new string within the micro-batch */
-			std::string *line = new (mb->allocate()) std::string();
-			/* get a line */
-			if (getline(file, *line)) {
-				mb->commit();
-				/* create next micro-batch if complete */
-				if (mb->full()) {
-					ff_send_out(reinterpret_cast<void*>(mb));
-					mb = new mb_t(global_params.MICROBATCH_SIZE);
-				}
-			} else
-				assert(false);
+		while (true) {
+			auto pos = file.tellg();
+			if (pos < r->end && pos != -1) {
+				/* initialize a new string within the micro-batch */
+				std::string *line = new (mb->allocate()) std::string();
+				/* get a line */
+				if (getline(file, *line)) {
+					mb->commit();
+					/* create next micro-batch if complete */
+					if (mb->full()) {
+						ff_send_out(reinterpret_cast<void*>(mb));
+						mb = new mb_t(global_params.MICROBATCH_SIZE);
+					}
+				} else
+					assert(false);
+			}
+			else {
+				if(pos != r->end)
+					//assert(file.rdstate() == std::ifstream::eofbit);
+					assert(pos == -1);
+				break;
+			}
 		}
-		assert(file.tellg() == r->end);
 
 		/* remainder micro-batch */
 		if (!mb->empty())
@@ -116,6 +129,7 @@ public:
 
 private:
 	std::ifstream file;
+	std::string fname;
 };
 
 /*
@@ -218,8 +232,8 @@ private:
 template<typename Farm>
 class ReadFromFileFFNode: public Farm {
 	/* select implementation for line-based file reading */
-	using Worker = getline_textfile;
-	//using Worker = read_textfile;
+	//using Worker = getline_textfile;
+	using Worker = read_textfile;
 
 public:
 	ReadFromFileFFNode(std::string fname_) :
@@ -269,7 +283,7 @@ private:
 				}
 				assert(rend > rbegin); //todo - better partitioning?
 				ff_send_out(new prange(rbegin, rend));
-				rbegin = rend + 1;
+				rbegin = rend;
 
 			}
 			assert(fsize > rbegin); //todo - better partitioning?
