@@ -53,7 +53,8 @@ public:
 			std::function<OutV(OutV&, OutV&)> reducef, WindowPolicy* win) {
 
 		this->setEmitterF(win->window_farm(parallelism, this->getlb()));
-		this->setCollectorF(new FarmCollector(parallelism));
+		auto c = new PReduceCollector<Out, TokenTypeOut>(parallelism, reducef);
+		this->setCollectorF(c);
 		delete win;
 		std::vector<ff_node *> w;
 		for (int i = 0; i < parallelism; ++i) {
