@@ -22,7 +22,8 @@ std::vector<std::string> read_lines(std::string fname) {
 	assert(in.is_open());
 
 	for (std::string line; std::getline(in, line);)
-		res.push_back(line);
+		if(!line.empty())
+			res.push_back(line);
 
 	return res;
 }
