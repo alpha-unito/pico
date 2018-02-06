@@ -30,6 +30,10 @@
 
 #include <ff/mapper.hpp>
 
+#ifndef PARDEG
+#define PARDEG 1
+#endif
+
 namespace pico {
 
 struct app_args_t {
@@ -38,7 +42,7 @@ struct app_args_t {
 };
 
 struct {
-	int PARALLELISM = 1;
+	int PARALLELISM = PARDEG;
 	int MICROBATCH_SIZE = 8;
 	const char* MAPPING;
 } global_params;
