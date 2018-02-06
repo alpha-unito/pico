@@ -35,10 +35,8 @@ TEST_CASE("reduce by key", "reduce by key tag" ){
 
 	test_pipe.run();
 
-	/* parse output into sym-cnt pairs */
+	/* parse output into char-int pairs */
 	std::unordered_map<char, int> observed;
-	char sym;
-	int cnt;
 	auto output_pairs_str = read_lines(output_file);
 	for(auto pair : output_pairs_str) {
 		auto kv = KV::from_string(pair);
