@@ -65,91 +65,79 @@ public:
 
 private:
 
-class Worker: public ff_node {
-public:
-	Worker(std::function<Out(In&)>& kernel_,
-			std::function<OutV(OutV&, OutV&)>& reducef_kernel_) :
-			kernel(kernel_), reducef_kernel(reducef_kernel_)
+	class Worker: public ff_node {
+	public:
+		Worker(std::function<Out(In&)>& kernel_,
+				std::function<OutV(OutV&, OutV&)>& reducef_kernel_) :
+				map_kernel(kernel_), reduce_kernel(reducef_kernel_)
 #ifdef TRACE_FASTFLOW
-    , user_svc(0)
+		, user_svc(0)
 #endif
-{}
-
- 	void* svc(void* task) {
-#ifdef TRACE_FASTFLOW
-            time_point_t t0, t1;
-            hires_timer_ull(t0);
-#endif
-		if(task != PICO_EOS && task != PICO_SYNC){
-			auto in_microbatch = reinterpret_cast<mb_in*>(task);
-			// iterate over microbatch
-			for(In &x : *in_microbatch) {
-			    Out kv = kernel(x);
-			    if (kvmap.find(kv.Key()) != kvmap.end()) {
-					kvmap[kv.Key()] = Out(kv.Key(), reducef_kernel(kv.Value(), kvmap[kv.Key()].Value()));
-				} else {
-					kvmap[kv.Key()] = kv;
-				}
-			}
-
-#if 0
-	// stateless variant
-	out_microbatch = new Microbatch<TokenTypeOut>(global_params.MICROBATCH_SIZE);
-	for (auto it=kvmap.begin(); it!=kvmap.end(); ++it){
-			out_microbatch->push_back(std::move(it->second));
-	}
-	ff_send_out(reinterpret_cast<void*>(out_microbatch));
-	kvmap.clear();
-#endif
-
-			DELETE(in_microbatch, mb_in);
-		} else {
-#ifdef DEBUG
-	fprintf(stderr, "[MAP-PREDUCE-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
-#endif
-	        mb_out *out_microbatch;
-	        NEW(out_microbatch, mb_out, global_params.MICROBATCH_SIZE);
-			for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
-			    new (out_microbatch->allocate()) Out(std::move(it->second));
-			    out_microbatch->commit();
-			    if(out_microbatch->full()) {
-			       ff_send_out(reinterpret_cast<void*>(out_microbatch));
-			       NEW(out_microbatch, mb_out, global_params.MICROBATCH_SIZE);
-			    }
-			}
-			if(!out_microbatch->empty()) {
-			   ff_send_out(reinterpret_cast<void*>(out_microbatch));
-			}
-			else {
-			    DELETE(out_microbatch, mb_out); //spurious microbatch
-			}
-
-			ff_send_out(task);
+		{
 		}
+
+		void* svc(void* task) {
 #ifdef TRACE_FASTFLOW
-            hires_timer_ull(t1);
-            user_svc += get_duration(t0, t1);
+			time_point_t t0, t1;
+			hires_timer_ull(t0);
 #endif
-	return GO_ON;
-	}
+			if (task != PICO_EOS && task != PICO_SYNC) {
+				auto in_microbatch = reinterpret_cast<in_mb_t*>(task);
+				// iterate over microbatch
+				for (In &x : *in_microbatch) {
+					Out kv = map_kernel(x);
+					const OutK &k(kv.Key());
+					if (kvmap.find(k) != kvmap.end())
+						kvmap[k] = reduce_kernel(kv.Value(), kvmap[k]);
+					else
+						kvmap[k] = kv.Value();
+				}
 
-    private:
-        typedef Microbatch<TokenTypeIn> mb_in;
-        typedef Microbatch<TokenTypeOut> mb_out;
-        std::function<Out(In&)> kernel;
-        std::function<OutV(OutV&, OutV&)> reducef_kernel;
-        std::unordered_map<OutK, Out> kvmap;
+				DELETE(in_microbatch, in_mb_t);
+			} else {
+#ifdef DEBUG
+				fprintf(stderr, "[MAP-PREDUCE-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
+#endif
+				out_mb_t *out_mb;
+				NEW(out_mb, out_mb_t, global_params.MICROBATCH_SIZE);
+				for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
+					new (out_mb->allocate()) Out(it->first, it->second);
+					out_mb->commit();
+					if (out_mb->full()) {
+						ff_send_out(reinterpret_cast<void*>(out_mb));
+						NEW(out_mb, out_mb_t, global_params.MICROBATCH_SIZE);
+					}
+				}
+
+				if (!out_mb->empty())
+					ff_send_out(reinterpret_cast<void*>(out_mb));
+				else
+					DELETE(out_mb, out_mb_t); //spurious microbatch
+
+				ff_send_out(task);
+			}
+#ifdef TRACE_FASTFLOW
+			hires_timer_ull(t1);
+			user_svc += get_duration(t0, t1);
+#endif
+			return GO_ON;
+		}
+
+	private:
+		typedef Microbatch<TokenTypeIn> in_mb_t;
+		typedef Microbatch<TokenTypeOut> out_mb_t;
+		std::function<Out(In&)> map_kernel;
+		std::function<OutV(OutV&, OutV&)> reduce_kernel;
+		std::unordered_map<OutK, OutV> kvmap;
 
 #ifdef TRACE_FASTFLOW
-        duration_t user_svc;
-        virtual void print_pico_stats(std::ostream & out) {
-            out << "*** PiCo stats ***\n";
-            out << "user svc (ms) : " << time_count(user_svc) * 1000 << std::endl;
-        }
+		duration_t user_svc;
+		virtual void print_pico_stats(std::ostream & out) {
+			out << "*** PiCo stats ***\n";
+			out << "user svc (ms) : " << time_count(user_svc) * 1000 << std::endl;
+		}
 #endif
 	};
 };
-
-
 
 #endif /* INTERNALS_FFOPERATORS_MAPPREDUCEBATCH_HPP_ */
