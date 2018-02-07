@@ -10,7 +10,7 @@ LIBS                 = -lpthread
 PICO_ROOT                 = ..
 
 INCLUDES             = -I$(PICO_ROOT) -I./include
-TARGET               = input_output_file reduce_by_key
+TARGET               = input_output_file reduce_by_key wordcount
 DRIVER_OBJ           = test_driver.o
 
 
@@ -30,6 +30,7 @@ all: $(TARGET)
 #dependencies
 input_output_file: input_output_file.o $(DRIVER_OBJ)
 reduce_by_key: reduce_by_key.o $(DRIVER_OBJ)
+wordcount: wordcount.o $(DRIVER_OBJ)
 
 clean:
 	rm -rf *.o *~
