@@ -52,7 +52,7 @@ static auto tokenizer = [](std::string& in, FlatMapCollector<KV>& collector) {
 std::vector<std::string> to_vec_str(std::unordered_map<std::string, int> un_map){
 	std::vector<std::string> vec;
 	for(auto pair : un_map){
-		vec.push_back("<" + pair.first + ", " + std::to_string(pair.second) + ">");
+		vec.push_back(KV(pair.first, pair.second).to_string());
 	}
 	return vec;
 
