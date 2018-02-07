@@ -70,7 +70,7 @@ private:
 	public:
 		Worker(std::function<void(In&, FlatMapCollector<Out> &)>& kernel_, //
 				std::function<OutV(OutV&, OutV&)>& reducef_kernel_) :
-				kernel(kernel_), reducef_kernel(reducef_kernel_)
+				map_kernel(kernel_), reduce_kernel(reducef_kernel_)
 #ifdef TRACE_FASTFLOW
 		, user_svc(0)
 #endif
@@ -86,20 +86,19 @@ private:
 				auto in_microbatch = reinterpret_cast<mb_in*>(task);
 
 				// iterate over microbatch
-				for (In &in : *in_microbatch) {
-					kernel(in, collector);
-				}
+				for (In &in : *in_microbatch)
+					map_kernel(in, collector);
 
 				// partial reduce on all output micro-batches
 				auto it = collector.begin();
 				while (it) {
 					/* reduce the micro-batch */
 					for (Out &kv : *it->mb) {
-						const typename Out::keytype & k(kv.Key());
-						if (kvmap.find(k) != kvmap.end()) {
-							kvmap[k] = Out(k, reducef_kernel(kv.Value(), kvmap[k].Value()));
-						} else
-							kvmap[k] = kv;
+						const OutK &k(kv.Key());
+						if (kvmap.find(k) != kvmap.end())
+							kvmap[k] = reduce_kernel(kv.Value(), kvmap[k]);
+						else
+							kvmap[k] = kv.Value();
 					}
 
 					/* clean up and skip to the next micro-batch */
@@ -119,7 +118,7 @@ private:
 				mb_out *mb;
 				NEW(mb, mb_out, global_params.MICROBATCH_SIZE);
 				for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
-					new (mb->allocate()) Out(it->second);
+					new (mb->allocate()) Out(it->first, it->second);
 					mb->commit();
 					if (mb->full()) {
 						ff_send_out(reinterpret_cast<void*>(mb));
@@ -152,9 +151,9 @@ private:
 		typedef Microbatch<TokenTypeOut> mb_out;
 
 		TokenCollector<Out> collector;
-		std::function<void(In&, FlatMapCollector<Out> &)> kernel;
-		std::function<OutV(OutV&, OutV&)> reducef_kernel;
-		std::unordered_map<OutK, Out> kvmap;
+		std::function<void(In&, FlatMapCollector<Out> &)> map_kernel;
+		std::function<OutV(OutV&, OutV&)> reduce_kernel;
+		std::unordered_map<OutK, OutV> kvmap;
 
 #ifdef TRACE_FASTFLOW
 		duration_t user_svc;
