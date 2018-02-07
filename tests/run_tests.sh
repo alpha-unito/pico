@@ -8,3 +8,7 @@ echo "reduce by key"
 
 echo "wordcount"
 ./wordcount
+
+echo "streaming reduce by key"
+cat common/occurrences.txt | nc -l 4000 &
+./streaming_reduce_by_key
