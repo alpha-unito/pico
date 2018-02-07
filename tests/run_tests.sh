@@ -5,3 +5,6 @@ echo "file i/o"
 
 echo "reduce by key"
 ./reduce_by_key
+
+echo "wordcount"
+./wordcount
