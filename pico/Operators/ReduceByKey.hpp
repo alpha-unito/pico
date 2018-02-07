@@ -52,13 +52,22 @@ public:
 	 * Creates a ReduceByKey operator by defining its kernel function.
 	 */
 	ReduceByKey(std::function<V(V&, V&)> reducef_) :
-			reducef(reducef_), win(nullptr) {
+			reducef(reducef_) {
 		this->set_input_degree(1);
 		this->set_output_degree(1);
 		this->set_stype(BOUNDED, true);
 		this->set_stype(UNBOUNDED, false);
 		this->set_stype(ORDERED, true);
 		this->set_stype(UNORDERED, true);
+	}
+
+	/**
+	 * \ingroup op-api
+	 * ReduceByKey copy Constructor
+	 */
+	ReduceByKey(const ReduceByKey &copy) : UnaryOperator<In, In>(copy) {
+		reducef = copy.reducef;
+		win = copy.win ? copy.win->clone() : nullptr;
 	}
 
 	/**
@@ -72,9 +81,10 @@ public:
 	 * Sets a fixed size for windows when operating on streams.
 	 * Windowing is applied on partitioning basis: each window contains only items belonging to a single partition.
 	 */
-	ReduceByKey& window(size_t size) {
-		win = new ByKeyWindow<Token<In>>(size);
-		return *this;
+	ReduceByKey window(size_t size) {
+		ReduceByKey res(*this);
+		res.win = new ByKeyWindow<Token<In>>(size);
+		return res;
 	}
 
 	std::function<V(V&, V&)> kernel() {
@@ -95,7 +105,7 @@ protected:
 	}
 
 	bool windowing() const {
-		return win;
+		return win != nullptr;
 	}
 
 	bool partitioning() const {
@@ -113,7 +123,7 @@ protected:
 
 private:
 	std::function<V(V&, V&)> reducef;
-	WindowPolicy* win;
+	WindowPolicy* win = nullptr;
 };
 
 } /* namespace pico */

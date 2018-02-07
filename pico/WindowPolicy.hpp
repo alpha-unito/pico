@@ -56,6 +56,7 @@ public:
 	}
 
 	virtual ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const)=0;
+	virtual WindowPolicy *clone() = 0;
 
 	virtual ~WindowPolicy() {
 	}
@@ -73,12 +74,20 @@ public:
 			WindowPolicy() {
 	}
 
+	BatchWindow(const BatchWindow &copy) :
+			WindowPolicy(copy) {
+	}
+
 	BatchWindow(size_t w_size_) :
 			WindowPolicy(w_size_, w_size_) {
 	}
 
 	ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const lb_) {
 		return new OFarmEmitter<TokenType>(nworkers_, lb_);
+	}
+
+	BatchWindow *clone() {
+		return new BatchWindow(*this);
 	}
 };
 
@@ -90,12 +99,20 @@ public:
 			WindowPolicy() {
 	}
 
+	ByKeyWindow(const ByKeyWindow &copy) :
+			WindowPolicy(copy) {
+	}
+
 	ByKeyWindow(size_t w_size_) :
 			WindowPolicy(w_size_, w_size_) {
 	}
 
 	ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const lb_) {
 		return new ByKeyEmitter<TokenType>(nworkers_, lb_, w_size);
+	}
+
+	ByKeyWindow *clone() {
+		return new ByKeyWindow(*this);
 	}
 };
 
@@ -106,8 +123,16 @@ public:
 			WindowPolicy(global_params.MICROBATCH_SIZE, 1) {
 	}
 
+	noWindow(const noWindow &copy) :
+			WindowPolicy(copy) {
+	}
+
 	ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const lb_) {
 		return new FarmEmitter<TokenType>(nworkers_, lb_);
+	}
+
+	noWindow *clone() {
+		return new noWindow(*this);
 	}
 };
 
