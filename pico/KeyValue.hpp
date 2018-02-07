@@ -102,7 +102,7 @@ public:
 		val = val_;
 	}
 
-	bool operator==(KeyValue &kv) {
+	bool operator==(const KeyValue &kv) const {
 		return key == kv.Key() && val == kv.Value();
 	}
 
