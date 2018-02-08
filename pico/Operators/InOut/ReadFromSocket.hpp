@@ -65,7 +65,6 @@ public:
 		server_name = copy.server_name;
 		port = copy.port;
 		delimiter = copy.delimiter;
-		filename = copy.filename;
 	}
 
 	/**
@@ -98,17 +97,14 @@ protected:
 		return OpClass::INPUT;
 	}
 
-	ff::ff_node* node_operator(int parallelism, Operator* nextop = nullptr) {
-		return new ReadFromSocketFFNode<Token<std::string>>(server_name, port,
-				delimiter);
+	ff::ff_node* node_operator(int parallelism, Operator*) {
+		return new ReadFromSocketFFNode(server_name, port, delimiter);
 	}
 
 private:
 	std::string server_name;
 	int port;
 	char delimiter;
-	std::string filename;
-
 };
 
 } /* namespace pico */

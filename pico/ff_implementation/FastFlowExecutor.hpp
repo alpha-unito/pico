@@ -44,7 +44,7 @@ class FastFlowExecutor {
 public:
 	FastFlowExecutor(const Pipe &pipe_) :
 			pipe(pipe_) {
-		ff_pipe = make_ff_term(pipe);
+		ff_pipe = make_ff_term(pipe, true /* accelerator */);
 	}
 
 	~FastFlowExecutor() {
@@ -52,7 +52,11 @@ public:
 	}
 
 	void run() const {
-		ff_pipe->run_and_wait_end();
+		ff_pipe->run();
+		ff_pipe->offload(PICO_SYNC);
+		ff_pipe->offload(PICO_EOS);
+		ff_pipe->offload(EOS);
+		ff_pipe->wait();
 	}
 
 	double run_time() const {
@@ -63,9 +67,9 @@ private:
 	const Pipe &pipe;
 	ff::ff_pipeline *ff_pipe = nullptr;
 
-	ff::ff_pipeline *make_ff_term(const Pipe &p) const {
+	ff::ff_pipeline *make_ff_term(const Pipe &p, bool accelerator) const {
 		/* create the ff pipeline with automatic node cleanup */
-		auto *res = new ff::ff_pipeline();
+		auto *res = new ff::ff_pipeline(accelerator);
 		res->cleanup_nodes();
 		Operator *op;
 
@@ -82,14 +86,14 @@ private:
 		case Pipe::MULTITO:
 			std::cerr << "MULTI-TO not implemented yet\n";
 			assert(false);
-			res->add_stage(make_ff_term(*p.children().front()));
+			res->add_stage(make_ff_term(*p.children().front(), false));
 			res->add_stage(make_multito_farm(p));
 			break;
 		case Pipe::ITERATE:
 			std::cerr << "ITERATION not implemented yet\n";
 			assert(false);
 			assert(p.children().size() == 1);
-			res->add_stage(make_ff_term(*p.children()[0]));
+			res->add_stage(make_ff_term(*p.children()[0], false));
 			//TODO add termination stage
 			res->wrap_around();
 			break;
@@ -109,7 +113,7 @@ private:
 		res->add_collector(new MergeCollector());
 		std::vector<ff::ff_node *> w;
 		for (auto p_ : p.children())
-			w.push_back(make_ff_term(*p_));
+			w.push_back(make_ff_term(*p_, false));
 		res->add_workers(w);
 		res->cleanup_all();
 		return res;
@@ -140,7 +144,7 @@ private:
 			p->add_stage(op->node_operator(global_params.PARALLELISM, nullptr));
 		} else
 			/* complex sub-term */
-			p->add_stage(make_ff_term(**it));
+			p->add_stage(make_ff_term(**it, false));
 	}
 
 	template<typename ItType>
@@ -187,7 +191,7 @@ private:
 		res->add_collector(new MergeCollector());
 		std::vector<ff::ff_node *> w;
 		for (auto it = p.children().begin() + 1; it != p.children().end(); ++it)
-			w.push_back(make_ff_term(**it));
+			w.push_back(make_ff_term(**it, false));
 		res->add_workers(w);
 		res->cleanup_all();
 		return res;

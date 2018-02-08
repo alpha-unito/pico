@@ -224,8 +224,6 @@ private:
 
 /**
  * The ReadFromFile farm
- *
- * @todo only works if not receiving input tasks
  */
 class ReadFromFileFFNode: public FarmWrapper {
 	/* select implementation for line-based file reading */
@@ -263,7 +261,15 @@ private:
 		}
 
 		void *svc(void *in) {
-			assert(!in); //todo drop
+			if (in == PICO_EOS) {
+#ifdef DEBUG
+				fprintf(stderr, "[READ FROM FILE MB-%p] In SVC: SEND OUT PICO_EOS\n", this);
+#endif
+				farm.getlb()->broadcast_task(PICO_EOS);
+				return GO_ON;
+			}
+
+			assert(in == PICO_SYNC);
 
 			/* get file size */
 			fseek(fd, 0, SEEK_END);
@@ -289,12 +295,7 @@ private:
 			assert(fsize > rbegin); //todo - better partitioning?
 			ff_send_out(new prange(rbegin, fsize));
 
-#ifdef DEBUG
-			fprintf(stderr, "[READ FROM FILE MB-%p] In SVC: SEND OUT PICO_EOS\n", this);
-#endif
-
-			farm.getlb()->broadcast_task(PICO_EOS);
-			return EOS;
+			return GO_ON;
 		}
 
 	private:
