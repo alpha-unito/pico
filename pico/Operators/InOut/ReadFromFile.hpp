@@ -45,7 +45,8 @@ public:
 	 *
 	 * ReadFromFile Constructor
 	 *
-	 * Creates a new ReadFromFile operator by defining its kernel function.
+	 * Creates a new ReadFromFile operator,
+	 * yielding an unordered bounded collection.
 	 */
 	ReadFromFile(std::string fname_) :
 			InputOperator<std::string>(StructureType::BAG), fname(fname_) {
@@ -84,8 +85,8 @@ protected:
 		assert(false);
 	}
 
-	ff::ff_node* node_operator(int parallelism, Operator* nextop = nullptr) {
-		return new ReadFromFileFFNode<FarmWrapper>(parallelism, fname);
+	ff::ff_node* node_operator(int parallelism, Operator*) {
+		return new ReadFromFileFFNode(parallelism, fname);
 	}
 
 private:

@@ -23,6 +23,9 @@
 
 #include <ff/farm.hpp>
 
+/*
+ * A non-ordering farm.
+ */
 class FarmWrapper: public ff::ff_farm<> {
 public:
 
