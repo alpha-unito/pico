@@ -51,29 +51,7 @@ public:
 	InputOperator(StructureType st_) {
 		this->set_input_degree(0);
 		this->set_output_degree(1);
-		this->set_stype(BOUNDED, false);
-		this->set_stype(UNBOUNDED, false);
-		this->set_stype(ORDERED, false);
-		this->set_stype(UNORDERED, false);
-		switch (st_) {
-		case LIST:
-			this->set_stype(BOUNDED, true);
-			this->set_stype(ORDERED, true);
-			break;
-		case BAG:
-			this->set_stype(BOUNDED, true);
-			this->set_stype(UNORDERED, true);
-			break;
-		case STREAM:
-			this->set_stype(UNBOUNDED, true);
-			this->set_stype(ORDERED, true);
-			break;
-		case UBAG:
-			this->set_stype(UNBOUNDED, true);
-			this->set_stype(UNORDERED, true);
-			break;
-		}
-		this->set_data_stype(st_);
+		this->stype(st_, true);
 	}
 
 	/**

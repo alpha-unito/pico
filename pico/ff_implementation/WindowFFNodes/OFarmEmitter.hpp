@@ -21,32 +21,13 @@
 #ifndef INTERNALS_FFOPERATORS_WINDOWFFNODES_OFARMMITTER_HPP_
 #define INTERNALS_FFOPERATORS_WINDOWFFNODES_OFARMMITTER_HPP_
 
+#include <ff/farm.hpp>
+
 #include "../../Internals/utils.hpp"
 #include "../../Internals/Microbatch.hpp"
 
 #include "../SupportFFNodes/Emitter.hpp"
 
 using namespace pico;
-
-template<typename TokenType>
-class OFarmEmitter: public Emitter {
-public:
-	OFarmEmitter(int nworkers_, ff_loadbalancer * const lb_) :
-			nworkers(nworkers_), lb(lb_) {
-	}
-
-	void* svc(void* task) {
-		if (task != PICO_EOS && task != PICO_SYNC) {
-			return task;
-		} else {
-			lb->broadcast_task(task);
-		}
-		return GO_ON;
-	}
-
-private:
-	int nworkers;
-	ff_loadbalancer * const lb;
-};
 
 #endif /* INTERNALS_FFOPERATORS_WINDOWFFNODES_OFARMMITTER_HPP_ */

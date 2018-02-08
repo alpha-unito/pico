@@ -132,8 +132,8 @@ public:
 	Pipe() :
 			in_deg_(0), out_deg_(0), term_node_type_(EMPTY), term_value(nullptr) {
 		/* set default data and structure types */
-		for (int i = 0; i < 4; ++i)
-			structure_types[i] = true;
+		st_map[StructureType::BAG] = true;
+		st_map[StructureType::STREAM] = true;
 #ifdef DEBUG
 		std::cerr << "[PIPE] Empty Pipe created\n";
 #endif
@@ -143,18 +143,18 @@ public:
 	 * \ingroup pipe-api
 	 * Copy Constructor
 	 */
-	Pipe(const Pipe& pipe) :
-			term_node_type_(pipe.term_node_type_), term_value(nullptr) {
-		in_dtype = pipe.in_dtype;
-		out_dtype = pipe.out_dtype;
-		in_deg_ = pipe.in_deg_;
-		out_deg_ = pipe.out_deg_;
-		copy_struct_type(*this, pipe.structure_types);
+	Pipe(const Pipe& copy) :
+			term_node_type_(copy.term_node_type_), term_value(nullptr) {
+		in_dtype = copy.in_dtype;
+		out_dtype = copy.out_dtype;
+		in_deg_ = copy.in_deg_;
+		out_deg_ = copy.out_deg_;
+		copy_struct_type(*this, copy);
 
 		if (term_node_type_ == OPERATOR)
-			term_value.op = pipe.term_value.op->clone();
+			term_value.op = copy.term_value.op->clone();
 		else
-			for (Pipe *p : pipe.children_)
+			for (Pipe *p : copy.children_)
 				children_.push_back(new Pipe(*p));
 	}
 
@@ -193,16 +193,11 @@ public:
 		in_dtype = typeid(typename OpType::inT);
 		out_dtype = typeid(typename OpType::outT);
 
-		/* set structure types */
-		//TODO check
-		for (int i = 0; i < 4; ++i)
-			structure_types[i] = true;
+		/* infer structure types */
 		in_deg_ = op_.i_degree();
 		out_deg_ = op_.o_degree();
-
-		// if Emitter node, Pipe takes its structure type
-		if (in_deg_ == 0)
-			copy_struct_type(*this, op_.structure_type());
+		st_map[StructureType::BAG] = op_.stype(StructureType::BAG);
+		st_map[StructureType::STREAM] = op_.stype(StructureType::STREAM);
 	}
 
 	/**
@@ -243,7 +238,7 @@ public:
 
 			/* check structure types */
 			assert(pipe.in_deg_ == 1);
-			assert(struct_type_check(pipe.structure_types));
+			assert(struct_type_check(pipe));
 
 			/* prepare the output term */
 			Pipe res;
@@ -254,8 +249,8 @@ public:
 			/* infer types */
 			res.in_dtype = in_dtype;
 			res.out_dtype = pipe.out_dtype;
-			copy_struct_type(res, structure_types);
-			struct_type_intersection(res, pipe.structure_types);
+			copy_struct_type(res, *this);
+			struct_type_intersection(res, pipe);
 			res.in_deg_ = in_deg_;
 			res.out_deg_ = pipe.out_deg_;
 
@@ -296,7 +291,7 @@ public:
 		/* infer types at input side */
 		res.in_dtype = in_dtype;
 		res.in_deg_ = in_deg_;
-		copy_struct_type(res, structure_types);
+		copy_struct_type(res, *this);
 
 		for (auto p : pipes) {
 			/* check data types */
@@ -305,8 +300,8 @@ public:
 			/* check structure types */
 			assert(p->in_deg_ == 1);
 			assert(p->out_deg_ == 0 || p->out_deg_ == 1);
-			assert(res.struct_type_check(p->structure_types));
-			struct_type_intersection(res, p->structure_types);
+			assert(res.struct_type_check(*p));
+			struct_type_intersection(res, *p);
 
 			/* typing at output side */
 			if (p->out_deg_) {
@@ -344,7 +339,7 @@ public:
 		assert(same_data_type(in_dtype, out_dtype));
 
 		/* check structure types */
-		assert(struct_type_check(structure_types));
+		assert(struct_type_check(*this));
 		assert(out_deg_ == 1 && in_deg_ == 1);
 
 		/* prepare the outer iteration term */
@@ -352,7 +347,7 @@ public:
 		res.in_dtype = in_dtype;
 		res.out_dtype = out_dtype;
 		res.in_deg_ = res.out_deg_ = 1;
-		copy_struct_type(res, structure_types);
+		copy_struct_type(res, *this);
 		res.term_value.cond = cond;
 		res.term_node_type_ = ITERATE;
 		res.children_.push_back(new Pipe(*this));
@@ -415,7 +410,7 @@ public:
 		/* check structure types */
 		assert(out_deg_ == 1 && term_node_type_ != EMPTY);
 		assert(pipe.in_deg_ == 0);
-		assert(struct_type_check(pipe.structure_types));
+		assert(struct_type_check(pipe));
 
 		/* prepare the output term */
 		Pipe res;
@@ -426,8 +421,8 @@ public:
 		/* infer types */
 		res.in_dtype = in_dtype;
 		res.out_dtype = pipe.out_dtype;
-		copy_struct_type(res, structure_types);
-		struct_type_intersection(res, pipe.structure_types);
+		copy_struct_type(res, *this);
+		struct_type_intersection(res, pipe);
 		res.in_deg_ = in_deg_;
 		res.out_deg_ = 1;
 
@@ -525,25 +520,20 @@ private:
 		return t1.get() == t2.get();
 	}
 
-	inline bool struct_type_check(const bool raw_st[4]) const {
-		bool ret = (structure_types[0] && raw_st[0]);
-		for (int i = 1; i < 4; ++i) {
-			ret = ret || (structure_types[i] && raw_st[i]);
-		}
+	inline bool struct_type_check(const Pipe &other) const {
+		bool ret = false;
+		for(auto st : st_map)
+			ret |= (st.second && other.st_map.at(st.first));
 		return ret;
 	}
 
-	inline void copy_struct_type(Pipe &res, const bool raw_st[4]) const {
-		for (int i = 0; i < 4; ++i) {
-			res.structure_types[i] = raw_st[i];
-		}
+	inline void copy_struct_type(Pipe &dst, const Pipe &src) const {
+		dst.st_map = src.st_map;
 	}
 
-	inline void struct_type_intersection(Pipe &res,
-			const bool raw_st[4]) const {
-		for (int i = 0; i < 4; ++i) {
-			res.structure_types[i] = raw_st[i] && structure_types[i];
-		}
+	inline void struct_type_intersection(Pipe &dst, const Pipe &src) const {
+		for (auto st : dst.st_map)
+			st.second &= src.st_map.at(st.first);
 	}
 
 	void add_to_chain(Pipe &res, const Pipe &to_be_added) const {
@@ -580,7 +570,7 @@ private:
 	TypeInfoRef in_dtype = typeid(void);
 	TypeInfoRef out_dtype = typeid(void);
 	unsigned in_deg_, out_deg_;
-	bool structure_types[4];
+	std::map<StructureType, bool> st_map;
 
 	/* term syntax tree */
 	term_node_t term_node_type_;

@@ -22,12 +22,9 @@
 #define INTERNALS_FFOPERATORS_FMAPBATCH_HPP_
 
 #include <ff/farm.hpp>
-#include "../SupportFFNodes/FarmCollector.hpp"
-#include "../SupportFFNodes/FarmEmitter.hpp"
 
 #include "../../Internals/utils.hpp"
 #include "../../Internals/TimedToken.hpp"
-#include "../../WindowPolicy.hpp"
 #include "../../FlatMapCollector.hpp"
 
 using namespace ff;
@@ -38,18 +35,17 @@ template<typename In, typename Out, typename Farm, typename TokenTypeIn, typenam
 class FMapBatch: public Farm {
 public:
 
-    FMapBatch(int parallelism, std::function<void(In&, FlatMapCollector<Out> &)> flatmapf, WindowPolicy* win) {
-        this->setEmitterF(win->window_farm(parallelism, this->getlb()));
-        this->setCollectorF(new FMapBatchCollector(parallelism));
-        delete win;
-        std::vector<ff_node *> w;
-        for (int i = 0; i < parallelism; ++i)
-        {
-            w.push_back(new Worker(flatmapf));
-        }
-        this->add_workers(w);
-        this->cleanup_all();
-    }
+	FMapBatch(int parallelism,
+			std::function<void(In&, FlatMapCollector<Out> &)> flatmapf) {
+		auto e = new ForwardingEmitter<typename Farm::lb_t>(this->getlb());
+		this->setEmitterF(e);
+		this->setCollectorF(new FMapBatchCollector(parallelism));
+		std::vector<ff_node *> w;
+		for (int i = 0; i < parallelism; ++i)
+			w.push_back(new Worker(flatmapf));
+		this->add_workers(w);
+		this->cleanup_all();
+	}
 
 private:
 
@@ -120,6 +116,12 @@ private:
 	    typedef typename TokenCollector<Out>::cnode cnode_t;
 	};
 };
+
+template<typename In, typename Out, typename TokenIn, typename TokenOut>
+using FMapBatchStream = FMapBatch<In, Out, OrderingFarm, TokenIn, TokenOut>;
+
+template<typename In, typename Out, typename TokenIn, typename TokenOut>
+using FMapBatchBag = FMapBatch<In, Out, FarmWrapper, TokenIn, TokenOut>;
 
 
 

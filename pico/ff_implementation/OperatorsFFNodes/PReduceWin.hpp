@@ -30,25 +30,25 @@
 #include "../../Internals/utils.hpp"
 #include "../../WindowPolicy.hpp"
 
-#include "../SupportFFNodes/Collector.hpp"
-#include "../SupportFFNodes/FarmCollector.hpp"
 #include "../SupportFFNodes/Emitter.hpp"
+#include "../SupportFFNodes/FarmWrapper.hpp"
+
 #include "../ff_config.hpp"
+#include "../SupportFFNodes/ForwardingCollector.hpp"
 
 using namespace ff;
 using namespace pico;
 
-template<typename In, typename TokenType, typename FarmType = ff_farm<>>
-class PReduceWin: public FarmType {
+template<typename In, typename TokenType>
+class PReduceWin: public FarmWrapper {
 	typedef typename In::keytype K;
 	typedef typename In::valuetype V;
 
 public:
 	PReduceWin(int parallelism, std::function<V(V&, V&)>& preducef,
-			WindowPolicy* win_) {
-		win = win_;
+			WindowPolicy* win) {
 		this->setEmitterF(win->window_farm(parallelism, this->getlb()));
-		this->setCollectorF(new FarmCollector(parallelism)); // collects and emits single items
+		this->setCollectorF(new ForwardingCollector(parallelism)); // collects and emits single items
 		std::vector<ff_node *> w;
 		for (int i = 0; i < parallelism; ++i) {
 			w.push_back(new PReduceFFNode(preducef, win->win_size()));
@@ -57,12 +57,7 @@ public:
 		this->cleanup_all();
 	}
 
-	~PReduceWin() {
-		delete win;
-	}
 private:
-	WindowPolicy* win;
-
 	/*
 	 * TODO only works with non-decorating token
 	 */
@@ -74,16 +69,10 @@ private:
 				kernel(reducef_), mb_size(mb_size_) {
 		}
 
-//		void svc_end(){
-//			fprintf(stderr, "PREDW %f\n", time_count(wt));
-//		}
-
 		void* svc(void* task) {
 
 			if (task != PICO_EOS && task != PICO_SYNC) {
 
-//				time_point_t t0, t1;
-//				hires_timer_ull(t0);
 				auto in_microbatch = reinterpret_cast<mb_t*>(task);
 				for (In& kv : *in_microbatch) {
 					if (kvmap.find(kv.Key()) != kvmap.end()) {

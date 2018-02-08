@@ -45,10 +45,8 @@ public:
 		reducef = reducef_;
 		this->set_input_degree(1);
 		this->set_output_degree(1);
-		this->set_stype(BOUNDED, true);
-		this->set_stype(UNBOUNDED, false);
-		this->set_stype(ORDERED, true);
-		this->set_stype(UNORDERED, true);
+		this->stype(StructureType::BAG, true);
+		this->stype(StructureType::STREAM, false);
 	}
 
 	/**

@@ -58,10 +58,8 @@ public:
 		mapf = mapf_;
 		this->set_input_degree(1);
 		this->set_output_degree(1);
-		this->set_stype(BOUNDED, true);
-		this->set_stype(UNBOUNDED, true);
-		this->set_stype(ORDERED, true);
-		this->set_stype(UNORDERED, true);
+		this->stype(StructureType::BAG, true);
+		this->stype(StructureType::STREAM, true);
 	}
 
 	/**
@@ -96,24 +94,23 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism, Operator *) {
-		WindowPolicy* win;
-		if (this->data_stype() == (StructureType::STREAM)) {
-			using t = MapBatch<In, Out, ff_ofarm, Token<In>, Token<Out>>;
-			win = new BatchWindow<Token<In>>(global_params.MICROBATCH_SIZE);
-			return new t(parallelism, mapf, win);
+		//todo assert unique stype
+		if (this->stype(StructureType::STREAM)) {
+			using impl_t = MapBatchStream<In, Out, Token<In>, Token<Out>>;
+			return new impl_t(parallelism, mapf);
 		}
-		using t = MapBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>;
-		win = new noWindow<Token<In>>();
-		return new t(parallelism, mapf, win);
+
+		//todo
+		//assert(this->data_stype() == (StructureType::BAG));
+		using impl_t = MapBatchBag<In, Out, Token<In>, Token<Out>>;
+		return new impl_t(parallelism, mapf);
 	}
 
-	ff::ff_node *opt_node(int parallelism, PEGOptimization_t opt,
-			opt_args_t a) {
+	ff::ff_node *opt_node(int pardeg, PEGOptimization_t opt, opt_args_t a) {
 		assert(opt == MAP_PREDUCE);
-		using t = MapPReduceBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>;
-		WindowPolicy* win = new noWindow<Token<In>>();
+		using t = MapPReduceBatch<In, Out, Token<In>, Token<Out>>;
 		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);
-		return new t(parallelism, mapf, nextop->kernel(), win);
+		return new t(pardeg, mapf, nextop->kernel());
 	}
 
 private:

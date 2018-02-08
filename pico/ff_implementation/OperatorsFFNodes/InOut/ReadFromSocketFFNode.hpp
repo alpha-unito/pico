@@ -45,9 +45,8 @@ using namespace pico;
 #define CHUNK_SIZE 512
 
 /*
- * TODO only works with non-decorating token
+ * reads a stream from a socket, maintains the order
  */
-
 class ReadFromSocketFFNode: public ff_node {
 	typedef Token<std::string> TokenType;
 

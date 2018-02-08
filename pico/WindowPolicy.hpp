@@ -21,7 +21,6 @@
 #ifndef INTERNALS_WINDOWPOLICY_HPP_
 #define INTERNALS_WINDOWPOLICY_HPP_
 
-#include "ff_implementation/SupportFFNodes/FarmEmitter.hpp"
 #include "ff_implementation/WindowFFNodes/ByKeyEmitter.hpp"
 #include "ff_implementation/WindowFFNodes/OFarmEmitter.hpp"
 
@@ -82,8 +81,8 @@ public:
 			WindowPolicy(w_size_, w_size_) {
 	}
 
-	ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const lb_) {
-		return new OFarmEmitter<TokenType>(nworkers_, lb_);
+	ff::ff_node* window_farm(int nworkers_, ff::ff_loadbalancer * const lb_) {
+		return new OFarmEmitter<TokenType>(lb_);
 	}
 
 	BatchWindow *clone() {
@@ -107,7 +106,7 @@ public:
 			WindowPolicy(w_size_, w_size_) {
 	}
 
-	ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const lb_) {
+	ff::ff_node* window_farm(int nworkers_, ff::ff_loadbalancer * const lb_) {
 		return new ByKeyEmitter<TokenType>(nworkers_, lb_, w_size);
 	}
 
@@ -116,6 +115,7 @@ public:
 	}
 };
 
+/*
 template<typename TokenType>
 class noWindow: public WindowPolicy {
 public:
@@ -135,6 +135,7 @@ public:
 		return new noWindow(*this);
 	}
 };
+*/
 
 } /* namespace pico */
 

@@ -26,13 +26,10 @@
 #include "../../Internals/utils.hpp"
 #include "../../Internals/TimedToken.hpp"
 #include "../../Internals/Microbatch.hpp"
-#include "../../WindowPolicy.hpp"
 #include "../../FlatMapCollector.hpp"
 #include "../ff_config.hpp"
 
 #include <unordered_map>
-#include "../SupportFFNodes/FarmCollector.hpp"
-#include "../SupportFFNodes/FarmEmitter.hpp"
 
 using namespace ff;
 using namespace pico;
@@ -41,25 +38,23 @@ using namespace pico;
  * TODO only works with non-decorating token
  */
 
-template<typename In, typename Out, typename Farm, typename TokenTypeIn,
+template<typename In, typename Out, typename TokenTypeIn,
 		typename TokenTypeOut>
-class FMapPReduceBatch: public Farm {
+class FMapPReduceBatch: public FarmWrapper {
 	typedef typename Out::keytype OutK;
 	typedef typename Out::valuetype OutV;
 
 public:
 	FMapPReduceBatch(int parallelism,
 			std::function<void(In&, FlatMapCollector<Out> &)>& flatmapf,
-			std::function<OutV(OutV&, OutV&)> reducef, WindowPolicy* win) {
-
-		this->setEmitterF(win->window_farm(parallelism, this->getlb()));
+			std::function<OutV(OutV&, OutV&)> reducef) {
+		auto e = new ForwardingEmitter<ff::ff_loadbalancer>(this->getlb());
+		this->setEmitterF(e);
 		auto c = new PReduceCollector<Out, TokenTypeOut>(parallelism, reducef);
 		this->setCollectorF(c);
-		delete win;
 		std::vector<ff_node *> w;
-		for (int i = 0; i < parallelism; ++i) {
+		for (int i = 0; i < parallelism; ++i)
 			w.push_back(new Worker(flatmapf, reducef));
-		}
 		this->add_workers(w);
 		this->cleanup_all();
 	}
@@ -82,7 +77,10 @@ private:
 			time_point_t t0, t1;
 			hires_timer_ull(t0);
 #endif
-			if (task != PICO_EOS && task != PICO_SYNC) {
+			if (task != PICO_EOS) {
+				/*
+				 * got a microbatch to process and delete
+				 */
 				auto in_microbatch = reinterpret_cast<mb_in*>(task);
 
 				// iterate over microbatch
@@ -112,6 +110,9 @@ private:
 				DELETE(in_microbatch, mb_in);
 				collector.clear();
 			} else {
+				/*
+				 * got PICO_EOS: stream out key-value store
+				 */
 #ifdef DEBUG
 				fprintf(stderr, "[UNARYFLATMAP-PREDUCE-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
 #endif
