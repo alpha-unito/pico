@@ -222,15 +222,12 @@ private:
 	char *buf;
 };
 
-/*
- *******************************************************************************
- *
+/**
  * The ReadFromFile farm
  *
- *******************************************************************************
+ * @todo only works if not receiving input tasks
  */
-template<typename Farm>
-class ReadFromFileFFNode: public Farm {
+class ReadFromFileFFNode: public FarmWrapper {
 	/* select implementation for line-based file reading */
 	using Worker = getline_textfile;
 	//using Worker = read_textfile;
@@ -251,11 +248,11 @@ public:
 private:
 
 	/*
-	 * the emitter partitions the input file and creates read-ranges
+	 * A Partitioner partitions an input file and creates read-ranges
 	 */
 	class Partitioner: public ff_node {
 	public:
-		Partitioner(const Farm &f_, std::string fname, unsigned partitions_) :
+		Partitioner(const FarmWrapper &f_, std::string fname, unsigned partitions_) :
 				farm(f_), partitions(partitions_) {
 			fd = fopen(fname.c_str(), "rb");
 			assert(fd); //todo - better reporting
@@ -265,7 +262,9 @@ private:
 			fclose(fd);
 		}
 
-		void *svc(void *) {
+		void *svc(void *in) {
+			assert(!in); //todo drop
+
 			/* get file size */
 			fseek(fd, 0, SEEK_END);
 			off_t fsize = ftell(fd);
@@ -299,7 +298,7 @@ private:
 		}
 
 	private:
-		const Farm &farm;
+		const FarmWrapper &farm;
 		FILE *fd;
 		unsigned partitions;
 	};
