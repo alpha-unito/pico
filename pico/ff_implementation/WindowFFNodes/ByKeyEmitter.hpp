@@ -23,6 +23,8 @@
 
 #include <unordered_map>
 
+#include <ff/farm.hpp>
+
 #include "../../Internals/utils.hpp"
 #include "../../Internals/Microbatch.hpp"
 
@@ -32,17 +34,13 @@
 using namespace pico;
 
 template<typename TokenType>
-class ByKeyEmitter: public Emitter {
+class ByKeyEmitter: public ff::ff_node {
 public:
-	ByKeyEmitter(int nworkers_, ff_loadbalancer * const lb_, size_t w_size_) :
+	ByKeyEmitter(int nworkers_, ff::ff_loadbalancer * const lb_, size_t w_size_) :
 			nworkers(nworkers_), lb(lb_), w_size(w_size_){
 		for(int i = 0; i < nworkers; ++i){
 			NEW(w_win_map[i], mb_t, global_params.MICROBATCH_SIZE);
 		}
-	}
-
-	~ByKeyEmitter() {
-
 	}
 
 	void* svc(void* task) {
@@ -83,7 +81,7 @@ private:
 	typedef typename DataType::keytype keytype;
 	typedef Microbatch<TokenType> mb_t;
 	int nworkers;
-	ff_loadbalancer * const lb;
+	ff::ff_loadbalancer * const lb;
 	std::unordered_map<size_t, mb_t	*> w_win_map;
 	size_t w_size;
 	inline size_t key_to_worker( const keytype& k) {

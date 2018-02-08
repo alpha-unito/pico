@@ -35,12 +35,8 @@ namespace pico {
 
 using TypeInfoRef = std::reference_wrapper<const std::type_info>;
 
-enum RawStructureType {
-	BOUNDED, UNBOUNDED, ORDERED, UNORDERED
-};
-
 enum StructureType {
-	LIST, BAG, STREAM, UBAG
+	BAG, STREAM //LIST, UBAG
 };
 
 enum OpClass {

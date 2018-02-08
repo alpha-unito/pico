@@ -55,10 +55,8 @@ public:
 			reducef(reducef_) {
 		this->set_input_degree(1);
 		this->set_output_degree(1);
-		this->set_stype(BOUNDED, true);
-		this->set_stype(UNBOUNDED, false);
-		this->set_stype(ORDERED, true);
-		this->set_stype(UNORDERED, true);
+		this->stype(StructureType::BAG, true);
+		this->stype(StructureType::STREAM, false);
 	}
 
 	/**
@@ -70,6 +68,11 @@ public:
 		win = copy.win ? copy.win->clone() : nullptr;
 	}
 
+	~ReduceByKey() {
+		if(win)
+			delete win;
+	}
+
 	/**
 	 * Returns the name of the operator, consisting in the name of the class.
 	 */
@@ -78,12 +81,14 @@ public:
 	}
 
 	/*
-	 * Sets a fixed size for windows when operating on streams.
-	 * Windowing is applied on partitioning basis: each window contains only items belonging to a single partition.
+	 * Sets batch windowing of fixed size.
+	 * Windowing is applied on partitioning basis:
+	 * each window contains only items belonging to a given partition.
 	 */
 	ReduceByKey window(size_t size) {
 		ReduceByKey res(*this);
 		res.win = new ByKeyWindow<Token<In>>(size);
+		res.stype(StructureType::STREAM, true);
 		return res;
 	}
 
@@ -93,7 +98,7 @@ public:
 
 protected:
 	ReduceByKey<In> *clone() {
-		return new ReduceByKey<In>(reducef);
+		return new ReduceByKey<In>(*this);
 	}
 
 	void run() {
@@ -112,11 +117,11 @@ protected:
 		return true;
 	}
 
-	ff::ff_node* node_operator(int parallelism, Operator* nextop = nullptr) {
-		if (this->data_stype() == (StructureType::STREAM)) {
-			assert(win != nullptr);
-			return new PReduceWin<In, Token<In>, FarmWrapper/*ff_ofarm not needed*/>(
-					parallelism, reducef, win);
+	ff::ff_node* node_operator(int pardeg, Operator* nextop = nullptr) {
+		//todo assert unique stype
+		if (this->stype(StructureType::STREAM)) {
+			assert(win);
+			return new PReduceWin<In, Token<In>>(pardeg, reducef, win);
 		}
 		return new PReduceSeqFFNode<In, Token<In>>(reducef);
 	}

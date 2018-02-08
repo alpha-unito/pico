@@ -27,7 +27,6 @@
 
 #include "../../Internals/utils.hpp"
 #include "../SupportFFNodes/PReduceCollector.hpp"
-#include "../SupportFFNodes/FarmEmitter.hpp"
 #include "../ff_config.hpp"
 #include "../../Internals/TimedToken.hpp"
 #include "../../Internals/Microbatch.hpp"
@@ -40,31 +39,27 @@ using namespace pico;
  * TODO only works with non-decorating token
  */
 
-template<typename In, typename Out, typename Farm, typename TokenTypeIn,
-		typename TokenTypeOut>
-class MapPReduceBatch: public Farm {
+template<typename In, typename Out, typename TokenTypeIn, typename TokenTypeOut>
+class MapPReduceBatch: public FarmWrapper {
 	typedef typename Out::keytype OutK;
 	typedef typename Out::valuetype OutV;
 
 public:
-	MapPReduceBatch(int parallelism, std::function<Out(In&)>& mapf,
-			std::function<OutV(OutV&, OutV&)> reducef, WindowPolicy* win) {
-
-		this->setEmitterF(win->window_farm(parallelism, this->getlb()));
+	MapPReduceBatch(int parallelism, //
+			std::function<Out(In&)>& mapf, //
+			std::function<OutV(OutV&, OutV&)> reducef) {
+		auto e = new ForwardingEmitter<ff::ff_loadbalancer>(this->getlb());
+		this->setEmitterF(e);
 		auto c = new PReduceCollector<Out, TokenTypeOut>(parallelism, reducef);
 		this->setCollectorF(c);
-		delete win;
 		std::vector<ff_node *> w;
-		for (int i = 0; i < parallelism; ++i) {
+		for (int i = 0; i < parallelism; ++i)
 			w.push_back(new Worker(mapf, reducef));
-		}
 		this->add_workers(w);
 		this->cleanup_all();
 	}
-	;
 
 private:
-
 	class Worker: public ff_node {
 	public:
 		Worker(std::function<Out(In&)>& kernel_,
@@ -81,9 +76,11 @@ private:
 			time_point_t t0, t1;
 			hires_timer_ull(t0);
 #endif
-			if (task != PICO_EOS && task != PICO_SYNC) {
+			if (task != PICO_EOS) {
+				/*
+				 * got a microbatch to process and delete
+				 */
 				auto in_microbatch = reinterpret_cast<in_mb_t*>(task);
-				// iterate over microbatch
 				for (In &x : *in_microbatch) {
 					Out kv = map_kernel(x);
 					const OutK &k(kv.Key());
@@ -92,9 +89,11 @@ private:
 					else
 						kvmap[k] = kv.Value();
 				}
-
 				DELETE(in_microbatch, in_mb_t);
 			} else {
+				/*
+				 * got PICO_EOS: stream out key-value store
+				 */
 #ifdef DEBUG
 				fprintf(stderr, "[MAP-PREDUCE-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
 #endif

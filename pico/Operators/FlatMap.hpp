@@ -59,10 +59,8 @@ public:
 		flatmapf = flatmapf_;
 		this->set_input_degree(1);
 		this->set_output_degree(1);
-        this->set_stype(BOUNDED, true);
-        this->set_stype(UNBOUNDED, true);
-        this->set_stype(ORDERED, true);
-        this->set_stype(UNORDERED, true);
+        this->stype(StructureType::BAG, true);
+        this->stype(StructureType::STREAM, true);
 	}
 
 	/**
@@ -89,21 +87,23 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism, Operator*) {
-		WindowPolicy* win;
-		if(this->data_stype()  == StructureType::STREAM){
-			win = new BatchWindow<Token<In>>();
-			return new FMapBatch<In, Out, ff_ofarm, Token<In>, Token<Out>>(parallelism, flatmapf, win);
+		//todo assert unique stype
+		if (this->stype(StructureType::STREAM)) {
+			using impl_t = FMapBatchStream<In, Out, Token<In>, Token<Out>>;
+			return new impl_t(parallelism, flatmapf);
 		}
-		win = new noWindow<Token<In>>();
-		return new FMapBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>(parallelism, flatmapf, win);
+
+		//todo
+		//assert(this->data_stype() == (StructureType::BAG));
+		using impl_t = FMapBatchBag<In, Out, Token<In>, Token<Out>>;
+		return new impl_t(parallelism, flatmapf);
 	}
 
 	ff::ff_node *opt_node(int pardeg, PEGOptimization_t opt, opt_args_t a) {
 		assert(opt == FMAP_PREDUCE);
-		using t = FMapPReduceBatch<In, Out, FarmWrapper, Token<In>, Token<Out>>;
-		auto win = new noWindow<Token<In>>();
+		using t = FMapPReduceBatch<In, Out, Token<In>, Token<Out>>;
 		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);
-		return new t(pardeg, flatmapf, nextop->kernel(), win);
+		return new t(pardeg, flatmapf, nextop->kernel());
 	}
 
 

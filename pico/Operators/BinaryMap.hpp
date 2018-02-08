@@ -35,6 +35,8 @@ namespace pico {
  *
  * The kernel is applied independently to all the elements of both collections (either bounded or unbounded).
  */
+
+#if 0
 template<typename In1, typename In2, typename Out>
 class BinaryMap: public BinaryOperator<In1, In2, Out> {
 	friend class Pipe;
@@ -111,6 +113,7 @@ private:
 	size_t iDegree, oDegree;
 	bool raw_struct_type[4];
 };
+#endif
 
 } /* namespace pico */
 

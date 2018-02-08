@@ -30,14 +30,10 @@
 namespace pico {
 
 /**
- * Defines an operator that reads data from a socket and produces a Stream.
+ * Defines an operator that reads a data stream from a socket,
+ * yielding an ordered unbounded collection.
  *
- * The user specifies the kernel function that operates on each item of the stream, passed as a std::string.
- * The delimiter is used to separate single items of the stream.
- * The kernel can be a lambda function, a functor or a function.
- *
- *
- * The operator is global and unique for the Pipe it refers to.
+ * The user specifies a delimiter to identify stream items.
  */
 
 class ReadFromSocket: public InputOperator<std::string> {

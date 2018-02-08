@@ -24,6 +24,43 @@
 #include <ff/node.hpp>
 using namespace ff;
 
-using Emitter = ff_node;
+#include "../../Internals/utils.hpp"
+
+template<typename lb_t>
+class ForwardingEmitter : public ff::ff_node {
+public:
+	ForwardingEmitter(lb_t *lb_) : lb(lb_) {
+	}
+
+	void *svc(void *in) {
+		if(in != pico::PICO_EOS) {
+			assert(in != pico::PICO_SYNC); //todo
+			return in;
+		}
+		lb->broadcast_task(pico::PICO_EOS);
+		return GO_ON;
+	}
+
+private:
+	lb_t *lb;
+};
+
+class BCastEmitter: public ff::ff_node {
+public:
+	BCastEmitter(ff::ff_loadbalancer * const lb_) :
+			lb(lb_) {
+	}
+
+	void* svc(void * task) {
+		lb->broadcast_task(task);
+		return GO_ON;
+	}
+private:
+	ff::ff_loadbalancer * const lb;
+};
+
+//todo drop
+template<typename TokenType>
+using OFarmEmitter = ForwardingEmitter<ff::ff_loadbalancer>;
 
 #endif /* INTERNALS_FFOPERATORS_EMITTER_HPP_ */

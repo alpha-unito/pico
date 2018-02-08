@@ -33,8 +33,6 @@
 #include <ff/farm.hpp>
 #include <ff/fftree.hpp>
 #include <pico/PEGOptimizations.hpp>
-#include "SupportFFNodes/BCastEmitter.hpp"
-#include "SupportFFNodes/MergeCollector.hpp"
 
 #include "../Pipe.hpp"
 
@@ -107,6 +105,7 @@ private:
 	}
 
 	ff::ff_farm<> *make_merge_farm(const Pipe &p) const {
+		/*
 		auto *res = new ff::ff_farm<>();
 		auto nw = p.children().size();
 		res->add_emitter(new BCastEmitter(nw, res->getlb()));
@@ -117,6 +116,9 @@ private:
 		res->add_workers(w);
 		res->cleanup_all();
 		return res;
+		*/
+		assert(false);
+		return nullptr;
 	}
 
 	/* apply PE optimization over two adjacent pipes  */
@@ -126,11 +128,11 @@ private:
 		switch (opt) {
 		case MAP_PREDUCE:
 			res = res && (opc1 == OpClass::MAP && opc2 == OpClass::REDUCE);
-			res = res && (!op1->windowing() && op2->partitioning());
+			res = res && (!op2->windowing() && op2->partitioning());
 			break;
 		case FMAP_PREDUCE:
 			res = res && (opc1 == OpClass::FMAP && opc2 == OpClass::REDUCE);
-			res = res && (!op1->windowing() && op2->partitioning());
+			res = res && (!op2->windowing() && op2->partitioning());
 			break;
 		}
 		return res;
@@ -185,6 +187,7 @@ private:
 	}
 
 	ff::ff_farm<> *make_multito_farm(const Pipe &p) const {
+		/*
 		auto *res = new ff::ff_farm<>();
 		auto nw = p.children().size() - 1;
 		res->add_emitter(new BCastEmitter(nw, res->getlb()));
@@ -195,6 +198,9 @@ private:
 		res->add_workers(w);
 		res->cleanup_all();
 		return res;
+		*/
+		assert(false);
+		return nullptr;
 	}
 
 	void delete_ff_term() {

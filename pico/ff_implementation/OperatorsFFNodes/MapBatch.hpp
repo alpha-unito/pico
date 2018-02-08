@@ -24,12 +24,10 @@
 #include <ff/farm.hpp>
 
 #include "../../Internals/utils.hpp"
-#include "../SupportFFNodes/FarmCollector.hpp"
-#include "../SupportFFNodes/FarmEmitter.hpp"
+#include "../SupportFFNodes/Emitter.hpp"
 #include "../ff_config.hpp"
 #include "../../Internals/TimedToken.hpp"
 #include "../../Internals/Microbatch.hpp"
-#include "../../WindowPolicy.hpp"
 
 using namespace ff;
 using namespace pico;
@@ -43,34 +41,27 @@ template<typename In, typename Out, typename Farm, typename TokenTypeIn,
 class MapBatch: public Farm {
 public:
 
-	MapBatch(int parallelism, std::function<Out(In&)>& mapf,
-			WindowPolicy* win) {
-		this->setEmitterF(win->window_farm(parallelism, this->getlb()));
-		this->setCollectorF(new FarmCollector(parallelism));
-		delete win;
+	MapBatch(int parallelism, std::function<Out(In&)>& mapf) {
+		auto e = new ForwardingEmitter<typename Farm::lb_t>(this->getlb());
+		this->setEmitterF(e);
+		this->setCollectorF(new ForwardingCollector(parallelism));
 		std::vector<ff_node *> w;
-		for (int i = 0; i < parallelism; ++i) {
+		for (int i = 0; i < parallelism; ++i)
 			w.push_back(new Worker(mapf));
-		}
 		this->add_workers(w);
 		this->cleanup_all();
 	}
-	;
 
 private:
-
 	class Worker: public ff_node {
 	public:
 		Worker(std::function<Out(In&)> kernel_) :
 				kernel(kernel_) {
 		}
 
-
 		void* svc(void* task) {
 			if (task != PICO_EOS && task != PICO_SYNC) {
 
-//				time_point_t t0, t1;
-//				hires_timer_ull(t0);
 				auto in_microbatch = reinterpret_cast<mb_in*>(task);
 				mb_out *out_microbatch;
 				NEW(out_microbatch, mb_out, global_params.MICROBATCH_SIZE);
@@ -82,8 +73,6 @@ private:
 				}
 				ff_send_out(reinterpret_cast<void*>(out_microbatch));
 				DELETE(in_microbatch, mb_in);
-//				hires_timer_ull(t1);
-//				wt += get_duration(t0, t1);
 
 
 			} else {
@@ -100,8 +89,13 @@ private:
 		typedef Microbatch<TokenTypeIn> mb_in;
 		typedef Microbatch<TokenTypeOut> mb_out;
 		std::function<Out(In&)> kernel;
-//		duration_t wt;
 	};
 };
+
+template<typename In, typename Out, typename TokenIn, typename TokenOut>
+using MapBatchStream = MapBatch<In, Out, OrderingFarm, TokenIn, TokenOut>;
+
+template<typename In, typename Out, typename TokenIn, typename TokenOut>
+using MapBatchBag = MapBatch<In, Out, FarmWrapper, TokenIn, TokenOut>;
 
 #endif /* INTERNALS_FFOPERATORS_MAPBATCH_HPP_ */

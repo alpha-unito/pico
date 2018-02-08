@@ -22,6 +22,7 @@
 #define ACTORNODE_HPP_
 
 #include <functional>
+#include <map>
 
 #include <ff/node.hpp>
 
@@ -42,6 +43,11 @@ namespace pico {
 
 class Operator {
 public:
+	Operator() : in_deg(0), out_deg(0) {
+		st_map[StructureType::BAG] = false;
+		st_map[StructureType::STREAM] = false;
+	}
+
 	virtual ~Operator() {
 	}
 
@@ -72,10 +78,6 @@ public:
 	 */
 	virtual Operator *clone() = 0;
 
-	const bool* structure_type() const {
-		return structure_types;
-	}
-
 	void set_input_degree(size_t degree) {
 		in_deg = degree;
 	}
@@ -92,20 +94,8 @@ public:
 		return out_deg;
 	}
 
-	void set_stype(enum RawStructureType stype, bool flag) {
-		structure_types[stype] = flag;
-	}
-
-	bool stype(enum RawStructureType stype) const {
-		return structure_types[stype];
-	}
-
-	StructureType data_stype() const {
-		return st;
-	}
-
-	void set_data_stype(const StructureType st_) {
-		st = st_;
+	bool stype(StructureType s) const {
+		return st_map.at(s);
 	}
 
 	virtual ff::ff_node* node_operator(int par_deg,
@@ -116,10 +106,14 @@ public:
 		return nullptr;
 	}
 
+protected:
+	void stype(StructureType s, bool v) {
+		st_map[s] = v;
+	}
+
 private:
 	size_t in_deg, out_deg;
-	bool structure_types[4];
-	StructureType st;
+	std::map<StructureType, bool> st_map;
 };
 
 } /* namespace pico */

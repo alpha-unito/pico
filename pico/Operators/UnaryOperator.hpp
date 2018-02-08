@@ -32,17 +32,13 @@ namespace pico {
 template<typename In, typename Out>
 class UnaryOperator: public Operator {
 public:
-	UnaryOperator() {
-	}
+	UnaryOperator() {}
 
 	UnaryOperator(const UnaryOperator &copy) {
 		set_input_degree(copy.i_degree());
 		set_output_degree(copy.o_degree());
-		set_stype(BOUNDED, copy.stype(BOUNDED));
-		set_stype(UNBOUNDED, copy.stype(UNBOUNDED));
-		set_stype(ORDERED, copy.stype(ORDERED));
-		set_stype(UNORDERED, copy.stype(UNORDERED));
-		set_data_stype(copy.data_stype());
+		stype(StructureType::BAG, copy.stype(StructureType::BAG));
+		stype(StructureType::STREAM, copy.stype(StructureType::STREAM));
 	}
 
 	virtual ~UnaryOperator() {

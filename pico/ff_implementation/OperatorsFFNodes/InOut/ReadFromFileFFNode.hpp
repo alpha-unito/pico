@@ -223,7 +223,7 @@ private:
 };
 
 /**
- * The ReadFromFile farm
+ * The ReadFromFile non-ordering farm.
  */
 class ReadFromFileFFNode: public FarmWrapper {
 	/* select implementation for line-based file reading */
@@ -239,7 +239,7 @@ public:
 		auto e = new Partitioner(*this, fname, parallelism);
 		this->setEmitterF(e);
 		this->add_workers(workers);
-		this->setCollectorF(new FarmCollector(parallelism));
+		this->setCollectorF(new ForwardingCollector(parallelism));
 		this->cleanup_all();
 	}
 

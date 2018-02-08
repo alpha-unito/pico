@@ -21,14 +21,13 @@
 #ifndef INTERNALS_FFOPERATORS_FARMCOLLECTOR_HPP_
 #define INTERNALS_FFOPERATORS_FARMCOLLECTOR_HPP_
 
-#include "Collector.hpp"
 #include "../../Internals/utils.hpp"
 
 using namespace pico;
 
-class FarmCollector: public Collector {
+class ForwardingCollector : public ff::ff_node {
 public:
-	FarmCollector(int nworkers_) :
+	ForwardingCollector(int nworkers_) :
 			nworkers(nworkers_), picoEOSrecv(0) {
 	}
 
@@ -37,13 +36,11 @@ public:
 			if (++picoEOSrecv == nworkers) {
 				return task;
 			}
+
+			return GO_ON;
 		}
 
-		if (task != PICO_EOS) {
-			return task;
-		}
-
-		return GO_ON;
+		return task;
 	}
 
 private:

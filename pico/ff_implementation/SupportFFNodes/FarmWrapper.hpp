@@ -28,6 +28,7 @@
  */
 class FarmWrapper: public ff::ff_farm<> {
 public:
+	typedef ff::ff_loadbalancer lb_t;
 
 	void setEmitterF(ff_node* f) {
 		this->add_emitter(f);
@@ -36,6 +37,14 @@ public:
 	void setCollectorF(ff_node* f) {
 		this->add_collector(f);
 	}
+};
+
+/*
+ * An ordering farm.
+ */
+class OrderingFarm: public ff::ff_ofarm {
+public:
+	typedef ff::ofarm_lb lb_t;
 };
 
 #endif /* INTERNALS_FFOPERATORS_SUPPORTFFNODES_FARMWRAPPER_HPP_ */
