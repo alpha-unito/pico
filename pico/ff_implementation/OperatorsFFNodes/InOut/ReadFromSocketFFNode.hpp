@@ -48,12 +48,12 @@ using namespace pico;
  * TODO only works with non-decorating token
  */
 
-template<typename TokenType>
 class ReadFromSocketFFNode: public ff_node {
+	typedef Token<std::string> TokenType;
+
 public:
 	ReadFromSocketFFNode(std::string& server_name_, int port_, char delimiter_) :
-			server_name(server_name_), port(port_), delimiter(delimiter_), counter(
-					0) {
+			server_name(server_name_), port(port_), delimiter(delimiter_) {
 		int option = 1;
 		sockfd = socket(AF_INET, SOCK_STREAM, 0);
 		setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
@@ -71,7 +71,18 @@ public:
 		serv_addr.sin_port = htons(port);
 	}
 
-	void* svc(void*) {
+	void* svc(void *in) {
+		if (in == PICO_EOS) {
+#ifdef DEBUG
+			fprintf(stderr, "[READ FROM SOCKET-%p] In SVC: SEND OUT PICO_EOS\n", this);
+#endif
+			ff_send_out(PICO_EOS);
+			close(sockfd);
+			return GO_ON;
+		}
+
+		assert(in == PICO_SYNC);
+
 		std::string tail;
 		char buffer[CHUNK_SIZE];
 		if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))
@@ -110,12 +121,7 @@ public:
 			DELETE(microbatch, mb_t);
 		}
 
-#ifdef DEBUG
-		fprintf(stderr, "[READ FROM SOCKET-%p] In SVC: SEND OUT PICO_EOS\n", this);
-#endif
-		ff_send_out(PICO_EOS);
-		close(sockfd);
-		return EOS;
+		return GO_ON;
 	}
 
 private:
@@ -126,7 +132,6 @@ private:
 	struct sockaddr_in serv_addr;
 	struct hostent *server = nullptr;
 	char delimiter;
-	size_t counter;
 
 	void error(const char *msg) {
 		perror(msg);

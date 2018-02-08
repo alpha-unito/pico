@@ -47,11 +47,9 @@ enum OpClass {
 	MAP, FMAP, BMAP, BFMAP, REDUCE, FOLDREDUCE, INPUT, OUTPUT, MERGE, none
 };
 
-static const size_t P_EOS = (ff::FF_EOS - 0x7);
-static void *PICO_EOS = (void*) P_EOS;
-
-static const size_t P_SYNC = (ff::FF_EOS - 0x9);
-static void *PICO_SYNC = (void*) P_SYNC;
+/* FF tokens for pico protocol */
+static void *PICO_EOS = (void*) (ff::FF_EOS - 0xb);
+static void *PICO_SYNC = (void*) (ff::FF_EOS - 0xc);
 
 } /* namespace pico */
 

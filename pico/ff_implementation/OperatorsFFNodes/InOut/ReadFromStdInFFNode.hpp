@@ -48,7 +48,17 @@ public:
 			delimiter(delimiter_) {
 	}
 
-	void* svc(void*) {
+	void* svc(void *in) {
+		if(in == PICO_EOS) {
+#ifdef DEBUG
+			fprintf(stderr, "[READ FROM STDIN-%p] In SVC: SEND OUT PICO_EOS\n", this);
+#endif
+			ff_send_out(PICO_EOS);
+			return GO_ON;
+		}
+
+		assert(in == PICO_SYNC);
+
 		std::string tail;
 		char buffer[CHUNK_SIZE];
 		mb_t *microbatch;
@@ -84,11 +94,7 @@ public:
 			DELETE(microbatch, mb_t);
 		}
 
-#ifdef DEBUG
-		fprintf(stderr, "[READ FROM STDIN-%p] In SVC: SEND OUT PICO_EOS\n", this);
-#endif
-		ff_send_out(PICO_EOS);
-		return EOS;
+		return GO_ON;
 	}
 
 private:

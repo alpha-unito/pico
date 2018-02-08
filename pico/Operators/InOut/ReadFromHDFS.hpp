@@ -24,7 +24,7 @@
 #include <iostream>
 #include <fstream>
 
-#include "../../ff_implementation/OperatorsFFNodes/InOut/ReadFromHDFSFFNode.hpp"
+//#include "../../ff_implementation/OperatorsFFNodes/InOut/ReadFromHDFSFFNode.hpp"
 #include "InputOperator.hpp"
 
 namespace pico {
@@ -43,17 +43,17 @@ public:
 	 * \ingroup op-api
 	 * ReadFromHDFS Constructor
 	 *
-	 * Creates a new ReadFromHDFS operator by defining its kernel function.
+	 * Creates a new ReadFromHDFS.
 	 */
-	ReadFromHDFS() :
-			InputOperator<std::string>(StructureType::BAG) {
+	ReadFromHDFS(std::string fname_) :
+		InputOperator<std::string>(StructureType::BAG), fname(fname_) {
 	}
 
 	/**
 	 * Copy constructor.
 	 */
 	ReadFromHDFS(const ReadFromHDFS &copy) :
-			InputOperator<std::string>(copy) {
+			InputOperator<std::string>(copy), fname(copy.fname) {
 	}
 
 	/**
@@ -70,7 +70,7 @@ public:
 	 * Returns the name of the operator, consisting in the name of the class.
 	 */
 	std::string name_short() {
-		return "ReadFromHDFS\n[" + global_params.INPUT_FILE + "]";
+		return "ReadFromHDFS\n[" + fname + "]";
 	}
 
 protected:
@@ -83,8 +83,13 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism, Operator* nextop = nullptr) {
-		return new ReadFromHDFSFFNode<std::string>();
+		//return new ReadFromHDFSFFNode<std::string>();
+		assert(false);
+		return nullptr;
 	}
+
+private:
+	std::string fname;
 };
 
 } /* namespace pico */
