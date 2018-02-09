@@ -51,7 +51,7 @@ struct {
  * Parses default arguments.
  * @return 0 if parsing succeeds
  */
-static app_args_t parse_PiCo_args(int argc, char** argv) {
+inline app_args_t parse_PiCo_args(int argc, char** argv) {
 	app_args_t res{argc - 1, nullptr};
 	int opt;
 	while ((opt = getopt(argc, argv, "w:b:s:p:m:h")) != -1) {

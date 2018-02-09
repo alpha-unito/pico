@@ -31,6 +31,7 @@
 #include "../../../Internals/Microbatch.hpp"
 #include "../../../Internals/Token.hpp"
 #include "../../../Internals/utils.hpp"
+#include "../../SupportFFNodes/FarmWrapper.hpp"
 
 #include "../../ff_config.hpp"
 
