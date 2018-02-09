@@ -25,7 +25,7 @@ TEST_CASE("streaming reduce by key", "streaming reduce by key tag" ) {
 	 */
 	std::string input_file = "common/occurrences.txt";
 	std::string output_file = "output.txt";
-	constexpr unsigned wsize = 3;
+	constexpr unsigned wsize = 2;
 
 	/* redirect stdout to output file */
 	auto coutbuf = std::cout.rdbuf(); //save old buf

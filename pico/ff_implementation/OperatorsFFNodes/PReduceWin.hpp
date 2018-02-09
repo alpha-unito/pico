@@ -39,6 +39,11 @@
 using namespace ff;
 using namespace pico;
 
+/*
+ * Partitions input stream by key and reduces sub-streams on per-window basis.
+ * A non-ordering farm is sufficient for keeping intra-key ordering.
+ * Only batching windowing is supported by now, windowing is performed by workers.
+ */
 template<typename In, typename TokenType>
 class PReduceWin: public FarmWrapper {
 	typedef typename In::keytype K;
@@ -47,65 +52,67 @@ class PReduceWin: public FarmWrapper {
 public:
 	PReduceWin(int parallelism, std::function<V(V&, V&)>& preducef,
 			WindowPolicy* win) {
-		this->setEmitterF(win->window_farm(parallelism, this->getlb()));
+		auto e = new ByKeyEmitter<TokenType>(parallelism, this->getlb());
+		this->setEmitterF(e);
 		this->setCollectorF(new ForwardingCollector(parallelism)); // collects and emits single items
 		std::vector<ff_node *> w;
 		for (int i = 0; i < parallelism; ++i) {
-			w.push_back(new PReduceFFNode(preducef, win->win_size()));
+			w.push_back(new PReduceWinWorker(preducef, win->win_size()));
 		}
 		this->add_workers(w);
 		this->cleanup_all();
 	}
 
 private:
-	/*
-	 * TODO only works with non-decorating token
-	 */
-
-	class PReduceFFNode: public ff_node {
+	class PReduceWinWorker: public ff_node {
 	public:
-		PReduceFFNode(std::function<V(V&, V&)>& reducef_, size_t mb_size_ =
+		PReduceWinWorker(std::function<V(V&, V&)>& reducef_, size_t win_size_ =
 				global_params.MICROBATCH_SIZE) :
-				kernel(reducef_), mb_size(mb_size_) {
+				kernel(reducef_), win_size(win_size_) {
 		}
 
 		void* svc(void* task) {
-
-			if (task != PICO_EOS && task != PICO_SYNC) {
-
-				auto in_microbatch = reinterpret_cast<mb_t*>(task);
-				for (In& kv : *in_microbatch) {
-					if (kvmap.find(kv.Key()) != kvmap.end()) {
-						kvmap[kv.Key()] = In(kv.Key(), kernel(kvmap[kv.Key()].Value(), kv.Value()));
-//						std::cout << "mb_size " << mb_size << " key " << kvcountmap[kv.Key()] << std::endl;
-						kvcountmap[kv.Key()]++;
-						if (kvcountmap[kv.Key()] == mb_size) {
-							mb_t *out_microbatch;
-							NEW(out_microbatch, mb_t, 1);
-//							std::cout << "adding to mb " << In(kvmap[kv.Key()]) << " kv " << kvmap[kv.Key()] << std::endl;
-							new (out_microbatch->allocate()) In(kvmap[kv.Key()]);
-							out_microbatch->commit();
-							ff_send_out(reinterpret_cast<void*>(out_microbatch));
-							kvcountmap[kv.Key()] = 1;
-							kvmap.erase(kv.Key());
-						}
-					} else {
-						kvcountmap[kv.Key()] = 1;
-						kvmap[kv.Key()] = kv;
+			if (task != PICO_EOS) {
+				/* got a microbatch to process */
+				auto in_mb = reinterpret_cast<mb_t*>(task);
+				for (In& kv : *in_mb) {
+					auto k(kv.Key());
+					if (kvmap.find(k) != kvmap.end() && kvcountmap[k]) {
+						++kvcountmap[k];
+						kvmap[k] = kernel(kvmap[k], kv.Value());
+					}
+					else {
+						kvcountmap[k] = 1;
+						kvmap[k] = kv.Value();
+					}
+					if (kvcountmap[k] == win_size) {
+						mb_t *out_mb;
+						NEW(out_mb, mb_t, 1);
+						new (out_mb->allocate()) In(k, kvmap[k]);
+						out_mb->commit();
+						ff_send_out(reinterpret_cast<void*>(out_mb));
+						kvcountmap[k] = 0;
 					}
 				}
-				DELETE(in_microbatch, mb_t);
-//				hires_timer_ull(t1);
-//				wt += get_duration(t0, t1);
-
-
-			} else if (task == PICO_EOS) {
-				  ff_send_out(PICO_SYNC);
+				DELETE(in_mb, mb_t);
+			} else {
 #ifdef DEBUG
 				fprintf(stderr, "[P-REDUCE-FFNODE-%p] In SVC RECEIVED PICO_EOS \n", this);
 #endif
+				/* stream out incomplete windows */
+				for(auto kc : kvcountmap) {
+					auto k(kc.first);
+					if(kc.second) {
+						mb_t *out_mb;
+						NEW(out_mb, mb_t, 1);
+						new (out_mb->allocate()) In(k, kvmap[k]);
+						out_mb->commit();
+						ff_send_out(reinterpret_cast<void*>(out_mb));
+						kvcountmap[k] = 0;
+					}
+				}
 
-				return task;
+				ff_send_out(PICO_EOS);
 			}
 
 			return GO_ON;
@@ -114,14 +121,9 @@ private:
 	private:
 		typedef Microbatch<TokenType> mb_t;
 		std::function<V(V&, V&)> kernel;
-		// map containing, for each key, the partial reduced value plus the counter of how many
-		// elements entered the window.
-		// It works only for tumbling windows
-//		std::unordered_map<typename In::keytype, std::pair<In, size_t>> kvmap;
-		std::unordered_map<K, In> kvmap;
-		std::unordered_map<K, size_t> kvcountmap;
-		size_t mb_size;
-//		duration_t wt;
+		std::unordered_map<K, V> kvmap; //partial per-window/key reduced value
+		std::unordered_map<K, size_t> kvcountmap; //per-window/key counter
+		size_t win_size;
 	};
 };
 

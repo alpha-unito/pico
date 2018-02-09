@@ -36,42 +36,38 @@ using namespace pico;
 template<typename TokenType>
 class ByKeyEmitter: public ff::ff_node {
 public:
-	ByKeyEmitter(int nworkers_, ff::ff_loadbalancer * const lb_, size_t w_size_) :
-			nworkers(nworkers_), lb(lb_), w_size(w_size_){
-		for(int i = 0; i < nworkers; ++i){
-			NEW(w_win_map[i], mb_t, global_params.MICROBATCH_SIZE);
-		}
+	ByKeyEmitter(int nworkers_, ff::ff_loadbalancer * const lb_) :
+			nworkers(nworkers_), lb(lb_) {
+		/* prepare a microbatch for each worker */
+		for (int i = 0; i < nworkers; ++i)
+			NEW(worker_mb[i], mb_t, global_params.MICROBATCH_SIZE);
 	}
 
 	void* svc(void* task) {
-		if (task != PICO_EOS && task != PICO_SYNC) {
+		if (task != PICO_EOS) {
 			mb_t *in_microbatch = reinterpret_cast<mb_t*>(task);
-			size_t dst;
-			for(DataType& tt: *in_microbatch){
-				const keytype &key(tt.Key());
-				dst = key_to_worker(key);
+			for (auto tt : *in_microbatch) {
+				auto dst = key_to_worker(tt.Key());
 				// add token to dst's microbatch
-				new (w_win_map[dst]->allocate()) DataType(tt);
-				w_win_map[dst]->commit();
-				if(w_win_map[dst]->full()){
-					lb->ff_send_out_to(reinterpret_cast<void*>(w_win_map[dst]), dst);
-					NEW(w_win_map[dst], mb_t, global_params.MICROBATCH_SIZE);
+				new (worker_mb[dst]->allocate()) DataType(tt);
+				worker_mb[dst]->commit();
+				if (worker_mb[dst]->full()) {
+					auto mb = reinterpret_cast<void*>(worker_mb[dst]);
+					lb->ff_send_out_to(mb, dst);
+					NEW(worker_mb[dst], mb_t, global_params.MICROBATCH_SIZE);
 				}
 			}
 			DELETE(in_microbatch, mb_t);
 		} else {
-			if(task == PICO_EOS){
-				for (int i = 0; i < nworkers; ++i) {
-					if(!w_win_map[i]->empty()){
-						lb->ff_send_out_to(reinterpret_cast<void*>(w_win_map[i]), i);
-					}
-					lb->ff_send_out_to(task, i);
+			for (int i = 0; i < nworkers; ++i) {
+				if (!worker_mb[i]->empty()) {
+					auto mb = reinterpret_cast<void*>(worker_mb[i]);
+					lb->ff_send_out_to(mb, i);
 				}
-			} else {
-				for (int i = 0; i < nworkers; ++i) {
-					lb->ff_send_out_to(task, i);
-				}
+				else
+					DELETE(worker_mb[i], mb_t); //spurious microbatch
 			}
+			lb->broadcast_task(task);
 		}
 		return GO_ON;
 	}
@@ -82,13 +78,10 @@ private:
 	typedef Microbatch<TokenType> mb_t;
 	int nworkers;
 	ff::ff_loadbalancer * const lb;
-	std::unordered_map<size_t, mb_t	*> w_win_map;
-	size_t w_size;
-	inline size_t key_to_worker( const keytype& k) {
-	    return std::hash<keytype>{}(k) % nworkers;
+	std::unordered_map<size_t, mb_t *> worker_mb;
+	inline size_t key_to_worker(const keytype& k) {
+		return std::hash<keytype> { }(k) % nworkers;
 	}
 };
-
-
 
 #endif /* INTERNALS_FFOPERATORS_WINDOWFFNODES_BYKEYEMITTER_HPP_ */
