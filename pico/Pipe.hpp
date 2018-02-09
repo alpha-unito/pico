@@ -55,21 +55,21 @@ namespace pico {
  */
 class Pipe;
 class SemanticGraph;
-SemanticGraph *make_semantic_graph(const Pipe &);
-void destroy_semantic_graph(SemanticGraph *);
-void print_semantic_graph(SemanticGraph &, std::ostream &os);
-void print_dot_semantic_graph(SemanticGraph &, std::string);
+static SemanticGraph *make_semantic_graph(const Pipe &);
+static void destroy_semantic_graph(SemanticGraph *);
+static void print_semantic_graph(SemanticGraph &, std::ostream &os);
+static void print_dot_semantic_graph(SemanticGraph &, std::string);
 }
 
 /*
  * forward declarations for execution
  */
 class FastFlowExecutor;
-FastFlowExecutor *make_executor(const pico::Pipe &);
-void destroy_executor(FastFlowExecutor *);
-void run_pipe(FastFlowExecutor &);
-double run_time(FastFlowExecutor &);
-void print_executor_info(FastFlowExecutor &, std::ostream &os);
+static FastFlowExecutor *make_executor(const pico::Pipe &);
+static void destroy_executor(FastFlowExecutor *);
+static void run_pipe(FastFlowExecutor &);
+static double run_time(FastFlowExecutor &);
+static void print_executor_info(FastFlowExecutor &, std::ostream &os);
 void print_executor_trace(FastFlowExecutor &, std::ostream &os);
 
 namespace pico {

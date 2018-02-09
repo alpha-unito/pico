@@ -8,7 +8,10 @@
 #include <iostream>
 #include <string>
 
-#include <pico/pico.hpp>
+#include <pico/Operators/InOut/ReadFromFile.hpp>
+#include <pico/Operators/InOut/WriteToDisk.hpp>
+#include <pico/Pipe.hpp>
+
 #include <catch.hpp>
 
 #include "common/io.hpp"
