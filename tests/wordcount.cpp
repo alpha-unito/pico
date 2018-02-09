@@ -60,8 +60,8 @@ std::vector<std::string> to_vec_str(std::unordered_map<std::string, int> un_map)
 
 TEST_CASE("wordcount", "wordcount tag" ){
 
-	std::string input_file = "common/input_wc.txt";
-	std::string output_file = "output_wc.txt";
+	std::string input_file = "./testdata/pairs.txt";
+	std::string output_file = "output.txt";
 
 
 	/* define a generic word-count pipeline */
