@@ -60,7 +60,7 @@ private:
 		}
 
 		void* svc(void* task) {
-			if (task != PICO_EOS && task != PICO_SYNC) {
+			if (task != PICO_EOS) {
 
 				auto in_microbatch = reinterpret_cast<mb_in*>(task);
 				mb_out *out_microbatch;
@@ -79,7 +79,6 @@ private:
 #ifdef DEBUG
 				fprintf(stderr, "[MAPBATCH-%p] In SVC SENDING PICO_EOS\n", this);
 #endif
-				ff_send_out(PICO_SYNC);
 				ff_send_out(task);
 			}
 			return GO_ON;

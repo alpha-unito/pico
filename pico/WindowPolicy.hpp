@@ -107,7 +107,7 @@ public:
 	}
 
 	ff::ff_node* window_farm(int nworkers_, ff::ff_loadbalancer * const lb_) {
-		return new ByKeyEmitter<TokenType>(nworkers_, lb_, w_size);
+		return new ByKeyEmitter<TokenType>(nworkers_, lb_);
 	}
 
 	ByKeyWindow *clone() {
