@@ -21,6 +21,11 @@
 #ifndef INTERNALS_FFOPERATORS_INOUT_READFROMFILEFFNODE_HPP_
 #define INTERNALS_FFOPERATORS_INOUT_READFROMFILEFFNODE_HPP_
 
+#include <cmath>
+#include <fstream>
+#include <iostream>
+#include <cstdio>
+
 #include <ff/farm.hpp>
 
 #include "../../../Internals/Microbatch.hpp"
@@ -234,7 +239,7 @@ public:
 	ReadFromFileFFNode(int parallelism, std::string fname_) :
 			fname(fname_) {
 		std::vector<ff_node *> workers;
-		for (unsigned i = 0; i < parallelism; ++i)
+		for (int i = 0; i < parallelism; ++i)
 			workers.push_back(new Worker(fname));
 		auto e = new Partitioner(*this, fname, parallelism);
 		this->setEmitterF(e);
