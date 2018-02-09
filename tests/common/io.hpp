@@ -16,7 +16,7 @@
 /*
  * read a file line by line into a vector of lines
  */
-std::vector<std::string> read_lines(std::string fname) {
+static std::vector<std::string> read_lines(std::string fname) {
 	std::vector<std::string> res;
 	std::ifstream in(fname);
 	assert(in.is_open());
