@@ -1,3 +1,0 @@
-aaa bbb  ccc
-ccc   aaa
-aaa ccc  ccc

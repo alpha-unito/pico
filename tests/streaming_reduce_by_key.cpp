@@ -23,7 +23,7 @@ TEST_CASE("streaming reduce by key", "streaming reduce by key tag" ) {
 	 * - read-from-stdin emulated by streaming a file to a socket on port 4000
 	 * - output inspected by redirecting stdout to a file
 	 */
-	std::string input_file = "common/occurrences.txt";
+	std::string input_file = "./testdata/pairs.txt";
 	std::string output_file = "output.txt";
 	constexpr unsigned wsize = 2;
 

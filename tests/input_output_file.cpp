@@ -18,7 +18,7 @@ using namespace pico;
 
 TEST_CASE( "read and write", "read and write tag" ){
 
-	std::string input_file = "./input_output_file.cpp";
+	std::string input_file = "./testdata/lines.txt";
 	std::string output_file = "output.txt";
 
 	/* define i/o operators from/to file */

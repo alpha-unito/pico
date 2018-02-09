@@ -16,7 +16,7 @@ typedef KeyValue<char, int> KV;
 
 TEST_CASE("reduce by key", "reduce by key tag" ){
 
-	std::string input_file = "./common/occurrences.txt";
+	std::string input_file = "./testdata/pairs.txt";
 	std::string output_file = "output.txt";
 
 	/* define i/o operators from/to file */
