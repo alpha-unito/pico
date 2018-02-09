@@ -22,6 +22,7 @@
 #define KEYVALUE_HPP_
 
 #include <iostream>
+#include <sstream>
 
 namespace pico {
 
