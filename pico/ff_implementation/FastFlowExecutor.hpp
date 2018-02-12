@@ -100,6 +100,10 @@ private:
 			assert(false);
 			res->add_stage(make_merge_farm(p));
 			break;
+		case Pipe::PAIR:
+			std::cerr << "PAIR not implemented yet\n";
+			assert(false);
+			break;
 		}
 		return res;
 	}

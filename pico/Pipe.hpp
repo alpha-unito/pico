@@ -122,15 +122,19 @@ class Pipe {
 
 public:
 	enum term_node_t {
-		EMPTY, OPERATOR, TO, ITERATE, MERGE, MULTITO //TODO PAIR
+		EMPTY, OPERATOR, TO, ITERATE, MERGE, MULTITO, PAIR
 	};
 
 	/**
 	 * \ingroup pipe-api
 	 * Create an empty Pipe
+	 *
+	 * The empty Pipe is neutral with respect to the To operator,
+	 * it has universal data and structure types,
+	 * and its input and output degrees are both 1.
 	 */
 	Pipe() :
-			in_deg_(0), out_deg_(0), term_node_type_(EMPTY), term_value(nullptr) {
+			in_deg_(1), out_deg_(1), term_node_type_(EMPTY), term_value(nullptr) {
 		/* set default data and structure types */
 		st_map[StructureType::BAG] = true;
 		st_map[StructureType::STREAM] = true;
@@ -149,7 +153,7 @@ public:
 		out_dtype = copy.out_dtype;
 		in_deg_ = copy.in_deg_;
 		out_deg_ = copy.out_deg_;
-		copy_struct_type(*this, copy);
+		copy_struct_type(*this, copy.st_map);
 
 		if (term_node_type_ == OPERATOR)
 			term_value.op = copy.term_value.op->clone();
@@ -187,7 +191,7 @@ public:
 #ifdef DEBUG
 		std::cerr << "[PIPE] Creating Pipe from operator " << op_.name() << std::endl;
 #endif
-		assert(op_.i_degree() < 2); // can not add binary operator
+		assert(op_.i_degree() < 2); //can not create from binary operator
 
 		/* set data types */
 		in_dtype = typeid(typename OpType::inT);
@@ -226,40 +230,40 @@ public:
 	 *  - Structure Types are not compatible
 	 * @param pipe Pipe to append
 	 */
-	Pipe to(const Pipe& pipe) const {
+	Pipe to(const Pipe& p) const {
 #ifdef DEBUG
 		std::cerr << "[PIPE] Appending pipe\n";
 #endif
-		assert(out_deg_ == 1 || term_node_type_ == EMPTY); // can not add new nodes if pipe is complete
+		assert(out_deg_ == 1); //can not attach if pipe is output-complete
 
-		if (term_node_type_ != EMPTY) {
-			/* check data types */
-			assert(same_data_type(pipe.in_dtype, out_dtype));
+		/* apply structural identity for the empty Pipe */
+		if (term_node_type_ == EMPTY)
+			return Pipe(p);
+		if (p.term_node_type_ == EMPTY)
+			return Pipe(*this);
 
-			/* check structure types */
-			assert(pipe.in_deg_ == 1);
-			assert(struct_type_check(pipe));
+		/* check data types */
+		assert(same_data_type(p.in_dtype, out_dtype));
 
-			/* prepare the output term */
-			Pipe res;
-			res.term_node_type_ = TO;
-			add_to_chain(res, *this);
-			add_to_chain(res, pipe);
+		/* check structure types */
+		assert(p.in_deg_ == 1);
+		assert(struct_type_check(this->st_map, p.st_map));
 
-			/* infer types */
-			res.in_dtype = in_dtype;
-			res.out_dtype = pipe.out_dtype;
-			copy_struct_type(res, *this);
-			struct_type_intersection(res, pipe);
-			res.in_deg_ = in_deg_;
-			res.out_deg_ = pipe.out_deg_;
+		/* prepare the output term */
+		Pipe res;
+		res.term_node_type_ = TO;
+		add_to_chain(res, *this);
+		add_to_chain(res, p);
 
-			return res;
-		}
+		/* infer types */
+		res.in_dtype = in_dtype;
+		res.out_dtype = p.out_dtype;
+		copy_struct_type(res, this->st_map);
+		struct_type_intersection(res, p);
+		res.in_deg_ = in_deg_;
+		res.out_deg_ = p.out_deg_;
 
-		/* subject ignored if called on empty pipeline */
-		//TODO check
-		return Pipe(pipe);
+		return res;
 	}
 
 	/**
@@ -275,6 +279,9 @@ public:
 	 *  - output and input data types are not compatible
 	 *  - Structure Types are not compatible
 	 * @param pipes vector of references to Pipes
+	 *
+	 * @todo support empty Pipe(s)
+	 * @todo replace vector by variadic templates
 	 */
 	Pipe to(std::vector<Pipe*> pipes) const {
 #ifdef DEBUG
@@ -291,7 +298,7 @@ public:
 		/* infer types at input side */
 		res.in_dtype = in_dtype;
 		res.in_deg_ = in_deg_;
-		copy_struct_type(res, *this);
+		copy_struct_type(res, this->st_map);
 
 		for (auto p : pipes) {
 			/* check data types */
@@ -300,7 +307,7 @@ public:
 			/* check structure types */
 			assert(p->in_deg_ == 1);
 			assert(p->out_deg_ == 0 || p->out_deg_ == 1);
-			assert(res.struct_type_check(*p));
+			assert(res.struct_type_check(this->st_map, p->st_map));
 			struct_type_intersection(res, *p);
 
 			/* typing at output side */
@@ -333,13 +340,13 @@ public:
 #ifdef DEBUG
 		std::cerr << "[PIPE] Iterating pipe\n";
 #endif
-		assert(term_node_type_ != EMPTY);
+		if (term_node_type_ == EMPTY)
+			return Pipe();
 
 		/* check data types */
 		assert(same_data_type(in_dtype, out_dtype));
 
 		/* check structure types */
-		assert(struct_type_check(*this));
 		assert(out_deg_ == 1 && in_deg_ == 1);
 
 		/* prepare the outer iteration term */
@@ -347,7 +354,7 @@ public:
 		res.in_dtype = in_dtype;
 		res.out_dtype = out_dtype;
 		res.in_deg_ = res.out_deg_ = 1;
-		copy_struct_type(res, *this);
+		copy_struct_type(res, this->st_map);
 		res.term_value.cond = cond;
 		res.term_node_type_ = ITERATE;
 		res.children_.push_back(new Pipe(*this));
@@ -355,76 +362,139 @@ public:
 		return res;
 	}
 
-#if 0
-	//TODO
 	/**
-	 * Pair the current Pipe with a second pipe by a BinaryOperator that combines the two input items (a pair) with the
-	 * function specified by the user.
-	 * This method fails if:
-	 *  - the current O-degree is zero and the Pipe is not empty
-	 *  - output and input data types of the O-Degree==1 input are not compatible
-	 *  - Structure Types are not compatible
-	 * @param a is a BinaryOperator
-	 * @param pipe is the second input Pipe
+	 * \ingroup pipe-api
+	 * Create a pipe by pairing with another Pipe
+	 *
+	 * Pairs data coming from the current Pipe and the one passed as argument,
+	 * then processes the produced pairs.
+	 * Both pairing and processing logics are determined by the
+	 * argument binary operator.
+	 *
+	 * @param op is a BinaryOperator
+	 * @param p is the second input Pipe
 	 */
-	template<typename in1, typename in2, typename out>
-	Pipe& pair_with(const BinaryOperator<in1, in2, out> &a, const Pipe& pipe) {
-		assert(out_deg_==1); // can not add new nodes if pipe is complete
-		if(!DAG.empty()) {
-			assert(DAG.lastOp()->checkOutputTypeSanity(typeid(in1))
-					|| DAG.lastOp()->checkOutputTypeSanity(typeid(in2)));
-//			infotypes.back() = typeid(out);
-		}/* else {
-		 if(DAG.lastOp()->checkOutputTypeSanity(typeid(in1)))
-		 infotypes.push_back(typeid(in1));
-		 else
-		 infotypes.push_back(typeid(in2));
-		 infotypes.push_back(typeid(out));
-		 }*/
-		return *this;
+	template<typename OpType>
+	Pipe pair_with(const OpType &op, const Pipe& p) {
+		typedef typename OpType::inFirstT opt1;
+		typedef typename OpType::inSecondT opt2;
+
+		/* prepare the output term */
+		Pipe res;
+		res.term_node_type_ = PAIR;
+		res.children_.push_back(new Pipe(*this));
+		res.children_.push_back(new Pipe(p));
+
+		/* infer output data type */
+		res.out_dtype = typeid(typename OpType::outT);
+
+		/* case: empty subject/object Pipe */
+		if (term_node_type_ == EMPTY || p.term_node_type_ == EMPTY) {
+			bool empty_subject = (term_node_type_ == EMPTY);
+			const Pipe &notempty(empty_subject ? p : *this);
+
+			assert(!notempty.in_deg_); //implies is not empty
+			assert(notempty.out_deg_);
+
+			/* check typing: non-empty pipe output vs matching operator input */
+			if(empty_subject)
+				assert(same_data_type(typeid(opt2), notempty.out_dtype));
+			else
+				assert(same_data_type(typeid(opt1), notempty.out_dtype));
+			assert(struct_type_check(notempty.st_map, op.stype()));
+
+			/* infer types */
+			if(empty_subject)
+				res.in_dtype = typeid(opt1);
+			else
+				res.in_dtype = typeid(opt2);
+			copy_struct_type(res, op.st_map);
+			struct_type_intersection(res, notempty);
+			res.in_deg_ = res.out_deg_ = 1;
+		}
+
+		/* case: both non-empty Pipe */
+		else {
+			assert(!in_deg_ || !p.in_deg_);
+			assert(out_deg_ && p.out_deg_);
+
+			/* check data types: pipes output vs matching operator inputs */
+			assert(same_data_type(typeid(opt1), out_dtype)); //data1
+			assert(same_data_type(typeid(opt2), p.out_dtype)); //data2
+
+			/* three-way structure-type checking */
+			assert(struct_type_check(st_map, op.stype()));
+			assert(struct_type_check(p.st_map, op.stype()));
+			assert(struct_type_check(st_map, p.st_map));
+
+			/* infer input data type */
+			res.in_dtype = in_deg_ ? in_dtype : p.in_dtype;
+
+			/* three-way structure-type inferring */
+			copy_struct_type(res, op.st_map);
+			struct_type_intersection(res, *this);
+			struct_type_intersection(res, op);
+			res.in_deg_ = (in_deg_ || p.in_deg_);
+			res.out_deg_ = 1;
+		}
+
+		return res;
 	}
-#endif
 
 	/**
 	 * \ingroup pipe-api
 	 * Create a pipe by merging with another Pipe
 	 *
 	 * Merges data coming from the current Pipe and the one passed as argument.
-	 * The resulting collection is the union of the collection of the two Pipes.
-	 * If the input collections are ordered, the order is respected only within each input collections,
-	 * while there exists some interleaving of the two collections in the resulting one.
-	 * Merging fails if:
-	 *  - the current O-Degree is zero and the Pipe is not empty
-	 *  - output and input data types of the two Pipes are not compatible
-	 *  - Structure Types the two Pipes are not compatible
+	 * The resulting collection is the union of the output collections.
+	 * If the output collections are ordered, the resulting collection is an
+	 * interleaving of the output collections.
 	 *
 	 * @param pipe Pipe to merge
 	 */
-	Pipe merge(const Pipe& pipe) const {
+	Pipe merge(const Pipe& p) const {
 #ifdef DEBUG
 		std::cerr << "[PIPE] Merging pipes\n";
 #endif
-		// can not append pipes without compatibility on data types
-		assert(same_data_type(pipe.out_dtype, out_dtype));
-
-		/* check structure types */
-		assert(out_deg_ == 1 && term_node_type_ != EMPTY);
-		assert(pipe.in_deg_ == 0);
-		assert(struct_type_check(pipe));
-
-		/* prepare the output term */
 		Pipe res;
 		res.term_node_type_ = MERGE;
-		add_to_merge(res, *this);
-		add_to_merge(res, pipe);
 
-		/* infer types */
-		res.in_dtype = in_dtype;
-		res.out_dtype = pipe.out_dtype;
-		copy_struct_type(res, *this);
-		struct_type_intersection(res, pipe);
-		res.in_deg_ = in_deg_;
-		res.out_deg_ = 1;
+		if (term_node_type_ == EMPTY || p.term_node_type_ == EMPTY) {
+			const Pipe &notempty(term_node_type_ == EMPTY ? p : *this);
+			assert(!notempty.in_deg_); //implies is not empty
+			assert(notempty.out_deg_);
+
+			/* prepare the output term */
+			add_to_merge(res, Pipe());
+			add_to_merge(res, notempty);
+
+			/* infer types */
+			res.in_dtype = res.out_dtype = notempty.out_dtype;
+			copy_struct_type(res, notempty.st_map);
+			res.in_deg_ = res.out_deg_ = 1;
+		}
+
+		else {
+			/* check data types */
+			assert(same_data_type(p.out_dtype, out_dtype));
+
+			/* check structure types */
+			assert(!in_deg_ || !p.in_deg_);
+			assert(out_deg_ && p.out_deg_);
+			assert(struct_type_check(this->st_map, p.st_map));
+
+			/* prepare the output term */
+			add_to_merge(res, *this);
+			add_to_merge(res, p);
+
+			/* infer types */
+			res.in_dtype = in_deg_ ? in_dtype : p.in_dtype;
+			res.out_dtype = out_dtype;
+			copy_struct_type(res, this->st_map);
+			struct_type_intersection(res, p);
+			res.in_deg_ = (in_deg_ || p.in_deg_);
+			res.out_deg_ = 1;
+		}
 
 		return res;
 	}
@@ -516,21 +586,26 @@ public:
 	}
 
 private:
+	/* test data types for equality */
 	inline bool same_data_type(TypeInfoRef t1, TypeInfoRef t2) const {
 		return t1.get() == t2.get();
 	}
 
-	inline bool struct_type_check(const Pipe &other) const {
+	/* check if the intersection between structure types is not empty */
+	inline bool struct_type_check(const st_map_t &t1,
+			const st_map_t &t2) const {
 		bool ret = false;
-		for(auto st : st_map)
-			ret |= (st.second && other.st_map.at(st.first));
+		for (auto st : t1)
+			ret |= (st.second && t2.at(st.first));
 		return ret;
 	}
 
-	inline void copy_struct_type(Pipe &dst, const Pipe &src) const {
-		dst.st_map = src.st_map;
+	/* set dst structure types to the argument map */
+	inline void copy_struct_type(Pipe &dst, const st_map_t &t) const {
+		dst.st_map = t;
 	}
 
+	/* set dst structure types to the intersection of dst and src */
 	inline void struct_type_intersection(Pipe &dst, const Pipe &src) const {
 		for (auto st : dst.st_map)
 			st.second &= src.st_map.at(st.first);
@@ -570,7 +645,7 @@ private:
 	TypeInfoRef in_dtype = typeid(void);
 	TypeInfoRef out_dtype = typeid(void);
 	unsigned in_deg_, out_deg_;
-	std::map<StructureType, bool> st_map;
+	st_map_t st_map;
 
 	/* term syntax tree */
 	term_node_t term_node_type_;

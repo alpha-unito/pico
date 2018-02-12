@@ -26,6 +26,7 @@
  */
 #include <utility>
 #include <typeinfo>
+#include <map>
 
 #include <ff/config.hpp>
 
@@ -42,6 +43,8 @@ enum StructureType {
 enum OpClass {
 	MAP, FMAP, BMAP, BFMAP, REDUCE, FOLDREDUCE, INPUT, OUTPUT, MERGE, none
 };
+
+typedef std::map<StructureType, bool> st_map_t;
 
 /* FF tokens for pico protocol */
 static void *PICO_EOS = (void*) (ff::FF_EOS - 0xb);
