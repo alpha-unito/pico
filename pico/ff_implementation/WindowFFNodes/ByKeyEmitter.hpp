@@ -60,7 +60,7 @@ public:
 			DELETE(in_microbatch, mb_t);
 			return GO_ON;
 		} else if (task == PICO_EOS) {
-			for (int i = 0; i < nworkers; ++i) {
+			for (unsigned i = 0; i < nworkers; ++i) {
 				if (!worker_mb[i]->empty()) {
 					auto mb = reinterpret_cast<void*>(worker_mb[i]);
 					lb->ff_send_out_to(mb, i);

@@ -27,7 +27,7 @@ using namespace pico;
 
 class ForwardingCollector : public ff::ff_node {
 public:
-	ForwardingCollector(int nworkers_) :
+	ForwardingCollector(unsigned nworkers_) :
 			nworkers(nworkers_), picoEOSrecv(0), picoSYNCrecv(0) {
 	}
 
@@ -48,7 +48,7 @@ public:
 	}
 
 private:
-	int nworkers;
+	unsigned nworkers;
 	unsigned picoEOSrecv, picoSYNCrecv;
 };
 
