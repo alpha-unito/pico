@@ -44,7 +44,7 @@ public:
 	}
 
 	void* svc(void* task) {
-		if (task != PICO_EOS) {
+		if (task != PICO_EOS && task != PICO_SYNC) {
 			mb_t *in_microbatch = reinterpret_cast<mb_t*>(task);
 			for (auto tt : *in_microbatch) {
 				auto dst = key_to_worker(tt.Key());
@@ -58,17 +58,21 @@ public:
 				}
 			}
 			DELETE(in_microbatch, mb_t);
-		} else {
+			return GO_ON;
+		} else if (task == PICO_EOS) {
 			for (int i = 0; i < nworkers; ++i) {
 				if (!worker_mb[i]->empty()) {
 					auto mb = reinterpret_cast<void*>(worker_mb[i]);
 					lb->ff_send_out_to(mb, i);
-				}
-				else
+				} else
 					DELETE(worker_mb[i], mb_t); //spurious microbatch
 			}
-			lb->broadcast_task(task);
+			lb->broadcast_task(PICO_EOS);
+			return GO_ON;
 		}
+
+		assert(task == PICO_SYNC);
+		lb->broadcast_task(PICO_SYNC);
 		return GO_ON;
 	}
 

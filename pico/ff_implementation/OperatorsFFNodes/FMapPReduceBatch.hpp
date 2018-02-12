@@ -38,8 +38,7 @@ using namespace pico;
  * TODO only works with non-decorating token
  */
 
-template<typename In, typename Out, typename TokenTypeIn,
-		typename TokenTypeOut>
+template<typename In, typename Out, typename TokenTypeIn, typename TokenTypeOut>
 class FMapPReduceBatch: public FarmWrapper {
 	typedef typename Out::keytype OutK;
 	typedef typename Out::valuetype OutV;
@@ -77,7 +76,7 @@ private:
 			time_point_t t0, t1;
 			hires_timer_ull(t0);
 #endif
-			if (task != PICO_EOS) {
+			if (task != PICO_EOS && task != PICO_SYNC) {
 				/*
 				 * got a microbatch to process and delete
 				 */
@@ -109,7 +108,9 @@ private:
 				//clean up
 				DELETE(in_microbatch, mb_in);
 				collector.clear();
-			} else {
+
+				return GO_ON;
+			} else if (task == PICO_EOS) {
 				/*
 				 * got PICO_EOS: stream out key-value store
 				 */
@@ -134,13 +135,16 @@ private:
 					DELETE(mb, mb_out);
 				}
 
-				ff_send_out(task);
+				/* forward PICO_EOS */
+				return PICO_EOS;
 			}
+
+			assert(task == PICO_SYNC);
 #ifdef TRACE_FASTFLOW
 			hires_timer_ull(t1);
 			user_svc += get_duration(t0, t1);
 #endif
-			return GO_ON;
+			return PICO_SYNC; //forward
 		}
 
 	private:

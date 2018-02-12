@@ -24,7 +24,7 @@ class PReduceCollector: public ff::ff_node {
 
 public:
 	PReduceCollector(int nworkers_, std::function<V(V&, V&)>& rk_) :
-			nworkers(nworkers_), picoEOSrecv(0), rk(rk_) {
+			nworkers(nworkers_), picoEOSrecv(0), picoSYNCrecv(0), rk(rk_) {
 	}
 
 	void* svc(void* task) {
@@ -41,8 +41,6 @@ public:
 			DELETE(in_microbatch, mb_t);
 			return GO_ON;
 		}
-
-		assert(task == PICO_EOS);
 
 		if (task == PICO_EOS) {
 			if (++picoEOSrecv == nworkers) {
@@ -64,16 +62,21 @@ public:
 				else
 					DELETE(out_microbatch, mb_out);
 
-				return task;
+				return PICO_EOS;
 			}
+			return GO_ON;
 		}
+
+		assert(task == PICO_SYNC);
+		if (++picoSYNCrecv == nworkers)
+			return PICO_SYNC;
 
 		return GO_ON;
 	}
 
 private:
 	int nworkers;
-	int picoEOSrecv;
+	unsigned picoEOSrecv, picoSYNCrecv;
 	std::unordered_map<K, KV> kvmap;
 	std::function<V(V&, V&)> rk;
 	const int mb_size = global_params.MICROBATCH_SIZE;

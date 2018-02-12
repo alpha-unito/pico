@@ -75,12 +75,13 @@ public:
 #ifdef DEBUG
 			fprintf(stderr, "[READ FROM SOCKET-%p] In SVC: SEND OUT PICO_EOS\n", this);
 #endif
-			ff_send_out(PICO_EOS);
 			close(sockfd);
-			return GO_ON;
+			return PICO_EOS;
 		}
 
+		/* forward PICO_SYNC */
 		assert(in == PICO_SYNC);
+		ff_send_out(PICO_SYNC);
 
 		std::string tail;
 		char buffer[CHUNK_SIZE];
@@ -94,7 +95,7 @@ public:
 		std::string *line = new (microbatch->allocate()) std::string();
 
 		while ((n = read(sockfd, buffer, sizeof(buffer))) > 0) {
-			tail.append(buffer,n);
+			tail.append(buffer, n);
 			std::istringstream f(tail);
 			/* initialize a new string within the micro-batch */
 			while (std::getline(f, *line, delimiter)) {

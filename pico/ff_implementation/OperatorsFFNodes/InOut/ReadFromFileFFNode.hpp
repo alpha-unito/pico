@@ -91,7 +91,7 @@ public:
 	 * read a file-range line by line
 	 */
 	void *svc(void *r_) {
-		if (r_ == PICO_EOS)
+		if (r_ == PICO_EOS || r_ == PICO_SYNC)
 			return r_;
 
 		prange *r = (prange *) r_;
@@ -112,9 +112,8 @@ public:
 					}
 				} else
 					assert(false);
-			}
-			else {
-				if(pos != r->end)
+			} else {
+				if (pos != r->end)
 					//assert(file.rdstate() == std::ifstream::eofbit);
 					assert(pos == -1);
 				break;
@@ -163,7 +162,7 @@ public:
 	}
 
 	void *svc(void *r_) {
-		if (r_ == PICO_EOS)
+		if (r_ == PICO_EOS || r_ == PICO_SYNC)
 			return r_;
 
 		prange *r = (prange *) r_;
@@ -256,7 +255,8 @@ private:
 	 */
 	class Partitioner: public ff_node {
 	public:
-		Partitioner(const FarmWrapper &f_, std::string fname, unsigned partitions_) :
+		Partitioner(const FarmWrapper &f_, std::string fname,
+				unsigned partitions_) :
 				farm(f_), partitions(partitions_) {
 			fd = fopen(fname.c_str(), "rb");
 			assert(fd); //todo - better reporting
@@ -275,7 +275,9 @@ private:
 				return GO_ON;
 			}
 
+			/* forward PICO_SYNC */
 			assert(in == PICO_SYNC);
+			ff_send_out(PICO_SYNC);
 
 			/* get file size */
 			fseek(fd, 0, SEEK_END);

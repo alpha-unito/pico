@@ -76,7 +76,7 @@ private:
 			time_point_t t0, t1;
 			hires_timer_ull(t0);
 #endif
-			if (task != PICO_EOS) {
+			if (task != PICO_EOS && task != PICO_SYNC) {
 				/*
 				 * got a microbatch to process and delete
 				 */
@@ -90,7 +90,10 @@ private:
 						kvmap[k] = kv.Value();
 				}
 				DELETE(in_microbatch, in_mb_t);
-			} else {
+				return GO_ON;
+			}
+
+			if (task == PICO_EOS) {
 				/*
 				 * got PICO_EOS: stream out key-value store
 				 */
@@ -113,13 +116,14 @@ private:
 				else
 					DELETE(out_mb, out_mb_t); //spurious microbatch
 
-				ff_send_out(task);
+				return PICO_EOS;
 			}
 #ifdef TRACE_FASTFLOW
 			hires_timer_ull(t1);
 			user_svc += get_duration(t0, t1);
 #endif
-			return GO_ON;
+			assert(task == PICO_SYNC);
+			return PICO_SYNC;
 		}
 
 	private:

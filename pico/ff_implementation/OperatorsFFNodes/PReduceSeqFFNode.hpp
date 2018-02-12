@@ -69,11 +69,13 @@ public:
 					kvmap[k] = kv.Value();
 			}
 			DELETE(in_microbatch, mb_t);
-		} else if (task == PICO_EOS) {
+			return GO_ON;
+		}
+
+		if (task == PICO_EOS) {
 #ifdef DEBUG
 			fprintf(stderr, "[P-REDUCE-FFNODE-SEQ-%p] In SVC RECEIVED PICO_EOS %p \n", this, task);
 #endif
-			ff_send_out(PICO_SYNC);
 			mb_t *out_microbatch;
 			NEW(out_microbatch, mb_t, outmb_size);
 			for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
@@ -91,10 +93,11 @@ public:
 			} else
 				DELETE(out_microbatch, mb_t);
 
-			return task;
-
+			return PICO_EOS;
 		}
-		return GO_ON;
+
+		assert(task == PICO_SYNC);
+		return PICO_SYNC;
 	}
 
 private:
