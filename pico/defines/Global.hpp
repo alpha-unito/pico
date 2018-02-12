@@ -42,7 +42,7 @@ struct app_args_t {
 };
 
 struct {
-	int PARALLELISM = PARDEG;
+	unsigned PARALLELISM = PARDEG;
 	int MICROBATCH_SIZE = 8;
 	const char* MAPPING;
 } global_params;

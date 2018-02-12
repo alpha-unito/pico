@@ -91,22 +91,13 @@ private:
 	public:
 		Collector(int nworkers_,
 				std::function<void(const State&, State&)> &reducef_) :
-				nworkers(nworkers_), picoEOSrecv(0), reducef(reducef_){
+				nworkers(nworkers_), picoEOSrecv(0), picoSYNCrecv(0), reducef(reducef_){
 		}
 
 		void* svc(void* task) {
 			if (task != PICO_EOS && task != PICO_SYNC) {
 				State* s = reinterpret_cast<State*>(task);
 				reducef(*s, state);
-
-//				std::cout << "state " << std::endl;
-//				for (auto it = state.begin(); it != state.end(); ++it) {
-//					std::cout << it->first << ": ";
-//					for (auto val : it->second) {
-//						std::cout << val << " ";
-//					}
-//					std::cout << std::endl;
-//				}
 				delete s;
 			}
 
@@ -125,8 +116,8 @@ private:
 		}
 
 	private:
-		int nworkers;
-		int picoEOSrecv;
+		unsigned nworkers;
+		unsigned picoEOSrecv, picoSYNCrecv;
 		State state;
 		std::function<void(const State&, State&)> &reducef;
 		typedef Microbatch<TokenTypeState> mb_out;
