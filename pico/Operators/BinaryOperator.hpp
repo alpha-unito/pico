@@ -30,12 +30,20 @@ namespace pico {
  */
 template<typename In1, typename In2, typename Out>
 class BinaryOperator: public Operator {
-	friend class Pipe;
 public:
+	BinaryOperator(const BinaryOperator &copy) {
+		set_input_degree(copy.i_degree());
+		set_output_degree(copy.o_degree());
+		stype(StructureType::BAG, copy.stype(StructureType::BAG));
+		stype(StructureType::STREAM, copy.stype(StructureType::STREAM));
+	}
+
 	virtual ~BinaryOperator() {
 	}
 
-	virtual std::string name()=0;
+	typedef In1 inFirstT;
+	typedef In2 inSecondT;
+	typedef Out outT;
 };
 
 } /* namespace pico */

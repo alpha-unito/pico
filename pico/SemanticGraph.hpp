@@ -36,7 +36,7 @@
 namespace pico {
 
 enum SemNodeRole {
-	Processing, Merge
+	Empty, Processing, Merge
 };
 
 class SemanticGraph {
@@ -71,8 +71,8 @@ private:
 		Operator *op;
 		SemNodeRole role;
 
-		SemGraphNode() :
-				op(nullptr), role(SemNodeRole::Merge) {
+		SemGraphNode(SemNodeRole role_) :
+				op(nullptr), role(role_) {
 		}
 
 		SemGraphNode(Operator *op_) :
@@ -110,6 +110,10 @@ private:
 
 		switch (p.term_node_type()) {
 		case Pipe::EMPTY:
+			/* singleton graph */
+			node_ = new SemGraphNode(SemNodeRole::Empty);
+			res.graph[node_] = std::vector<SemGraphNode *>();
+			res.firstdagnode = res.lastdagnode = node_;
 			break;
 		case Pipe::OPERATOR:
 			/* singleton graph */
@@ -134,7 +138,7 @@ private:
 			break;
 		case Pipe::MULTITO:
 			if (p.out_deg() == 1)
-				node_ = new SemGraphNode(); //merge
+				node_ = new SemGraphNode(SemNodeRole::Merge); //merge
 			/* merge children graphs */
 			for (auto p_ : p.children()) {
 				subg.push_back(from_pipe(*p_));
@@ -157,16 +161,35 @@ private:
 			//TODO termination
 			break;
 		case Pipe::MERGE:
-			node_ = new SemGraphNode();
+			node_ = new SemGraphNode(SemNodeRole::Merge);
 			/* merge children graphs */
 			for (auto p_ : p.children()) {
 				subg.push_back(from_pipe(*p_));
 				res.merge_with(subg.back());
 				/* link with merge node */
 				res.graph[subg.back().lastdagnode].push_back(node_);
+				/* set as first node if pipe has input*/
+				if (p_->in_deg()) {
+					assert(!res.firstdagnode);
+					res.firstdagnode = subg.back().firstdagnode;
+				}
 			}
-			/* set first and last nodes */
-			res.firstdagnode = subg[0].firstdagnode;
+			res.lastdagnode = node_;
+			break;
+		case Pipe::PAIR:
+			node_ = new SemGraphNode(SemNodeRole::Merge);
+			/* merge children graphs */
+			for (auto p_ : p.children()) {
+				subg.push_back(from_pipe(*p_));
+				res.merge_with(subg.back());
+				/* link with merge node */
+				res.graph[subg.back().lastdagnode].push_back(node_);
+				/* set as first node if pipe has input*/
+				if (p_->in_deg()) {
+					assert(!res.firstdagnode);
+					res.firstdagnode = subg.back().firstdagnode;
+				}
+			}
 			res.lastdagnode = node_;
 			break;
 		}

@@ -106,14 +106,17 @@ public:
 		return nullptr;
 	}
 
-protected:
+	const st_map_t stype() {
+		return st_map;
+	}
+
 	void stype(StructureType s, bool v) {
 		st_map[s] = v;
 	}
 
 private:
 	size_t in_deg, out_deg;
-	std::map<StructureType, bool> st_map;
+	st_map_t st_map;
 };
 
 } /* namespace pico */
