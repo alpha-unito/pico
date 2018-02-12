@@ -69,17 +69,17 @@ private:
 					foldf(in, *state);
 				}
 				DELETE(in_microbatch, mb_t);
+				return GO_ON;
 			} else if (task == PICO_EOS) {
 #ifdef DEBUG
 				fprintf(stderr, "[SORT-FFNODE-%p] In SVC RECEIVED PICO_EOS %p \n", this, task);
 #endif
-//				ff_send_out(PICO_SYNC);
 				ff_send_out(reinterpret_cast<void*>(state));
-
-				return task;
+				return PICO_EOS;
 
 			}
-			return GO_ON;
+			assert(task == PICO_SYNC);
+			return PICO_SYNC;
 		}
 	private:
 		typedef Microbatch<TokenTypeIn> mb_t;

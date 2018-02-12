@@ -49,7 +49,7 @@ public:
 	}
 
 	void* svc(void *in) {
-		if(in == PICO_EOS) {
+		if (in == PICO_EOS) {
 #ifdef DEBUG
 			fprintf(stderr, "[READ FROM STDIN-%p] In SVC: SEND OUT PICO_EOS\n", this);
 #endif
@@ -57,7 +57,9 @@ public:
 			return GO_ON;
 		}
 
+		/* forward PICO_SYNC */
 		assert(in == PICO_SYNC);
+		ff_send_out(PICO_SYNC);
 
 		std::string tail;
 		char buffer[CHUNK_SIZE];
@@ -68,7 +70,7 @@ public:
 		bzero(buffer, sizeof(buffer));
 		while (std::cin.read(buffer, sizeof(buffer))) {
 			auto n = std::cin.gcount();
-			tail.append(buffer,n);
+			tail.append(buffer, n);
 			std::istringstream f(tail);
 			/* initialize a new string within the micro-batch */
 			while (std::getline(f, *line, delimiter)) {

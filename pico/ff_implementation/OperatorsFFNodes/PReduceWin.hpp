@@ -72,7 +72,7 @@ private:
 		}
 
 		void* svc(void* task) {
-			if (task != PICO_EOS) {
+			if (task != PICO_EOS && task != PICO_SYNC) {
 				/* got a microbatch to process */
 				auto in_mb = reinterpret_cast<mb_t*>(task);
 				for (In& kv : *in_mb) {
@@ -95,6 +95,7 @@ private:
 					}
 				}
 				DELETE(in_mb, mb_t);
+				return GO_ON;
 			} else {
 #ifdef DEBUG
 				fprintf(stderr, "[P-REDUCE-FFNODE-%p] In SVC RECEIVED PICO_EOS \n", this);
@@ -112,10 +113,11 @@ private:
 					}
 				}
 
-				ff_send_out(PICO_EOS);
+				return PICO_EOS;
 			}
 
-			return GO_ON;
+			assert(task == PICO_SYNC);
+			return PICO_SYNC;
 		}
 
 	private:

@@ -28,15 +28,19 @@ using namespace pico;
 class ForwardingCollector : public ff::ff_node {
 public:
 	ForwardingCollector(int nworkers_) :
-			nworkers(nworkers_), picoEOSrecv(0) {
+			nworkers(nworkers_), picoEOSrecv(0), picoSYNCrecv(0) {
 	}
 
 	void* svc(void* task) {
 		if (task == PICO_EOS) {
-			if (++picoEOSrecv == nworkers) {
+			if (++picoEOSrecv == nworkers)
 				return task;
-			}
+			return GO_ON;
+		}
 
+		if (task == PICO_SYNC) {
+			if (++picoSYNCrecv == nworkers)
+				return task;
 			return GO_ON;
 		}
 
@@ -45,7 +49,7 @@ public:
 
 private:
 	int nworkers;
-	int picoEOSrecv;
+	unsigned picoEOSrecv, picoSYNCrecv;
 };
 
 #endif /* INTERNALS_FFOPERATORS_FARMCOLLECTOR_HPP_ */

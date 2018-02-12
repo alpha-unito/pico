@@ -30,8 +30,8 @@
 using namespace ff;
 using namespace pico;
 
-
-template<typename In, typename Out, typename Farm, typename TokenTypeIn, typename TokenTypeOut>
+template<typename In, typename Out, typename Farm, typename TokenTypeIn,
+		typename TokenTypeOut>
 class FMapBatch: public Farm {
 public:
 
@@ -49,71 +49,77 @@ public:
 
 private:
 
-	class Worker : public ff_node{
+	class Worker: public ff_node {
 	public:
-		Worker(std::function<void(In&, FlatMapCollector<Out> &)> kernel_):
-		    kernel(kernel_) {}
-
+		Worker(std::function<void(In&, FlatMapCollector<Out> &)> kernel_) :
+				kernel(kernel_) {
+		}
 
 		void* svc(void* task) {
-			if(task != PICO_EOS && task != PICO_SYNC){
-				auto in_microbatch = reinterpret_cast<Microbatch<TokenTypeIn>*>(task);
+			if (task != PICO_EOS && task != PICO_SYNC) {
+				auto in_microbatch =
+						reinterpret_cast<Microbatch<TokenTypeIn>*>(task);
 				// iterate over microbatch
-				for(In &tt : *in_microbatch){
-				    kernel(tt, collector);
+				for (In &tt : *in_microbatch) {
+					kernel(tt, collector);
 				}
-				if(collector.begin())
-				    ff_send_out(reinterpret_cast<void*>(collector.begin()));
+				if (collector.begin())
+					ff_send_out(reinterpret_cast<void*>(collector.begin()));
 
 				//clean up
 				DELETE(in_microbatch, Microbatch<TokenTypeIn>);
 				collector.clear();
+
+				return GO_ON;
 			} else {
-	#ifdef DEBUG
-			fprintf(stderr, "[UNARYFLATMAP-MB-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
-	#endif
+#ifdef DEBUG
+				fprintf(stderr, "[UNARYFLATMAP-MB-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
+#endif
 				ff_send_out(task);
 			}
-			return GO_ON;
+			return GO_ON; //never reached
 		}
-
 
 	private:
 		TokenCollector<Out> collector;
 		std::function<void(In&, FlatMapCollector<Out> &)> kernel;
 	};
 
-	class FMapBatchCollector : public ff_node {
+	class FMapBatchCollector: public ff_node {
 	public:
-	    FMapBatchCollector(int nworkers_):nworkers(nworkers_), picoEOSrecv(0) {
-	    }
+		FMapBatchCollector(int nworkers_) :
+				nworkers(nworkers_), //
+				picoEOSrecv(0), picoSYNCrecv(0) {
+		}
 
-	    void* svc(void* task) {
-	        if(task != PICO_EOS && task != PICO_SYNC) {
-	            cnode_t *it = reinterpret_cast<cnode_t *>(task), *it_;
-	            /* send out all the micro-batches in the list */
-	            while(it) {
-	                ff_send_out(reinterpret_cast<void *>(it->mb));
+		void* svc(void* task) {
+			if (task != PICO_EOS && task != PICO_SYNC) {
+				cnode_t *it = reinterpret_cast<cnode_t *>(task), *it_;
+				/* send out all the micro-batches in the list */
+				while (it) {
+					ff_send_out(reinterpret_cast<void *>(it->mb));
 
-                    /* clean up and skip to the next micro-batch */
-                    it_ = it;
-                    it = it->next;
-                    FREE(it_);
-	            };
-	        }
+					/* clean up and skip to the next micro-batch */
+					it_ = it;
+					it = it->next;
+					FREE(it_);
+				};
+				return GO_ON;
+			}
 
-	        if(task == PICO_EOS) {
-	            if(++picoEOSrecv == nworkers){
-	                return task;
-	            }
-	        }
-	        return GO_ON;
-	    }
+			/* process sync messages */
+			if (task == PICO_EOS && ++picoEOSrecv == nworkers)
+				return PICO_EOS;
+			if (task == PICO_SYNC && ++picoSYNCrecv == nworkers)
+				return PICO_SYNC;
+
+			return GO_ON;
+		}
 
 	private:
-	    int nworkers;
-	    int picoEOSrecv;
-	    typedef typename TokenCollector<Out>::cnode cnode_t;
+		int nworkers;
+		unsigned picoEOSrecv, picoSYNCrecv;
+		typedef typename TokenCollector<Out>::cnode cnode_t;
 	};
 };
 
@@ -122,7 +128,5 @@ using FMapBatchStream = FMapBatch<In, Out, OrderingFarm, TokenIn, TokenOut>;
 
 template<typename In, typename Out, typename TokenIn, typename TokenOut>
 using FMapBatchBag = FMapBatch<In, Out, FarmWrapper, TokenIn, TokenOut>;
-
-
 
 #endif /* INTERNALS_FFOPERATORS_FMAPBATCH_HPP_ */

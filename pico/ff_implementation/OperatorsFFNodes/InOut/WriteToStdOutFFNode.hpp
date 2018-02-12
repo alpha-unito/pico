@@ -39,34 +39,23 @@ template<typename In, typename TokenType>
 class WriteToStdOutFFNode: public ff_node {
 public:
 	WriteToStdOutFFNode(std::function<std::string(In&)> kernel_) :
-			kernel(kernel_), recv_sync(false) {};
+			kernel(kernel_) {
+	}
+	;
 
-	void* svc(void* task) {
-		if(task == PICO_SYNC) {
-#ifdef DEBUG
-					fprintf(stderr,"[WRITE TO STDOUT] In SVC: RECEIVED PICO_SYNC\n");
-#endif
-			recv_sync = true;
-			return GO_ON;
-		}
-//		if(task == PICO_EOS) {
-//			std::cout << "received eos\n";
-//		}
-		if(/*recv_sync || */task != PICO_EOS){
-			auto in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(task);
-			for(In& tt: *in_microbatch) {
-				std::cout << kernel(tt) << std::endl;
-			}
-			DELETE(in_microbatch, Microbatch<TokenType>);
-		}
+	void* svc(void* in) {
+		if (in == PICO_EOS || in == PICO_SYNC)
+			return in;
+
+		auto in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(in);
+		for (In& tt : *in_microbatch)
+			std::cout << kernel(tt) << std::endl;
+		DELETE(in_microbatch, Microbatch<TokenType>);
 		return GO_ON;
 	}
 
-
 private:
 	std::function<std::string(In&)> kernel;
-    bool recv_sync;
 };
-
 
 #endif /* INTERNALS_FFOPERATORS_INOUT_WRITETOSTDOUTFFNODE_HPP_ */
