@@ -36,10 +36,10 @@ using namespace pico;
 template<typename TokenType>
 class ByKeyEmitter: public ff::ff_node {
 public:
-	ByKeyEmitter(int nworkers_, ff::ff_loadbalancer * const lb_) :
+	ByKeyEmitter(unsigned nworkers_, ff::ff_loadbalancer * const lb_) :
 			nworkers(nworkers_), lb(lb_) {
 		/* prepare a microbatch for each worker */
-		for (int i = 0; i < nworkers; ++i)
+		for (unsigned i = 0; i < nworkers; ++i)
 			NEW(worker_mb[i], mb_t, global_params.MICROBATCH_SIZE);
 	}
 
@@ -80,7 +80,7 @@ private:
 	typedef typename TokenType::datatype DataType;
 	typedef typename DataType::keytype keytype;
 	typedef Microbatch<TokenType> mb_t;
-	int nworkers;
+	unsigned nworkers;
 	ff::ff_loadbalancer * const lb;
 	std::unordered_map<size_t, mb_t *> worker_mb;
 	inline size_t key_to_worker(const keytype& k) {

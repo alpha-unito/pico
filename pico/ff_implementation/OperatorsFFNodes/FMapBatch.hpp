@@ -87,7 +87,7 @@ private:
 
 	class FMapBatchCollector: public ff_node {
 	public:
-		FMapBatchCollector(int nworkers_) :
+		FMapBatchCollector(unsigned nworkers_) :
 				nworkers(nworkers_), //
 				picoEOSrecv(0), picoSYNCrecv(0) {
 		}
@@ -117,7 +117,7 @@ private:
 		}
 
 	private:
-		int nworkers;
+		unsigned nworkers;
 		unsigned picoEOSrecv, picoSYNCrecv;
 		typedef typename TokenCollector<Out>::cnode cnode_t;
 	};

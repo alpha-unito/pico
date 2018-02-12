@@ -23,7 +23,7 @@ class PReduceCollector: public ff::ff_node {
 	typedef Microbatch<TokenType> mb_t;
 
 public:
-	PReduceCollector(int nworkers_, std::function<V(V&, V&)>& rk_) :
+	PReduceCollector(unsigned nworkers_, std::function<V(V&, V&)>& rk_) :
 			nworkers(nworkers_), picoEOSrecv(0), picoSYNCrecv(0), rk(rk_) {
 	}
 
@@ -75,7 +75,7 @@ public:
 	}
 
 private:
-	int nworkers;
+	unsigned nworkers;
 	unsigned picoEOSrecv, picoSYNCrecv;
 	std::unordered_map<K, KV> kvmap;
 	std::function<V(V&, V&)> rk;
