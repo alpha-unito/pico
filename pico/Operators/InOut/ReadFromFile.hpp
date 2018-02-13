@@ -81,11 +81,7 @@ protected:
 		return new ReadFromFile(*this);
 	}
 
-	void run_kernel() {
-		assert(false);
-	}
-
-	ff::ff_node* node_operator(int parallelism, Operator*) {
+	ff::ff_node* node_operator(int parallelism) {
 		return new ReadFromFileFFNode(parallelism, fname);
 	}
 

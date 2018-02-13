@@ -72,8 +72,6 @@ public:
 	virtual ~InputOperator() {
 	}
 
-	virtual void run_kernel()=0;
-
 //protected:
 	const OpClass operator_class() {
 		return OpClass::INPUT;

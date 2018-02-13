@@ -85,15 +85,11 @@ protected:
 		return new ReadFromStdIn(*this);
 	}
 
-	void run_kernel() {
-		assert(false);
-	}
-
 	const OpClass operator_class() {
 		return OpClass::INPUT;
 	}
 
-	ff::ff_node* node_operator(int parallelism, Operator* nextop = nullptr) {
+	ff::ff_node* node_operator(int parallelism) {
 		return new ReadFromStdInFFNode<Token<std::string>>(delimiter);
 	}
 

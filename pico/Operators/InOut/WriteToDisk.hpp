@@ -80,19 +80,15 @@ public:
 	}
 
 protected:
-	void run_kernel(In* task) {
-		assert(false);
-	}
-
 	/**
 	 * Duplicates a WriteToDisk with a copy of the kernel function.
 	 * @return new WriteToDisk pointer
 	 */
-	WriteToDisk<In>* clone() {
-		return new WriteToDisk<In>(*this);
+	WriteToDisk* clone() {
+		return new WriteToDisk(*this);
 	}
 
-	ff::ff_node* node_operator(int parallelism, Operator* nextop = nullptr) {
+	ff::ff_node* node_operator(int parallelism) {
 		return new WriteToDiskFFNode<In>(fname, func);
 	}
 

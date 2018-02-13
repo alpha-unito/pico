@@ -67,8 +67,6 @@ public:
 	virtual ~OutputOperator() {
 	}
 
-	virtual void run_kernel(In*)=0;
-
 	const OpClass operator_class() {
 		return OpClass::OUTPUT;
 	}

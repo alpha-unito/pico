@@ -200,8 +200,8 @@ public:
 		/* infer structure types */
 		in_deg_ = op_.i_degree();
 		out_deg_ = op_.o_degree();
-		st_map[StructureType::BAG] = op_.stype(StructureType::BAG);
-		st_map[StructureType::STREAM] = op_.stype(StructureType::STREAM);
+		st_map[StructureType::BAG] = op_.stype().at(StructureType::BAG);
+		st_map[StructureType::STREAM] = op_.stype().at(StructureType::STREAM);
 	}
 
 	/**

@@ -85,15 +85,11 @@ protected:
 		return new ReadFromSocket(*this);
 	}
 
-	void run_kernel() {
-		assert(false);
-	}
-
 	const OpClass operator_class() {
 		return OpClass::INPUT;
 	}
 
-	ff::ff_node* node_operator(int parallelism, Operator*) {
+	ff::ff_node* node_operator(int parallelism) {
 		return new ReadFromSocketFFNode(server_name, port, delimiter);
 	}
 

@@ -78,11 +78,7 @@ protected:
 		return new ReadFromHDFS(*this);
 	}
 
-	void run_kernel() {
-		assert(false);
-	}
-
-	ff::ff_node* node_operator(int parallelism, Operator* nextop = nullptr) {
+	ff::ff_node* node_operator(int parallelism) {
 		//return new ReadFromHDFSFFNode<std::string>();
 		assert(false);
 		return nullptr;
