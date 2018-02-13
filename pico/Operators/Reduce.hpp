@@ -35,7 +35,6 @@ namespace pico {
  */
 template<typename In>
 class Reduce: public UnaryOperator<In, In> {
-	friend class Pipe;
 public:
 	/**
 	 * \ingroup op-api
