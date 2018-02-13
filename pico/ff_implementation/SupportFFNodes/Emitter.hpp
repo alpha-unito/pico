@@ -26,6 +26,11 @@ using namespace ff;
 
 #include "../../Internals/utils.hpp"
 
+#include "FarmWrapper.hpp"
+
+/*
+ * Forwards non-sync tokens and broadcasts sync tokens.
+ */
 template<typename lb_t>
 class ForwardingEmitter: public ff::ff_node {
 public:
@@ -46,6 +51,9 @@ private:
 	lb_t *lb;
 };
 
+/*
+ * Broadcasts each token.
+ */
 class BCastEmitter: public ff::ff_node {
 public:
 	BCastEmitter(ff::ff_loadbalancer * const lb_) :

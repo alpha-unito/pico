@@ -34,7 +34,7 @@
 #include "../SupportFFNodes/FarmWrapper.hpp"
 
 #include "../ff_config.hpp"
-#include "../SupportFFNodes/ForwardingCollector.hpp"
+#include "../SupportFFNodes/Collector.hpp"
 
 using namespace ff;
 using namespace pico;

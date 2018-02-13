@@ -23,37 +23,37 @@
  */
 class PairEmitterToNone: public ff::ff_node {
 public:
-	PairEmitterToNone(const FarmWrapper &farm) :
-			lb(farm.getlb()) {
+	PairEmitterToNone(ff::ff_loadbalancer &lb_) :
+			lb(lb_) {
 	}
 
 	void* svc(void * task) {
 		assert(task == pico::PICO_SYNC || task == pico::PICO_EOS);
-		lb->broadcast_task(task);
+		lb.broadcast_task(task);
 		return GO_ON;
 	}
 
 private:
-	ff::ff_loadbalancer * lb;
+	ff::ff_loadbalancer &lb;
 };
 
 template<int To>
 class PairEmitterTo: public ff::ff_node {
 public:
-	PairEmitterTo(const FarmWrapper &farm) :
-			lb(farm.getlb()) {
+	PairEmitterTo(ff::ff_loadbalancer &lb_) :
+			lb(lb_) {
 	}
 
 	void* svc(void * task) {
 		if(task != pico::PICO_SYNC && task != pico::PICO_EOS)
-			lb->ff_send_out_to(task, To);
+			lb.ff_send_out_to(task, To);
 		else
-			lb->broadcast_task(task);
+			lb.broadcast_task(task);
 		return GO_ON;
 	}
 
 private:
-	ff::ff_loadbalancer * lb;
+	ff::ff_loadbalancer &lb;
 };
 
 using PairEmitterToFirst = PairEmitterTo<0>;
@@ -68,7 +68,10 @@ using PairEmitterToSecond = PairEmitterTo<1>;
  */
 class PairGatherer : public ff::ff_gatherer {
 public:
-	ssize_t from() {
+	PairGatherer(size_t n) : ff::ff_gatherer(n), from_(-1) {
+	}
+
+	ssize_t from() const {
 		return from_;
 	}
 
@@ -88,8 +91,8 @@ struct task_from_t {
 
 class PairCollector : public ff::ff_node {
 public:
-	PairCollector(const FarmWrapper &farm_) :
-			gt(farm_.getlb()), picoEOSrecv(0), picoSYNCrecv(0) {
+	PairCollector(const PairGatherer &gt_) :
+			gt(gt_), picoEOSrecv(0), picoSYNCrecv(0) {
 	}
 
 	void* svc(void* task) {
@@ -110,9 +113,10 @@ public:
 	}
 
 private:
-	PairGatherer &gt;
+	const PairGatherer &gt;
 	unsigned picoEOSrecv, picoSYNCrecv;
 };
 
+typedef ff::ff_farm<ff::ff_loadbalancer, PairGatherer> PairFarm;
 
 #endif /* PICO_FF_IMPLEMENTATION_SUPPORTFFNODES_PAIRFARM_HPP_ */

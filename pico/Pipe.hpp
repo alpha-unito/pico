@@ -382,6 +382,7 @@ public:
 		/* prepare the output term */
 		Pipe res;
 		res.term_node_type_ = PAIR;
+		res.term_value.op = new OpType(op);
 		res.children_.push_back(new Pipe(*this));
 		res.children_.push_back(new Pipe(p));
 
