@@ -34,7 +34,47 @@ namespace pico {
  */
 template <typename In1, typename In2, typename Out>
 class JoinFlatMapByKey : public BinaryOperator<In1, In2, Out> {
+public:
+	/**
+	 * \ingroup op-api
+	 *
+	 * JoinFlatMapByKey Constructor
+	 *
+	 * Creates a new JoinFlatMapByKey operator by defining its kernel function.
+	 */
+	JoinFlatMapByKey(
+			std::function<void(In1&, In2&, FlatMapCollector<Out> &)> kernel_) {
+		kernel = kernel_;
+		this->set_input_degree(2);
+		this->set_output_degree(1);
+		this->stype(StructureType::BAG, true);
+		this->stype(StructureType::STREAM, false);
+	}
 
+	JoinFlatMapByKey(const JoinFlatMapByKey &copy) : kernel(copy.kernel) {
+	}
+
+	std::string name_short() {
+		return "JoinFlatMapByKey";
+	}
+
+	const OpClass operator_class() {
+		return OpClass::BFMAP;
+	}
+
+	ff::ff_node* node_operator(int parallelism, Operator*) {
+		//todo
+		assert(false);
+		return nullptr;
+	}
+
+protected:
+	JoinFlatMapByKey* clone() {
+		return new JoinFlatMapByKey(*this);
+	}
+
+private:
+	std::function<void(In1&, In2&, FlatMapCollector<Out> &)> kernel;
 };
 
 } /* namespace pico */
