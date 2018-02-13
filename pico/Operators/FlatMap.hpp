@@ -45,9 +45,7 @@ namespace pico {
  */
 template <typename In, typename Out>
 class FlatMap : public UnaryOperator<In, Out> {
-	friend class Pipe;
 public:
-
 	/**
 	 * \ingroup op-api
 	 *
