@@ -76,7 +76,7 @@ private:
 			break;
 		case Pipe::OPERATOR:
 			op = p.get_operator_ptr();
-			res->add_stage(op->node_operator(global_params.PARALLELISM, nullptr));
+			res->add_stage(op->node_operator(global_params.PARALLELISM));
 			break;
 		case Pipe::TO:
 			add_chain(res, p.children());
@@ -147,7 +147,7 @@ private:
 		if ((*it)->term_node_type() == Pipe::OPERATOR) {
 			/* standalone operator */
 			auto op = (*it)->get_operator_ptr();
-			p->add_stage(op->node_operator(global_params.PARALLELISM, nullptr));
+			p->add_stage(op->node_operator(global_params.PARALLELISM));
 		} else
 			/* complex sub-term */
 			p->add_stage(make_ff_term(**it, false));

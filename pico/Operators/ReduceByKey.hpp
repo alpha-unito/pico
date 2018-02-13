@@ -97,12 +97,8 @@ public:
 	}
 
 protected:
-	ReduceByKey<In> *clone() {
-		return new ReduceByKey<In>(*this);
-	}
-
-	void run() {
-		assert(false);
+	ReduceByKey *clone() {
+		return new ReduceByKey(*this);
 	}
 
 	const OpClass operator_class() {
@@ -117,9 +113,9 @@ protected:
 		return true;
 	}
 
-	ff::ff_node* node_operator(int pardeg, Operator* nextop = nullptr) {
+	ff::ff_node* node_operator(int pardeg) {
 		//todo assert unique stype
-		if (this->stype(StructureType::STREAM)) {
+		if (this->stype().at(StructureType::STREAM)) {
 			assert(win);
 			return new PReduceWin<In, Token<In>>(pardeg, reducef, win);
 		}

@@ -51,8 +51,8 @@ public:
 	Operator(const Operator &copy) {
 		set_input_degree(copy.i_degree());
 		set_output_degree(copy.o_degree());
-		stype(StructureType::BAG, copy.stype(StructureType::BAG));
-		stype(StructureType::STREAM, copy.stype(StructureType::STREAM));
+		stype(StructureType::BAG, copy.st_map.at(StructureType::BAG));
+		stype(StructureType::STREAM, copy.st_map.at(StructureType::STREAM));
 	}
 
 	virtual ~Operator() {
@@ -101,19 +101,14 @@ public:
 		return out_deg;
 	}
 
-	bool stype(StructureType s) const {
-		return st_map.at(s);
-	}
-
-	virtual ff::ff_node* node_operator(int par_deg,
-			Operator* nextop = nullptr)=0;
+	virtual ff::ff_node* node_operator(int par_deg)=0;
 
 	virtual ff::ff_node* opt_node(int, PEGOptimization_t, opt_args_t) {
 		assert(false);
 		return nullptr;
 	}
 
-	const st_map_t stype() {
+	const st_map_t stype() const {
 		return st_map;
 	}
 

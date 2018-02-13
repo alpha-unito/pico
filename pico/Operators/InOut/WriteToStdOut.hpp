@@ -80,23 +80,19 @@ public:
 	}
 
 protected:
-	void run_kernel(In* task) {
-		assert(false);
-	}
-
 	/**
 	 * Duplicates a WriteToStdOut with a copy of the kernel function.
 	 * @return new WriteToStdOut pointer
 	 */
 	WriteToStdOut<In>* clone() {
-		return new WriteToStdOut<In>(func);
+		return new WriteToStdOut(*this);
 	}
 
 	const OpClass operator_class() {
 		return OpClass::OUTPUT;
 	}
 
-	ff::ff_node* node_operator(int parallelism, Operator* nextop = nullptr) {
+	ff::ff_node* node_operator(int parallelism) {
 		return new WriteToStdOutFFNode<In, Token<In>>(func);
 	}
 

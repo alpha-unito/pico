@@ -69,18 +69,7 @@ public:
 		return "Map";
 	}
 
-//	Map& window(size_t size) {
-//		win = new BatchWindow<TimedToken<In>>(size);
-//		return *this;
-//	}
-
 protected:
-
-	Out run_kernel(In* in_task) {
-
-		return mapf(*in_task);
-	}
-
 	/**
 	 * Duplicates a Map with a copy of the Map kernel function.
 	 * @return new Map pointer
@@ -93,9 +82,9 @@ protected:
 		return OpClass::MAP;
 	}
 
-	ff::ff_node* node_operator(int parallelism, Operator *) {
+	ff::ff_node* node_operator(int parallelism) {
 		//todo assert unique stype
-		if (this->stype(StructureType::STREAM)) {
+		if (this->stype().at(StructureType::STREAM)) {
 			using impl_t = MapBatchStream<In, Out, Token<In>, Token<Out>>;
 			return new impl_t(parallelism, mapf);
 		}

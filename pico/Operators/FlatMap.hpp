@@ -61,6 +61,9 @@ public:
         this->stype(StructureType::STREAM, true);
 	}
 
+	FlatMap(const FlatMap &copy) : flatmapf(copy.flatmapf) {
+	}
+
 	/**
 	 * Returns the name of the operator, consisting in the name of the class.
 	 */
@@ -69,24 +72,17 @@ public:
 	}
 
 protected:
-	FlatMap<In, Out>* clone() {
-		return new FlatMap<In, Out>(flatmapf);
-	}
-
-	void run(In* task) {
-		assert(false);
-#ifdef DEBUG
-		std::cerr << "[FLATMAP] running... \n";
-#endif
+	FlatMap* clone() {
+		return new FlatMap(*this);
 	}
 
 	const OpClass operator_class(){
 		return OpClass::FMAP;
 	}
 
-	ff::ff_node* node_operator(int parallelism, Operator*) {
+	ff::ff_node* node_operator(int parallelism) {
 		//todo assert unique stype
-		if (this->stype(StructureType::STREAM)) {
+		if (this->stype().at(StructureType::STREAM)) {
 			using impl_t = FMapBatchStream<In, Out, Token<In>, Token<Out>>;
 			return new impl_t(parallelism, flatmapf);
 		}
@@ -103,7 +99,6 @@ protected:
 		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);
 		return new t(pardeg, flatmapf, nextop->kernel());
 	}
-
 
 private:
 	std::function<void(In&, FlatMapCollector<Out> &)> flatmapf;

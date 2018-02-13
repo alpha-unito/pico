@@ -62,7 +62,7 @@ public:
 		return OpClass::BFMAP;
 	}
 
-	ff::ff_node* node_operator(int parallelism, Operator*) {
+	ff::ff_node* node_operator(int parallelism) {
 		//todo
 		assert(false);
 		return nullptr;

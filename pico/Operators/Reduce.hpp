@@ -33,6 +33,7 @@ namespace pico {
  *
  * It implements a tree reduce operator where input and output value are the same.
  */
+#if 0
 template<typename In>
 class Reduce: public UnaryOperator<In, In> {
 public:
@@ -62,12 +63,6 @@ protected:
 		return new Reduce<In>(reducef);
 	}
 
-	void run() {
-#ifdef DEBUG
-		std::cerr << "[REDUCE] running... \n";
-#endif
-	}
-
 	const OpClass operator_class() {
 		return OpClass::REDUCE;
 	}
@@ -75,6 +70,7 @@ protected:
 private:
 	std::function<In(In, In)> reducef;
 };
+#endif
 
 } /* namespace pico */
 

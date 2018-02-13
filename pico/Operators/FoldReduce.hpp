@@ -49,6 +49,10 @@ public:
 		this->stype(StructureType::STREAM, false);
 	}
 
+	FoldReduce(const FoldReduce &copy) :
+			foldf(copy.foldf), reducef(copy.reducef) {
+	}
+
 	/**
 	 * Returns the name of the operator, consisting in the name of the class.
 	 */
@@ -58,20 +62,15 @@ public:
 
 protected:
 
-	Out run_kernel(In* in_task) {
-
-		return nullptr;
-	}
-
 	FoldReduce<In, Out, State>* clone() {
-		return new FoldReduce<In, Out, State>(foldf, reducef);
+		return new FoldReduce(*this);
 	}
 
 	const OpClass operator_class() {
 		return OpClass::FOLDREDUCE;
 	}
 
-	ff::ff_node* node_operator(int parallelism, Operator* nextop) {
+	ff::ff_node* node_operator(int parallelism) {
 		return new FoldReduceBatch<In, State, FarmWrapper, Token<In>,
 				Token<State>>(parallelism, foldf, reducef);
 	}
