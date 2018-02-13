@@ -35,6 +35,8 @@
 #include <pico/PEGOptimizations.hpp>
 
 #include "../Pipe.hpp"
+#include "SupportFFNodes/ForwardingNode.hpp"
+#include "SupportFFNodes/PairFarm.hpp"
 
 using namespace pico;
 
@@ -73,8 +75,11 @@ private:
 
 		switch (p.term_node_type()) {
 		case Pipe::EMPTY:
+			std::cerr << "warning: adding forwarding node\n";
+			res->add_stage(new ForwardingNode());
 			break;
 		case Pipe::OPERATOR:
+			std::cerr << "PUPPA\n";
 			op = p.get_operator_ptr();
 			res->add_stage(op->node_operator(global_params.PARALLELISM));
 			break;
@@ -101,8 +106,11 @@ private:
 			res->add_stage(make_merge_farm(p));
 			break;
 		case Pipe::PAIR:
-			std::cerr << "PAIR not implemented yet\n";
-			assert(false);
+			op = p.get_operator_ptr();
+			assert(op);
+			assert(p.children().size() == 2);
+			res->add_stage(make_pair_farm(*p.children()[0], *p.children()[1]));
+			res->add_stage(op->node_operator(global_params.PARALLELISM));
 			break;
 		}
 		return res;
@@ -110,19 +118,46 @@ private:
 
 	ff::ff_farm<> *make_merge_farm(const Pipe &p) const {
 		/*
-		auto *res = new ff::ff_farm<>();
-		auto nw = p.children().size();
-		res->add_emitter(new BCastEmitter(nw, res->getlb()));
-		res->add_collector(new MergeCollector());
-		std::vector<ff::ff_node *> w;
-		for (auto p_ : p.children())
-			w.push_back(make_ff_term(*p_, false));
-		res->add_workers(w);
-		res->cleanup_all();
-		return res;
-		*/
+		 auto *res = new ff::ff_farm<>();
+		 auto nw = p.children().size();
+		 res->add_emitter(new BCastEmitter(nw, res->getlb()));
+		 res->add_collector(new MergeCollector());
+		 std::vector<ff::ff_node *> w;
+		 for (auto p_ : p.children())
+		 w.push_back(make_ff_term(*p_, false));
+		 res->add_workers(w);
+		 res->cleanup_all();
+		 return res;
+		 */
 		assert(false);
 		return nullptr;
+	}
+
+	PairFarm *make_pair_farm(const Pipe &p1, const Pipe &p2) const {
+		/* create and configure */
+		auto res = new PairFarm();
+		res->cleanup_all();
+
+		/* add emitter */
+		ff::ff_node *e;
+		if(p1.in_deg())
+			e = new PairEmitterToFirst(*res->getlb());
+		else if(p2.in_deg())
+			e = new PairEmitterToSecond(*res->getlb());
+		else
+			e = new PairEmitterToNone(*res->getlb());
+		res->add_emitter(e);
+
+		/* add argument pipelines as workers */
+		std::vector<ff::ff_node *> w;
+		w.push_back(make_ff_term(p1, false));
+		w.push_back(make_ff_term(p2, false));
+		res->add_workers(w);
+
+		/* add collector */
+		res->add_collector(new PairCollector(*res->getgt()));
+
+		return res;
 	}
 
 	/* apply PE optimization over two adjacent pipes  */
@@ -161,14 +196,18 @@ private:
 			op1 = (**it1).get_operator_ptr();
 		if ((**it2).term_node_type() == Pipe::OPERATOR)
 			op2 = (**it2).get_operator_ptr();
-		if(!op1 || !op2)
+		if (!op1 || !op2)
 			return false;
 
 		/* match with the optimization rules */
 		if (opt_match(op1, op2, MAP_PREDUCE))
-			p->add_stage(op1->opt_node(global_params.PARALLELISM, MAP_PREDUCE, opt_args_t{op2}));
+			p->add_stage(
+					op1->opt_node(global_params.PARALLELISM, MAP_PREDUCE,
+							opt_args_t { op2 }));
 		else if (opt_match(op1, op2, FMAP_PREDUCE))
-			p->add_stage(op1->opt_node(global_params.PARALLELISM, FMAP_PREDUCE, opt_args_t{op2}));
+			p->add_stage(
+					op1->opt_node(global_params.PARALLELISM, FMAP_PREDUCE,
+							opt_args_t { op2 }));
 		else
 			return false;
 		return true;
@@ -186,23 +225,23 @@ private:
 				add_plain(p, it);
 		}
 		/* add last sub-term if any */
-		if(it != s.end())
+		if (it != s.end())
 			add_plain(p, it);
 	}
 
 	ff::ff_farm<> *make_multito_farm(const Pipe &p) const {
 		/*
-		auto *res = new ff::ff_farm<>();
-		auto nw = p.children().size() - 1;
-		res->add_emitter(new BCastEmitter(nw, res->getlb()));
-		res->add_collector(new MergeCollector());
-		std::vector<ff::ff_node *> w;
-		for (auto it = p.children().begin() + 1; it != p.children().end(); ++it)
-			w.push_back(make_ff_term(**it, false));
-		res->add_workers(w);
-		res->cleanup_all();
-		return res;
-		*/
+		 auto *res = new ff::ff_farm<>();
+		 auto nw = p.children().size() - 1;
+		 res->add_emitter(new BCastEmitter(nw, res->getlb()));
+		 res->add_collector(new MergeCollector());
+		 std::vector<ff::ff_node *> w;
+		 for (auto it = p.children().begin() + 1; it != p.children().end(); ++it)
+		 w.push_back(make_ff_term(**it, false));
+		 res->add_workers(w);
+		 res->cleanup_all();
+		 return res;
+		 */
 		assert(false);
 		return nullptr;
 	}
