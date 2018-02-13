@@ -23,12 +23,12 @@
 #include "Operators/FlatMap.hpp"
 #include "Operators/Reduce.hpp"
 #include "Operators/FoldReduce.hpp"
-#include "Operators/BinaryMap.hpp"
 #include "Operators/InOut/ReadFromFile.hpp"
 #include "Operators/InOut/ReadFromStdIn.hpp"
 //#include "Operators/InOut/ReadFromHDFS.hpp"
 #include "Operators/InOut/ReadFromSocket.hpp"
 #include "Operators/InOut/WriteToDisk.hpp"
 #include "Operators/InOut/WriteToStdOut.hpp"
+#include "Operators/JoinFlatMapByKey.hpp"
 
 #endif /* PICO_PICO_HPP_ */
