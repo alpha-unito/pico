@@ -30,11 +30,11 @@
 #include "../../Internals/utils.hpp"
 #include "../../WindowPolicy.hpp"
 
-#include "../SupportFFNodes/Emitter.hpp"
-#include "../SupportFFNodes/FarmWrapper.hpp"
+#include "../SupportFFNodes/emitters.hpp"
+#include "../SupportFFNodes/farms.hpp"
 
 #include "../ff_config.hpp"
-#include "../SupportFFNodes/Collector.hpp"
+#include "../SupportFFNodes/collectors.hpp"
 
 using namespace ff;
 using namespace pico;
@@ -45,7 +45,7 @@ using namespace pico;
  * Only batching windowing is supported by now, windowing is performed by workers.
  */
 template<typename In, typename TokenType>
-class PReduceWin: public FarmWrapper {
+class PReduceWin: public NonOrderingFarm {
 	typedef typename In::keytype K;
 	typedef typename In::valuetype V;
 

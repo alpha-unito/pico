@@ -21,8 +21,7 @@
 #ifndef INTERNALS_WINDOWPOLICY_HPP_
 #define INTERNALS_WINDOWPOLICY_HPP_
 
-#include "ff_implementation/WindowFFNodes/ByKeyEmitter.hpp"
-#include "ff_implementation/WindowFFNodes/OFarmEmitter.hpp"
+#include "ff_implementation/SupportFFNodes/ByKeyEmitter.hpp"
 
 namespace pico {
 

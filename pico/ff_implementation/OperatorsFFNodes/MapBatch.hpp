@@ -24,7 +24,7 @@
 #include <ff/farm.hpp>
 
 #include "../../Internals/utils.hpp"
-#include "../SupportFFNodes/Emitter.hpp"
+#include "../SupportFFNodes/emitters.hpp"
 #include "../ff_config.hpp"
 #include "../../Internals/TimedToken.hpp"
 #include "../../Internals/Microbatch.hpp"
@@ -92,6 +92,6 @@ template<typename In, typename Out, typename TokenIn, typename TokenOut>
 using MapBatchStream = MapBatch<In, Out, OrderingFarm, TokenIn, TokenOut>;
 
 template<typename In, typename Out, typename TokenIn, typename TokenOut>
-using MapBatchBag = MapBatch<In, Out, FarmWrapper, TokenIn, TokenOut>;
+using MapBatchBag = MapBatch<In, Out, NonOrderingFarm, TokenIn, TokenOut>;
 
 #endif /* INTERNALS_FFOPERATORS_MAPBATCH_HPP_ */

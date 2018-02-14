@@ -24,7 +24,6 @@
 #include "UnaryOperator.hpp"
 
 #include "../ff_implementation/OperatorsFFNodes/FoldReduceBatch.hpp"
-#include "../ff_implementation/SupportFFNodes/FarmWrapper.hpp"
 #include "../Internals/Token.hpp"
 
 namespace pico {
@@ -71,7 +70,7 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism) {
-		return new FoldReduceBatch<In, State, FarmWrapper, Token<In>,
+		return new FoldReduceBatch<In, State, NonOrderingFarm, Token<In>,
 				Token<State>>(parallelism, foldf, reducef);
 	}
 

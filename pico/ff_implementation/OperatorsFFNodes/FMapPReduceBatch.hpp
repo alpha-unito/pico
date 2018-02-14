@@ -39,7 +39,7 @@ using namespace pico;
  */
 
 template<typename In, typename Out, typename TokenTypeIn, typename TokenTypeOut>
-class FMapPReduceBatch: public FarmWrapper {
+class FMapPReduceBatch: public NonOrderingFarm {
 	typedef typename Out::keytype OutK;
 	typedef typename Out::valuetype OutV;
 
