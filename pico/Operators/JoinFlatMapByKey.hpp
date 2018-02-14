@@ -23,6 +23,8 @@
 
 #include "BinaryOperator.hpp"
 
+#include "../ff_implementation/OperatorsFFNodes/JoinFlatMapByKeyFarm.hpp"
+
 namespace pico {
 
 /**
@@ -63,9 +65,8 @@ public:
 	}
 
 	ff::ff_node* node_operator(int parallelism) {
-		//todo
-		assert(false);
-		return nullptr;
+		using t = JoinFlatMapByKeyFarm<Token<In1>, Token<In2>, Token<Out>>;
+		return new t(parallelism, kernel);
 	}
 
 protected:
