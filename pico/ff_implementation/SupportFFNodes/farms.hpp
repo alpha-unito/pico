@@ -26,7 +26,7 @@
 /*
  * A non-ordering farm.
  */
-class FarmWrapper: public ff::ff_farm<> {
+class NonOrderingFarm: public ff::ff_farm<> {
 public:
 	typedef ff::ff_loadbalancer lb_t;
 

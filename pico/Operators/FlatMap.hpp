@@ -30,7 +30,6 @@
 
 #include "../ff_implementation/OperatorsFFNodes/FMapBatch.hpp"
 #include "../ff_implementation/OperatorsFFNodes/FMapPReduceBatch.hpp"
-#include "../ff_implementation/SupportFFNodes/FarmWrapper.hpp"
 
 namespace pico {
 

@@ -29,7 +29,7 @@
 #include "../../Internals/Microbatch.hpp"
 
 #include "../ff_config.hpp"
-#include "../SupportFFNodes/Emitter.hpp"
+#include "../SupportFFNodes/emitters.hpp"
 
 using namespace pico;
 

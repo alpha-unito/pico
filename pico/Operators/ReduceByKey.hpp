@@ -23,7 +23,6 @@
 
 #include "../ff_implementation/OperatorsFFNodes/PReduceSeqFFNode.hpp"
 #include "../ff_implementation/OperatorsFFNodes/PReduceWin.hpp"
-#include "../ff_implementation/SupportFFNodes/FarmWrapper.hpp"
 #include "UnaryOperator.hpp"
 
 #include "../Internals/TimedToken.hpp"

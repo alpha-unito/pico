@@ -31,7 +31,7 @@
 #include "../../../Internals/Microbatch.hpp"
 #include "../../../Internals/Token.hpp"
 #include "../../../Internals/utils.hpp"
-#include "../../SupportFFNodes/FarmWrapper.hpp"
+#include "../../SupportFFNodes/farms.hpp"
 
 #include "../../ff_config.hpp"
 
@@ -230,7 +230,7 @@ private:
 /**
  * The ReadFromFile non-ordering farm.
  */
-class ReadFromFileFFNode: public FarmWrapper {
+class ReadFromFileFFNode: public NonOrderingFarm {
 	/* select implementation for line-based file reading */
 	using Worker = getline_textfile;
 	//using Worker = read_textfile;
@@ -255,7 +255,7 @@ private:
 	 */
 	class Partitioner: public ff_node {
 	public:
-		Partitioner(const FarmWrapper &f_, std::string fname,
+		Partitioner(const NonOrderingFarm &f_, std::string fname,
 				unsigned partitions_) :
 				farm(f_), partitions(partitions_) {
 			fd = fopen(fname.c_str(), "rb");
@@ -307,7 +307,7 @@ private:
 		}
 
 	private:
-		const FarmWrapper &farm;
+		const NonOrderingFarm &farm;
 		FILE *fd;
 		unsigned partitions;
 	};

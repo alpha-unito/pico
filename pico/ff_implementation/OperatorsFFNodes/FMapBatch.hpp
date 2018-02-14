@@ -38,8 +38,9 @@ public:
 	FMapBatch(int parallelism,
 			std::function<void(In&, FlatMapCollector<Out> &)> flatmapf) {
 		auto e = new ForwardingEmitter<typename Farm::lb_t>(this->getlb());
+		auto c = new UnpackingCollector<TokenCollector<Out>>(parallelism);
 		this->setEmitterF(e);
-		this->setCollectorF(new FMapBatchCollector(parallelism));
+		this->setCollectorF(c);
 		std::vector<ff_node *> w;
 		for (int i = 0; i < parallelism; ++i)
 			w.push_back(new Worker(flatmapf));
@@ -84,49 +85,12 @@ private:
 		TokenCollector<Out> collector;
 		std::function<void(In&, FlatMapCollector<Out> &)> kernel;
 	};
-
-	class FMapBatchCollector: public ff_node {
-	public:
-		FMapBatchCollector(unsigned nworkers_) :
-				nworkers(nworkers_), //
-				picoEOSrecv(0), picoSYNCrecv(0) {
-		}
-
-		void* svc(void* task) {
-			if (task != PICO_EOS && task != PICO_SYNC) {
-				cnode_t *it = reinterpret_cast<cnode_t *>(task), *it_;
-				/* send out all the micro-batches in the list */
-				while (it) {
-					ff_send_out(reinterpret_cast<void *>(it->mb));
-
-					/* clean up and skip to the next micro-batch */
-					it_ = it;
-					it = it->next;
-					FREE(it_);
-				};
-				return GO_ON;
-			}
-
-			/* process sync messages */
-			if (task == PICO_EOS && ++picoEOSrecv == nworkers)
-				return PICO_EOS;
-			if (task == PICO_SYNC && ++picoSYNCrecv == nworkers)
-				return PICO_SYNC;
-
-			return GO_ON;
-		}
-
-	private:
-		unsigned nworkers;
-		unsigned picoEOSrecv, picoSYNCrecv;
-		typedef typename TokenCollector<Out>::cnode cnode_t;
-	};
 };
 
 template<typename In, typename Out, typename TokenIn, typename TokenOut>
 using FMapBatchStream = FMapBatch<In, Out, OrderingFarm, TokenIn, TokenOut>;
 
 template<typename In, typename Out, typename TokenIn, typename TokenOut>
-using FMapBatchBag = FMapBatch<In, Out, FarmWrapper, TokenIn, TokenOut>;
+using FMapBatchBag = FMapBatch<In, Out, NonOrderingFarm, TokenIn, TokenOut>;
 
 #endif /* INTERNALS_FFOPERATORS_FMAPBATCH_HPP_ */

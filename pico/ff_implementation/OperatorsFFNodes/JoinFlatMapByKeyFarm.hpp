@@ -31,7 +31,7 @@
 using namespace pico;
 
 template<typename TokenTypeIn1, typename TokenTypeIn2, typename TokenTypeOut>
-class JoinFlatMapByKeyFarm: FarmWrapper {
+class JoinFlatMapByKeyFarm: NonOrderingFarm {
 	typedef typename TokenTypeIn1::datatype In1;
 	typedef typename TokenTypeIn2::datatype In2;
 	typedef typename TokenTypeOut::datatype Out;
@@ -52,8 +52,8 @@ public:
 		for (unsigned i = 0; i < nworkers; ++i)
 			w.push_back(new Worker(kernel));
 
-		add_emitter(e);
-		add_collector(c);
+		setEmitterF(e);
+		setCollectorF(c);
 		add_workers(w);
 
 		cleanup_all();
@@ -74,7 +74,7 @@ public:
 	 */
 	class Emitter: public ff::ff_node {
 	public:
-		Emitter(unsigned nworkers_, unsigned mbsize_, FarmWrapper &farm_) :
+		Emitter(unsigned nworkers_, unsigned mbsize_, NonOrderingFarm &farm_) :
 				nworkers(nworkers_), mbsize(mbsize_), farm(farm_), //
 				mb2w_from1(nworkers), mb2w_from2(nworkers) {
 			/* prepare a per-worker microbatch for each origin */
@@ -146,7 +146,7 @@ public:
 
 		unsigned nworkers;
 		const unsigned mbsize;
-		FarmWrapper &farm;
+		NonOrderingFarm &farm;
 
 		/* one per-worker microbatch for each source pipe */
 		std::vector<mb_in1 *> mb2w_from1;

@@ -26,7 +26,7 @@ using namespace ff;
 
 #include "../../Internals/utils.hpp"
 
-#include "FarmWrapper.hpp"
+#include "farms.hpp"
 
 /*
  * Forwards non-sync tokens and broadcasts sync tokens.
