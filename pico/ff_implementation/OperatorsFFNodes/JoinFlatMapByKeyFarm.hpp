@@ -31,7 +31,7 @@
 using namespace pico;
 
 template<typename TokenTypeIn1, typename TokenTypeIn2, typename TokenTypeOut>
-class JoinFlatMapByKeyFarm: NonOrderingFarm {
+class JoinFlatMapByKeyFarm: public NonOrderingFarm {
 	typedef typename TokenTypeIn1::datatype In1;
 	typedef typename TokenTypeIn2::datatype In2;
 	typedef typename TokenTypeOut::datatype Out;
@@ -39,8 +39,6 @@ class JoinFlatMapByKeyFarm: NonOrderingFarm {
 	typedef Microbatch<TokenTypeIn2> mb_in2;
 	typedef Microbatch<TokenTypeOut> mb_out;
 	typedef typename In1::keytype K;
-	typedef typename In1::valtype V1;
-	typedef typename In2::valtype V2;
 	typedef std::function<void(In1&, In2&, FlatMapCollector<Out> &)> kernel_t;
 
 public:
@@ -77,11 +75,6 @@ public:
 		Emitter(unsigned nworkers_, unsigned mbsize_, NonOrderingFarm &farm_) :
 				nworkers(nworkers_), mbsize(mbsize_), farm(farm_), //
 				mb2w_from1(nworkers), mb2w_from2(nworkers) {
-			/* prepare a per-worker microbatch for each origin */
-			for (unsigned i = 0; i < nworkers; ++i) {
-				NEW(mb2w_from1[i], mb_in1, mbsize);
-				NEW(mb2w_from2[i], mb_in2, mbsize);
-			}
 		}
 
 	private:
@@ -120,15 +113,19 @@ public:
 		template<typename In, typename mb_t, typename mb2w_from_t>
 		void dispatch(mb_t *in_mb, mb2w_from_t &mb2w_from, unsigned from) {
 			for (auto tt : *in_mb) {
-				auto dst = key_to_worker(tt.Key());
-				// add token to dst's microbatch
-				new (mb2w_from[dst]->allocate()) In(tt);
-				mb2w_from[dst]->commit();
-				if (mb2w_from[dst]->full()) {
-					mb_from_t *mb;
-					NEW(mb, mb_from_t, mb2w_from[dst], from);
-					farm.getlb()->ff_send_out_to(mb, dst);
-					NEW(mb2w_from[dst], mb_t, mbsize);
+				auto k = tt.Key();
+				auto dst = key_to_worker(k);
+				// create k-dst microbatch if not existing
+				if (mb2w_from[dst].find(k) == mb2w_from[dst].end())
+					NEW(mb2w_from[dst][k], mb_t, mbsize);
+				// copy token into dst's microbatch
+				new (mb2w_from[dst][k]->allocate()) In(tt);
+				mb2w_from[dst][k]->commit();
+				if (mb2w_from[dst][k]->full()) {
+					mb_from_t *mb_from;
+					NEW(mb_from, mb_from_t, mb2w_from[dst][k], from);
+					farm.getlb()->ff_send_out_to(mb_from, dst);
+					NEW(mb2w_from[dst][k], mb_t, mbsize);
 				}
 			}
 		}
@@ -136,21 +133,22 @@ public:
 		/* stream out (or delete) incomplete microbatch */
 		template<typename mb_t, typename mb2w_from_t>
 		void send_remainder(mb2w_from_t &mb2w, unsigned dst, unsigned from) {
-			if (!mb2w[dst]->empty()) {
-				mb_from_t *mb;
-				NEW(mb, mb_from_t, mb2w[dst], from);
-				farm.getlb()->ff_send_out_to(mb, dst);
-			} else
-				DELETE(mb2w[dst], mb_t); //spurious microbatch
+			for (auto kmb : mb2w[dst])
+				if (!kmb.second->empty()) {
+					mb_from_t *mb_from;
+					NEW(mb_from, mb_from_t, kmb.second, from);
+					farm.getlb()->ff_send_out_to(mb_from, dst);
+				} else
+					DELETE(kmb.second, mb_t); //spurious microbatch
 		}
 
 		unsigned nworkers;
 		const unsigned mbsize;
 		NonOrderingFarm &farm;
 
-		/* one per-worker microbatch for each source pipe */
-		std::vector<mb_in1 *> mb2w_from1;
-		std::vector<mb_in2 *> mb2w_from2;
+		/* for both origins, one per-key microbatch for each worker */
+		std::vector<std::unordered_map<K, mb_in1 *>> mb2w_from1;
+		std::vector<std::unordered_map<K, mb_in2 *>> mb2w_from2;
 
 		template<typename K>
 		inline size_t key_to_worker(const K& k) {
@@ -175,7 +173,11 @@ public:
 					process_and_store_from1(t);
 				else
 					process_and_store_from2(t);
+
+				/* cleanup */
 				DELETE(t, mb_from_t);
+				collector.clear();
+
 				return GO_ON;
 			}
 
@@ -200,13 +202,15 @@ public:
 	private:
 		void process_and_store_from1(mb_from_t *mb_from) {
 			auto in_mb = reinterpret_cast<mb_in1 *>(mb_from->mb);
-			auto k = in_mb->begin()->Key();
+			auto k = (*in_mb->begin()).Key();
 
 			/* process */
-			for (auto kv_in : *in_mb)
+			for (auto kv_in : *in_mb) {
 				/* match with the from-2 k-partition stored so far */
-				for (auto kv_match : kmb_from2[k])
-					kernel(kv_in, kv_match, collector);
+				for (auto kmb_ptr : kmb_from2[k])
+					for (auto kv_match : *kmb_ptr)
+						kernel(kv_in, kv_match, collector);
+			}
 			if (collector.begin())
 				ff_send_out(collector.begin());
 
@@ -216,13 +220,15 @@ public:
 
 		void process_and_store_from2(mb_from_t *mb_from) {
 			auto in_mb = reinterpret_cast<mb_in2 *>(mb_from->mb);
-			auto k = in_mb->begin()->Key();
+			auto k = (*in_mb->begin()).Key();
 
 			/* process */
-			for (auto kv_in : *in_mb)
+			for (auto kv_in : *in_mb) {
 				/* match with the from-1 k-partition stored so far */
-				for (auto kv_match : kmb_from1[k])
-					kernel(kv_match, kv_in, collector);
+				for (auto kmb_ptr : kmb_from1[k])
+					for (auto kv_match : *kmb_ptr)
+						kernel(kv_match, kv_in, collector);
+			}
 			if (collector.begin())
 				ff_send_out(collector.begin());
 

@@ -79,7 +79,6 @@ private:
 			res->add_stage(new ForwardingNode());
 			break;
 		case Pipe::OPERATOR:
-			std::cerr << "PUPPA\n";
 			op = p.get_operator_ptr();
 			res->add_stage(op->node_operator(global_params.PARALLELISM));
 			break;

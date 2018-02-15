@@ -155,11 +155,10 @@ public:
 		out_deg_ = copy.out_deg_;
 		copy_struct_type(*this, copy.st_map);
 
-		if (term_node_type_ == OPERATOR)
+		if (has_operator())
 			term_value.op = copy.term_value.op->clone();
-		else
-			for (Pipe *p : copy.children_)
-				children_.push_back(new Pipe(*p));
+		for (Pipe *p : copy.children_)
+			children_.push_back(new Pipe(*p));
 	}
 
 	~Pipe() {
@@ -167,7 +166,7 @@ public:
 		std::cerr << "[PIPE] Deleting\n";
 #endif
 		/* recursively delete the term tree */
-		if (term_node_type_ == OPERATOR)
+		if (has_operator())
 			delete term_value.op;
 		for (Pipe *p : children_)
 			delete p;
@@ -259,7 +258,7 @@ public:
 		res.in_dtype = in_dtype;
 		res.out_dtype = p.out_dtype;
 		copy_struct_type(res, this->st_map);
-		struct_type_intersection(res, p);
+		stype_intersection(res, p.st_map);
 		res.in_deg_ = in_deg_;
 		res.out_deg_ = p.out_deg_;
 
@@ -308,7 +307,7 @@ public:
 			assert(p->in_deg_ == 1);
 			assert(p->out_deg_ == 0 || p->out_deg_ == 1);
 			assert(res.struct_type_check(this->st_map, p->st_map));
-			struct_type_intersection(res, *p);
+			stype_intersection(res, p->st_map);
 
 			/* typing at output side */
 			if (p->out_deg_) {
@@ -375,7 +374,7 @@ public:
 	 * @param p is the second input Pipe
 	 */
 	template<typename OpType>
-	Pipe pair_with(const OpType &op, const Pipe& p) {
+	Pipe pair_with(const Pipe& p, const OpType &op) {
 		typedef typename OpType::inFirstT opt1;
 		typedef typename OpType::inSecondT opt2;
 
@@ -409,8 +408,8 @@ public:
 				res.in_dtype = typeid(opt1);
 			else
 				res.in_dtype = typeid(opt2);
-			copy_struct_type(res, op.st_map);
-			struct_type_intersection(res, notempty);
+			copy_struct_type(res, op.stype());
+			stype_intersection(res, notempty.st_map);
 			res.in_deg_ = res.out_deg_ = 1;
 		}
 
@@ -432,9 +431,9 @@ public:
 			res.in_dtype = in_deg_ ? in_dtype : p.in_dtype;
 
 			/* three-way structure-type inferring */
-			copy_struct_type(res, op.st_map);
-			struct_type_intersection(res, *this);
-			struct_type_intersection(res, op);
+			copy_struct_type(res, op.stype());
+			stype_intersection(res, st_map);
+			stype_intersection(res, op.stype());
 			res.in_deg_ = (in_deg_ || p.in_deg_);
 			res.out_deg_ = 1;
 		}
@@ -492,7 +491,7 @@ public:
 			res.in_dtype = in_deg_ ? in_dtype : p.in_dtype;
 			res.out_dtype = out_dtype;
 			copy_struct_type(res, this->st_map);
-			struct_type_intersection(res, p);
+			stype_intersection(res, p.st_map);
 			res.in_deg_ = (in_deg_ || p.in_deg_);
 			res.out_deg_ = 1;
 		}
@@ -566,7 +565,7 @@ public:
 	 * Utility functions
 	 */
 	Operator *get_operator_ptr() const {
-		assert(term_node_type_ == OPERATOR);
+		assert(has_operator());
 		return term_value.op;
 	}
 
@@ -606,10 +605,10 @@ private:
 		dst.st_map = t;
 	}
 
-	/* set dst structure types to the intersection of dst and src */
-	inline void struct_type_intersection(Pipe &dst, const Pipe &src) const {
-		for (auto st : dst.st_map)
-			st.second &= src.st_map.at(st.first);
+	/* set p structure types to its intersection with m */
+	inline void stype_intersection(Pipe &p, const st_map_t &m) const {
+		for (auto st : p.st_map)
+			st.second &= m.at(st.first);
 	}
 
 	void add_to_chain(Pipe &res, const Pipe &to_be_added) const {
@@ -640,6 +639,11 @@ private:
 			delete fresh;
 		} else
 			res.children_.push_back(fresh);
+	}
+
+	/* utilities */
+	bool has_operator() const {
+		return (term_node_type_ == OPERATOR || term_node_type_ == PAIR);
 	}
 
 	/* data and structure types */
