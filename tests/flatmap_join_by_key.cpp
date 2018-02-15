@@ -93,7 +93,6 @@ TEST_CASE( "flatmap join by key", "flatmap join by key tag" ) {
 #endif
 
 	test_pipe.run();
-	test_pipe.print_executor();
 
 	/* parse output into char-int pairs */
 	std::unordered_map<char, std::vector<int>> observed;
