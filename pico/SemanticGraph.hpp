@@ -95,8 +95,10 @@ private:
 				assert(op);
 				return op->name_short();
 			}
-			assert(role == SemNodeRole::Merge);
-			return "Merge";
+			if (role == SemNodeRole::Merge)
+				return "Merge";
+			assert(role == SemNodeRole::Empty);
+			return "Empty";
 		}
 	};
 
@@ -177,7 +179,7 @@ private:
 			res.lastdagnode = node_;
 			break;
 		case Pipe::PAIR:
-			node_ = new SemGraphNode(SemNodeRole::Merge);
+			node_ = new SemGraphNode(p.get_operator_ptr());
 			/* merge children graphs */
 			for (auto p_ : p.children()) {
 				subg.push_back(from_pipe(*p_));
@@ -219,13 +221,15 @@ private:
 			os << std::endl;
 		}
 
-		os << "[SEMGRAPH] root operator: ";
-		os << firstdagnode->op->name() << std::endl;
-		os << "\n[SEMGRAPH] last operator: ";
-		os << lastdagnode->op->name() << std::endl;
-		os << "[SEMGRAPH] Printing BFS:\n";
+		os << "[SEMGRAPH] first operator: ";
+		os << firstdagnode->name() << std::endl;
+		os << "[SEMGRAPH] last operator: ";
+		os << lastdagnode->name() << std::endl;
 
+#if 0
+		os << "[SEMGRAPH] Printing BFS:\n";
 		bfs(os);
+#endif
 
 		os << std::endl;
 	}
@@ -251,6 +255,7 @@ private:
 		dotfile << "}\n";
 	}
 
+#if 0
 	void bfs(std::ostream &os) {
 		std::map<SemGraphNode*, int> distance;
 		std::map<SemGraphNode*, SemGraphNode*> parent;
@@ -276,6 +281,7 @@ private:
 			}
 		}
 	}
+#endif
 };
 
 SemanticGraph *make_semantic_graph(const Pipe &p) {
