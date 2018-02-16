@@ -6,6 +6,7 @@
  */
 
 #include <unordered_map>
+#include <unordered_set>
 
 #include <catch.hpp>
 
@@ -31,10 +32,10 @@ static auto kernel = [](KV& in1, KV& in2, FlatMapCollector<KV>& collector) {
  * sequential version of kernel (the function passed to JoinFlatMapByKey)
  * (here we use one collection)
  */
-std::unordered_map<char, std::vector<int>> seq_flatmap_join(
-		std::unordered_map<char, std::vector<int>> partitions) {
-	std::vector<int> values;
-	std::unordered_map<char, std::vector<int>> res;
+std::unordered_map<char, std::unordered_multiset<int>> seq_flatmap_join(
+		std::unordered_map<char, std::unordered_multiset<int>> partitions) {
+	std::unordered_multiset<int> values;
+	std::unordered_map<char, std::unordered_multiset<int>> res;
 	char key;
 	int sum, sum_abs;
 	for (auto part : partitions) {
@@ -46,13 +47,14 @@ std::unordered_map<char, std::vector<int>> seq_flatmap_join(
 				sum_abs = std::abs(sum);
 				if (sum_abs < 10) {
 					for (int i = 0; i < sum_abs; ++i)
-						res[key].push_back(sum);
+						res[key].insert(sum);
 				}
 			}
 		}
 	}
 	return res;
 }
+
 
 TEST_CASE( "flatmap join by key", "flatmap join by key tag" ) {
 
@@ -73,16 +75,7 @@ TEST_CASE( "flatmap join by key", "flatmap join by key tag" ) {
 			});
 
 	/* compose the pipeline */
-#if 0
-	auto pipe_1 = Pipe() //the empty pipeline
-	.add(reader)
-	.add(pairs_creator);
-	auto pipe_2 = Pipe()
-	.add(reader)
-	.add(pairs_creator);
 
-	auto test_pipe = pipe_1.pair_with(pipe_2, JoinFlatMapByKey<KV,KV,KV>(kernel));
-#else
 	auto p = Pipe() //the empty pipeline
 	.add(reader) //
 	.add(pairs_creator);
@@ -90,44 +83,28 @@ TEST_CASE( "flatmap join by key", "flatmap join by key tag" ) {
 	auto test_pipe = p //
 	.pair_with(p, JoinFlatMapByKey<KV, KV, KV>(kernel)) //
 	.to(writer);
-#endif
+
 
 	test_pipe.run();
 
 	/* parse output into char-int pairs */
-	std::unordered_map<char, std::vector<int>> observed;
+	std::unordered_map<char, std::unordered_multiset<int>> observed;
 	auto output_pairs_str = read_lines(output_file);
 	for (auto pair : output_pairs_str) {
 		auto kv = KV::from_string(pair);
-		observed[kv.Key()].push_back(kv.Value());
+		observed[kv.Key()].insert(kv.Value());
 	}
 
 	/* compute expected output */
-	std::unordered_map<char, std::vector<int>> partitions;
+	std::unordered_map<char, std::unordered_multiset<int>> partitions;
 	auto input_pairs_str = read_lines(input_file);
 	for (auto pair : input_pairs_str) {
 		auto kv = KV::from_string(pair);
-		partitions[kv.Key()].push_back(kv.Value());
+		partitions[kv.Key()].insert(kv.Value());
 	}
 	auto expected = seq_flatmap_join(partitions);
 
-#if 0
-	/* forget the order */
-	for (auto x : observed)
-	std::sort(x.second.begin(), x.second.end());
-	for (auto x : expected)
-	std::sort(x.second.begin(), x.second.end());
 
 	REQUIRE(expected == observed);
-#endif
 
-	long long observed_checkusm = 0, expected_checksum = 0;
-	for (auto x : observed)
-		for (auto x_ : x.second)
-			observed_checkusm += (x.first * x_);
-	for (auto x : expected)
-		for (auto x_ : x.second)
-			expected_checksum += (x.first * x_);
-
-	REQUIRE(expected_checksum == observed_checkusm);
 }
