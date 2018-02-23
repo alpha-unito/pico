@@ -346,7 +346,7 @@ public:
 		assert(same_data_type(in_dtype, out_dtype));
 
 		/* check structure types */
-		assert(st_map[StructureType::BAG]);
+		assert(st_map.at(StructureType::BAG));
 		assert(out_deg_ == 1 && in_deg_ == 1);
 
 		/* prepare the outer iteration term */
