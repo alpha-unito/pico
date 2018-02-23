@@ -346,6 +346,7 @@ public:
 		assert(same_data_type(in_dtype, out_dtype));
 
 		/* check structure types */
+		assert(st_map[StructureType::BAG]);
 		assert(out_deg_ == 1 && in_deg_ == 1);
 
 		/* prepare the outer iteration term */
@@ -353,7 +354,8 @@ public:
 		res.in_dtype = in_dtype;
 		res.out_dtype = out_dtype;
 		res.in_deg_ = res.out_deg_ = 1;
-		copy_struct_type(res, this->st_map);
+		res.st_map[StructureType::BAG] = true;
+		res.st_map[StructureType::STREAM] = false;
 		res.term_value.cond = cond;
 		res.term_node_type_ = ITERATE;
 		res.children_.push_back(new Pipe(*this));
