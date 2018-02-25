@@ -51,7 +51,8 @@ auto blackScholes = Map<std::string, StockAndPrice>([]
 		&opt.s, &opt.strike, &opt.r, &opt.divq, &opt.v, &opt.t,//
 		&otype, &opt.divs, &opt.DGrefval);
 opt.OptionType = (otype == 'P');
-int iMax=4, jMax=4, steps=10, size = 3;
+int iMax=4, jMax=4, steps=10;
+int const size = 3;
 StockPrice res[size];
 res[0] = black_scholes(opt);
 res[1] = binomial_tree(opt, steps);
