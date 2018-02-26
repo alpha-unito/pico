@@ -13,6 +13,7 @@
 #include "../../Internals/utils.hpp"
 
 #include "farms.hpp"
+#include "base_nodes.hpp"
 
 /*
  *******************************************************************************
@@ -21,39 +22,27 @@
  *
  *******************************************************************************
  */
-class PairEmitterToNone: public ff::ff_node {
+class PairEmitterToNone: public base_emitter<NonOrderingFarm_lb> {
 public:
 	PairEmitterToNone(NonOrderingFarm_lb &lb_) :
-			lb(lb_) {
+			base_emitter<NonOrderingFarm_lb>(&lb_, 2) {
 	}
 
-	void* svc(void * task) {
-		assert(task == pico::PICO_SYNC || task == pico::PICO_EOS);
-		lb.broadcast_task(task);
-		return GO_ON;
+	void kernel(base_microbatch *) {
+		assert(false);
 	}
-
-private:
-	NonOrderingFarm_lb &lb;
 };
 
 template<int To>
-class PairEmitterTo: public ff::ff_node {
+class PairEmitterTo: public base_emitter<NonOrderingFarm_lb> {
 public:
 	PairEmitterTo(NonOrderingFarm_lb &lb_) :
-			lb(lb_) {
+			base_emitter<NonOrderingFarm_lb>(&lb_, 2) {
 	}
 
-	void* svc(void * task) {
-		if(task != pico::PICO_SYNC && task != pico::PICO_EOS)
-			lb.ff_send_out_to(task, To);
-		else
-			lb.broadcast_task(task);
-		return GO_ON;
+	void kernel(base_microbatch *in_mb) {
+		send_out_to(in_mb, To);
 	}
-
-private:
-	NonOrderingFarm_lb &lb;
 };
 
 using PairEmitterToFirst = PairEmitterTo<0>;
@@ -66,9 +55,10 @@ using PairEmitterToSecond = PairEmitterTo<1>;
  *
  *******************************************************************************
  */
-class PairGatherer : public ff::ff_gatherer {
+class PairGatherer: public ff::ff_gatherer {
 public:
-	PairGatherer(size_t n) : ff::ff_gatherer(n), from_(-1) {
+	PairGatherer(size_t n) :
+			ff::ff_gatherer(n), from_(-1) {
 	}
 
 	ssize_t from() const {
@@ -89,32 +79,20 @@ struct task_from_t {
 	void *task;
 };
 
-class PairCollector : public ff::ff_node {
+class PairCollector: public base_collector {
 public:
-	PairCollector(const PairGatherer &gt_) :
-			gt(gt_), picoEOSrecv(0), picoSYNCrecv(0) {
+	PairCollector(PairGatherer &gt_) :
+			base_collector(2), gt(gt_) {
 	}
 
-	void* svc(void* task) {
-		if(task != pico::PICO_EOS && task != pico::PICO_SYNC)
-			/* decorate with the origin and forwards */
-			return new task_from_t{gt.from(), task};
-
-		if (task == pico::PICO_EOS) {
-			if (++picoEOSrecv == 2)
-				return pico::PICO_EOS;
-			return GO_ON;
-		}
-
-		assert(task == pico::PICO_SYNC);
-		if (++picoSYNCrecv == 2)
-			return pico::PICO_SYNC;
-		return GO_ON;
+	void kernel(base_microbatch *in_mb) {
+		//TODO wrap
+		/* decorate with the origin and forwards */
+		ff_send_out(new task_from_t { gt.from(), in_mb });
 	}
 
 private:
-	const PairGatherer &gt;
-	unsigned picoEOSrecv, picoSYNCrecv;
+	PairGatherer &gt;
 };
 
 typedef ff::ff_farm<NonOrderingFarm_lb, PairGatherer> PairFarm;
