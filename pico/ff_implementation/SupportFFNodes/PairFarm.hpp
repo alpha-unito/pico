@@ -23,7 +23,7 @@
  */
 class PairEmitterToNone: public ff::ff_node {
 public:
-	PairEmitterToNone(ff::ff_loadbalancer &lb_) :
+	PairEmitterToNone(NonOrderingFarm_lb &lb_) :
 			lb(lb_) {
 	}
 
@@ -34,13 +34,13 @@ public:
 	}
 
 private:
-	ff::ff_loadbalancer &lb;
+	NonOrderingFarm_lb &lb;
 };
 
 template<int To>
 class PairEmitterTo: public ff::ff_node {
 public:
-	PairEmitterTo(ff::ff_loadbalancer &lb_) :
+	PairEmitterTo(NonOrderingFarm_lb &lb_) :
 			lb(lb_) {
 	}
 
@@ -53,7 +53,7 @@ public:
 	}
 
 private:
-	ff::ff_loadbalancer &lb;
+	NonOrderingFarm_lb &lb;
 };
 
 using PairEmitterToFirst = PairEmitterTo<0>;
@@ -117,6 +117,6 @@ private:
 	unsigned picoEOSrecv, picoSYNCrecv;
 };
 
-typedef ff::ff_farm<ff::ff_loadbalancer, PairGatherer> PairFarm;
+typedef ff::ff_farm<NonOrderingFarm_lb, PairGatherer> PairFarm;
 
 #endif /* PICO_FF_IMPLEMENTATION_SUPPORTFFNODES_PAIRFARM_HPP_ */

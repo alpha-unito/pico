@@ -47,7 +47,7 @@ using namespace pico;
 /*
  * reads a stream from a socket, maintains the order
  */
-class ReadFromSocketFFNode: public ff_node {
+class ReadFromSocketFFNode: public base_filter {
 	typedef Token<std::string> TokenType;
 
 public:
@@ -70,19 +70,7 @@ public:
 		serv_addr.sin_port = htons(port);
 	}
 
-	void* svc(void *in) {
-		if (in == PICO_EOS) {
-#ifdef DEBUG
-			fprintf(stderr, "[READ FROM SOCKET-%p] In SVC: SEND OUT PICO_EOS\n", this);
-#endif
-			close(sockfd);
-			return PICO_EOS;
-		}
-
-		/* forward PICO_SYNC */
-		assert(in == PICO_SYNC);
-		ff_send_out(PICO_SYNC);
-
+	void initialize() {
 		std::string tail;
 		char buffer[CHUNK_SIZE];
 		if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))
@@ -120,8 +108,14 @@ public:
 		} else {
 			DELETE(microbatch, mb_t);
 		}
+	}
 
-		return GO_ON;
+	void finalize() {
+		close(sockfd);
+	}
+
+	void kernel(base_microbatch *) {
+		assert(false);
 	}
 
 private:

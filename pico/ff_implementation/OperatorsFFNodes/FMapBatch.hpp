@@ -35,14 +35,14 @@ template<typename In, typename Out, typename Farm, typename TokenTypeIn,
 class FMapBatch: public Farm {
 public:
 
-	FMapBatch(int parallelism,
+	FMapBatch(int par,
 			std::function<void(In&, FlatMapCollector<Out> &)> flatmapf) {
-		auto e = new ForwardingEmitter<typename Farm::lb_t>(this->getlb());
-		auto c = new UnpackingCollector<TokenCollector<Out>>(parallelism);
+		auto e = new ForwardingEmitter<typename Farm::lb_t>(this->getlb(), par);
+		auto c = new UnpackingCollector<TokenCollector<Out>>(par);
 		this->setEmitterF(e);
 		this->setCollectorF(c);
 		std::vector<ff_node *> w;
-		for (int i = 0; i < parallelism; ++i)
+		for (int i = 0; i < par; ++i)
 			w.push_back(new Worker(flatmapf));
 		this->add_workers(w);
 		this->cleanup_all();

@@ -42,25 +42,17 @@ using namespace pico;
  */
 
 template<typename TokenType>
-class ReadFromStdInFFNode: public ff_node {
+class ReadFromStdInFFNode: public base_filter {
 public:
 	ReadFromStdInFFNode(char delimiter_) :
 			delimiter(delimiter_) {
 	}
 
-	void* svc(void *in) {
-		if (in == PICO_EOS) {
-#ifdef DEBUG
-			fprintf(stderr, "[READ FROM STDIN-%p] In SVC: SEND OUT PICO_EOS\n", this);
-#endif
-			ff_send_out(PICO_EOS);
-			return GO_ON;
-		}
+	void kernel(base_microbatch *) {
+		assert(false);
+	}
 
-		/* forward PICO_SYNC */
-		assert(in == PICO_SYNC);
-		ff_send_out(PICO_SYNC);
-
+	void initialize() {
 		std::string tail;
 		char buffer[CHUNK_SIZE];
 		mb_t *microbatch;
@@ -95,8 +87,6 @@ public:
 		} else {
 			DELETE(microbatch, mb_t);
 		}
-
-		return GO_ON;
 	}
 
 private:

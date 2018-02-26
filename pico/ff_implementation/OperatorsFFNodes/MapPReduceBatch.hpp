@@ -45,22 +45,22 @@ class MapPReduceBatch: public NonOrderingFarm {
 	typedef typename Out::valuetype OutV;
 
 public:
-	MapPReduceBatch(int parallelism, //
+	MapPReduceBatch(int par, //
 			std::function<Out(In&)>& mapf, //
 			std::function<OutV(OutV&, OutV&)> reducef) {
-		auto e = new ForwardingEmitter<ff::ff_loadbalancer>(this->getlb());
+		auto e = new ForwardingEmitter<NonOrderingFarm_lb>(this->getlb(), par);
 		this->setEmitterF(e);
-		auto c = new PReduceCollector<Out, TokenTypeOut>(parallelism, reducef);
+		auto c = new PReduceCollector<Out, TokenTypeOut>(par, reducef);
 		this->setCollectorF(c);
 		std::vector<ff_node *> w;
-		for (int i = 0; i < parallelism; ++i)
+		for (int i = 0; i < par; ++i)
 			w.push_back(new Worker(mapf, reducef));
 		this->add_workers(w);
 		this->cleanup_all();
 	}
 
 private:
-	class Worker: public ff_node {
+	class Worker: public base_filter {
 	public:
 		Worker(std::function<Out(In&)>& kernel_,
 				std::function<OutV(OutV&, OutV&)>& reducef_kernel_) :
@@ -71,59 +71,35 @@ private:
 		{
 		}
 
-		void* svc(void* task) {
-#ifdef TRACE_FASTFLOW
-			time_point_t t0, t1;
-			hires_timer_ull(t0);
-#endif
-			if (task != PICO_EOS && task != PICO_SYNC) {
-				/*
-				 * got a microbatch to process and delete
-				 */
-				auto in_microbatch = reinterpret_cast<in_mb_t*>(task);
-				for (In &x : *in_microbatch) {
-					Out kv = map_kernel(x);
-					const OutK &k(kv.Key());
-					if (kvmap.find(k) != kvmap.end())
-						kvmap[k] = reduce_kernel(kv.Value(), kvmap[k]);
-					else
-						kvmap[k] = kv.Value();
-				}
-				DELETE(in_microbatch, in_mb_t);
-				return GO_ON;
-			}
-
-			if (task == PICO_EOS) {
-				/*
-				 * got PICO_EOS: stream out key-value store
-				 */
-#ifdef DEBUG
-				fprintf(stderr, "[MAP-PREDUCE-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
-#endif
-				out_mb_t *out_mb;
-				NEW(out_mb, out_mb_t, global_params.MICROBATCH_SIZE);
-				for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
-					new (out_mb->allocate()) Out(it->first, it->second);
-					out_mb->commit();
-					if (out_mb->full()) {
-						ff_send_out(reinterpret_cast<void*>(out_mb));
-						NEW(out_mb, out_mb_t, global_params.MICROBATCH_SIZE);
-					}
-				}
-
-				if (!out_mb->empty())
-					ff_send_out(reinterpret_cast<void*>(out_mb));
+		void kernel(base_microbatch *in_mb) {
+			auto in_microbatch = reinterpret_cast<in_mb_t*>(in_mb);
+			for (In &x : *in_microbatch) {
+				Out kv = map_kernel(x);
+				const OutK &k(kv.Key());
+				if (kvmap.find(k) != kvmap.end())
+					kvmap[k] = reduce_kernel(kv.Value(), kvmap[k]);
 				else
-					DELETE(out_mb, out_mb_t); //spurious microbatch
-
-				return PICO_EOS;
+					kvmap[k] = kv.Value();
 			}
-#ifdef TRACE_FASTFLOW
-			hires_timer_ull(t1);
-			user_svc += get_duration(t0, t1);
-#endif
-			assert(task == PICO_SYNC);
-			return PICO_SYNC;
+			DELETE(in_microbatch, in_mb_t);
+		}
+
+		void finalize() {
+			out_mb_t *out_mb;
+			NEW(out_mb, out_mb_t, global_params.MICROBATCH_SIZE);
+			for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
+				new (out_mb->allocate()) Out(it->first, it->second);
+				out_mb->commit();
+				if (out_mb->full()) {
+					ff_send_out(reinterpret_cast<void*>(out_mb));
+					NEW(out_mb, out_mb_t, global_params.MICROBATCH_SIZE);
+				}
+			}
+
+			if (!out_mb->empty())
+				ff_send_out(reinterpret_cast<void*>(out_mb));
+			else
+				DELETE(out_mb, out_mb_t); //spurious microbatch
 		}
 
 	private:

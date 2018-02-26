@@ -44,15 +44,15 @@ class FMapPReduceBatch: public NonOrderingFarm {
 	typedef typename Out::valuetype OutV;
 
 public:
-	FMapPReduceBatch(int parallelism,
+	FMapPReduceBatch(int par,
 			std::function<void(In&, FlatMapCollector<Out> &)>& flatmapf,
 			std::function<OutV(OutV&, OutV&)> reducef) {
-		auto e = new ForwardingEmitter<ff::ff_loadbalancer>(this->getlb());
+		auto e = new ForwardingEmitter<NonOrderingFarm_lb>(this->getlb(), par);
 		this->setEmitterF(e);
-		auto c = new PReduceCollector<Out, TokenTypeOut>(parallelism, reducef);
+		auto c = new PReduceCollector<Out, TokenTypeOut>(par, reducef);
 		this->setCollectorF(c);
 		std::vector<ff_node *> w;
-		for (int i = 0; i < parallelism; ++i)
+		for (int i = 0; i < par; ++i)
 			w.push_back(new Worker(flatmapf, reducef));
 		this->add_workers(w);
 		this->cleanup_all();
@@ -60,7 +60,7 @@ public:
 
 private:
 
-	class Worker: public ff_node {
+	class Worker: public base_filter {
 	public:
 		Worker(std::function<void(In&, FlatMapCollector<Out> &)>& kernel_, //
 				std::function<OutV(OutV&, OutV&)>& reducef_kernel_) :
@@ -71,80 +71,58 @@ private:
 		{
 		}
 
-		void* svc(void* task) {
-#ifdef TRACE_FASTFLOW
-			time_point_t t0, t1;
-			hires_timer_ull(t0);
-#endif
-			if (task != PICO_EOS && task != PICO_SYNC) {
-				/*
-				 * got a microbatch to process and delete
-				 */
-				auto in_microbatch = reinterpret_cast<mb_in*>(task);
+		void kernel(base_microbatch *in_mb) {
+			/*
+			 * got a microbatch to process and delete
+			 */
+			auto in_microbatch = reinterpret_cast<mb_in*>(in_mb);
 
-				// iterate over microbatch
-				for (In &in : *in_microbatch)
-					map_kernel(in, collector);
+			// iterate over microbatch
+			for (In &in : *in_microbatch)
+				map_kernel(in, collector);
 
-				// partial reduce on all output micro-batches
-				auto it = collector.begin();
-				while (it) {
-					/* reduce the micro-batch */
-					for (Out &kv : *it->mb) {
-						const OutK &k(kv.Key());
-						if (kvmap.find(k) != kvmap.end())
-							kvmap[k] = reduce_kernel(kv.Value(), kvmap[k]);
-						else
-							kvmap[k] = kv.Value();
-					}
-
-					/* clean up and skip to the next micro-batch */
-					auto it_ = it;
-					it = it->next;
-					DELETE(it_->mb, mb_out);
-					FREE(it_);
+			// partial reduce on all output micro-batches
+			auto it = collector.begin();
+			while (it) {
+				/* reduce the micro-batch */
+				for (Out &kv : *it->mb) {
+					const OutK &k(kv.Key());
+					if (kvmap.find(k) != kvmap.end())
+						kvmap[k] = reduce_kernel(kv.Value(), kvmap[k]);
+					else
+						kvmap[k] = kv.Value();
 				}
 
-				//clean up
-				DELETE(in_microbatch, mb_in);
-				collector.clear();
-
-				return GO_ON;
-			} else if (task == PICO_EOS) {
-				/*
-				 * got PICO_EOS: stream out key-value store
-				 */
-#ifdef DEBUG
-				fprintf(stderr, "[UNARYFLATMAP-PREDUCE-FFNODE-%p] In SVC SENDING PICO_EOS \n", this);
-#endif
-				mb_out *mb;
-				NEW(mb, mb_out, global_params.MICROBATCH_SIZE);
-				for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
-					new (mb->allocate()) Out(it->first, it->second);
-					mb->commit();
-					if (mb->full()) {
-						ff_send_out(reinterpret_cast<void*>(mb));
-						NEW(mb, mb_out, global_params.MICROBATCH_SIZE);
-					}
-				}
-
-				/* send out the remainder micro-batch or destroy if spurious */
-				if (!mb->empty()) {
-					ff_send_out(reinterpret_cast<void*>(mb));
-				} else {
-					DELETE(mb, mb_out);
-				}
-
-				/* forward PICO_EOS */
-				return PICO_EOS;
+				/* clean up and skip to the next micro-batch */
+				auto it_ = it;
+				it = it->next;
+				DELETE(it_->mb, mb_out);
+				FREE(it_);
 			}
 
-			assert(task == PICO_SYNC);
-#ifdef TRACE_FASTFLOW
-			hires_timer_ull(t1);
-			user_svc += get_duration(t0, t1);
-#endif
-			return PICO_SYNC; //forward
+			//clean up
+			DELETE(in_microbatch, mb_in);
+			collector.clear();
+		}
+
+		void finalize() {
+			mb_out *mb;
+			NEW(mb, mb_out, global_params.MICROBATCH_SIZE);
+			for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
+				new (mb->allocate()) Out(it->first, it->second);
+				mb->commit();
+				if (mb->full()) {
+					ff_send_out(reinterpret_cast<void*>(mb));
+					NEW(mb, mb_out, global_params.MICROBATCH_SIZE);
+				}
+			}
+
+			/* send out the remainder micro-batch or destroy if spurious */
+			if (!mb->empty()) {
+				ff_send_out(reinterpret_cast<void*>(mb));
+			} else {
+				DELETE(mb, mb_out);
+			}
 		}
 
 	private:

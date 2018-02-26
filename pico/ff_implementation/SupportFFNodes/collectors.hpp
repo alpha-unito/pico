@@ -21,74 +21,39 @@
 #ifndef INTERNALS_FFOPERATORS_FARMCOLLECTOR_HPP_
 #define INTERNALS_FFOPERATORS_FARMCOLLECTOR_HPP_
 
-#include "../../Internals/utils.hpp"
+#include "base_nodes.hpp"
 
-using namespace pico;
-
-class ForwardingCollector: public ff::ff_node {
+class ForwardingCollector: public base_collector {
 public:
-	ForwardingCollector(unsigned nworkers_) :
-			nworkers(nworkers_), picoEOSrecv(0), picoSYNCrecv(0) {
+	using base_collector::base_collector;
+
+	void kernel(base_microbatch* mb) {
+		ff_send_out(mb);
 	}
-
-	void* svc(void* task) {
-		if (task == PICO_EOS) {
-			if (++picoEOSrecv == nworkers)
-				return task;
-			return GO_ON;
-		}
-
-		if (task == PICO_SYNC) {
-			if (++picoSYNCrecv == nworkers)
-				return task;
-			return GO_ON;
-		}
-
-		return task;
-	}
-
-private:
-	unsigned nworkers;
-	unsigned picoEOSrecv, picoSYNCrecv;
 };
 
 /* unpacks and streams token-collectors */
-template<typename TokenCollector>
-class UnpackingCollector: public ff_node {
+template<typename coll_t>
+class UnpackingCollector: public base_collector {
+	typedef typename coll_t::cnode cnode_t;
 public:
-	UnpackingCollector(unsigned nworkers_) :
-			nworkers(nworkers_), //
-			picoEOSrecv(0), picoSYNCrecv(0) {
+	using base_collector::base_collector;
+
+	void kernel(base_microbatch *mb) {
+		//auto wmb = reinterpret_cast<mb_wrapped<cnode_t> *>(mb);
+		//cnode_t *it_, *it = wmb->get();
+		cnode_t *it_, *it = reinterpret_cast<cnode_t *>(mb);
+		/* send out all the micro-batches in the list */
+		while (it) {
+			ff_send_out(reinterpret_cast<void *>(it->mb));
+
+			/* clean up and skip to the next micro-batch */
+			it_ = it;
+			it = it->next;
+			FREE(it_);
+		};
+		//DELETE(mb, mb_wrapped<cnode_t>);
 	}
-
-	void* svc(void* task) {
-		if (task != PICO_EOS && task != PICO_SYNC) {
-			cnode_t *it = reinterpret_cast<cnode_t *>(task), *it_;
-			/* send out all the micro-batches in the list */
-			while (it) {
-				ff_send_out(reinterpret_cast<void *>(it->mb));
-
-				/* clean up and skip to the next micro-batch */
-				it_ = it;
-				it = it->next;
-				FREE(it_);
-			};
-			return GO_ON;
-		}
-
-		/* process sync messages */
-		if (task == PICO_EOS && ++picoEOSrecv == nworkers)
-			return PICO_EOS;
-		if (task == PICO_SYNC && ++picoSYNCrecv == nworkers)
-			return PICO_SYNC;
-
-		return GO_ON;
-	}
-
-private:
-	unsigned nworkers;
-	unsigned picoEOSrecv, picoSYNCrecv;
-	typedef typename TokenCollector::cnode cnode_t;
 };
 
 #endif /* INTERNALS_FFOPERATORS_FARMCOLLECTOR_HPP_ */

@@ -21,7 +21,6 @@
 #ifndef REDUCEBYKEY_HPP_
 #define REDUCEBYKEY_HPP_
 
-#include "../ff_implementation/OperatorsFFNodes/PReduceSeqFFNode.hpp"
 #include "../ff_implementation/OperatorsFFNodes/PReduceWin.hpp"
 #include "UnaryOperator.hpp"
 
@@ -118,7 +117,8 @@ protected:
 			assert(win);
 			return new PReduceWin<In, Token<In>>(pardeg, reducef, win);
 		}
-		return new PReduceSeqFFNode<In, Token<In>>(reducef);
+		//todo
+		return nullptr;
 	}
 
 private:

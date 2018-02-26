@@ -23,9 +23,29 @@
 
 #include <cstring>
 
+#include "Token.hpp"
+
 #include "../ff_implementation/ff_config.hpp"
 
 namespace pico {
+
+class base_microbatch {
+public:
+	base_microbatch() :
+			chunk(nullptr) {
+	}
+
+	base_microbatch(char *chunk_) :
+			chunk(chunk_) {
+	}
+
+	inline bool nil() const {
+		return !chunk;
+	}
+
+protected:
+	char *chunk;
+};
 
 /**
  * Microbatch is the atomic storage of PiCo collections.
@@ -61,27 +81,33 @@ namespace pico {
  * The entire chunk is allocated in one shot, with the purpose of reducing
  * the overall number of allocations for storing PiCo collections.
  */
-
 template<typename TokenType>
-class Microbatch {
+class Microbatch: public base_microbatch {
 	typedef typename TokenType::datatype DataType;
 
 public:
 	/**
+	 * The empty constructor
+	 */
+	using base_microbatch::base_microbatch;
+
+	/**
 	 * The constructor only allocates the chunk, it does not initialize items.
 	 */
 	Microbatch(unsigned int slots_) :
-			slots(slots_) {
-		chunk = (char *) MALLOC(slots * slot_size);
-		allocated = committed = 0;
+			base_microbatch((char *) MALLOC(slots_ * slot_size)), //
+			slots(slots_), allocated(0), committed(0) {
+		assert(slots_);
 	}
 
 	/**
 	 * The destructor destroy items and free memory.
 	 */
 	~Microbatch() {
-		clear();
-		FREE(chunk);
+		if (chunk) {
+			clear();
+			FREE(chunk);
+		}
 	}
 
 	/**
@@ -166,9 +192,23 @@ public:
 private:
 	static const size_t desc_size = sizeof(TokenType);
 	static const size_t slot_size = desc_size + sizeof(DataType);
-	char *chunk;
 	const unsigned int slots;
 	unsigned int allocated, committed;
+};
+
+template<typename T>
+class mb_wrapped: public Microbatch<Token<T *>> {
+public:
+	using Microbatch<Token<T *>>::Microbatch;
+	mb_wrapped(T *ptr) :
+			Microbatch<Token<T *>>(1) {
+		*(this->allocate()) = ptr;
+		this->commit();
+	}
+
+	T *get() {
+		return *this->begin();
+	}
 };
 
 } /* namespace pico */

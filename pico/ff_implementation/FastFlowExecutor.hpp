@@ -35,8 +35,11 @@
 #include <pico/PEGOptimizations.hpp>
 
 #include "../Pipe.hpp"
+
 #include "SupportFFNodes/ForwardingNode.hpp"
 #include "SupportFFNodes/PairFarm.hpp"
+#include "SupportFFNodes/base_nodes.hpp"
+#include "defs.hpp"
 
 using namespace pico;
 
@@ -54,8 +57,17 @@ public:
 	void run() const {
 		ff_pipe->run();
 		ff_pipe->offload(PICO_SYNC);
-		ff_pipe->offload(PICO_EOS);
+		ff_pipe->offload(make_eos());
 		ff_pipe->offload(EOS);
+
+		void *res;
+		ff_pipe->load_result(&res);
+		assert(res == PICO_SYNC);
+		ff_pipe->load_result(&res);
+//		assert(reinterpret_cast<base_microbatch *>(res)->nil());
+//		DELETE(reinterpret_cast<base_microbatch *>(res), base_microbatch);
+		assert(res == PICO_EOS);
+
 		ff_pipe->wait();
 	}
 
