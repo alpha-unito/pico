@@ -115,6 +115,7 @@ public:
 				mb2w_from[dst][k]->commit();
 				if (mb2w_from[dst][k]->full()) {
 					mb_from_t *mb_from;
+					//TODO wrap
 					NEW(mb_from, mb_from_t, mb2w_from[dst][k], from);
 					farm.getlb()->ff_send_out_to(mb_from, dst);
 					NEW(mb2w_from[dst][k], mb_t, mbsize);
@@ -128,6 +129,7 @@ public:
 			for (auto kmb : mb2w[dst])
 				if (!kmb.second->empty()) {
 					mb_from_t *mb_from;
+					//TODO wrap
 					NEW(mb_from, mb_from_t, kmb.second, from);
 					farm.getlb()->ff_send_out_to(mb_from, dst);
 				} else
@@ -194,6 +196,7 @@ public:
 						fkernel(kv_in, kv_match, collector);
 			}
 			if (collector.begin())
+				//TODO wrap
 				ff_send_out(collector.begin());
 
 			/* store */
@@ -212,6 +215,7 @@ public:
 						fkernel(kv_match, kv_in, collector);
 			}
 			if (collector.begin())
+				//TODO wrap
 				ff_send_out(collector.begin());
 
 			/* store */
