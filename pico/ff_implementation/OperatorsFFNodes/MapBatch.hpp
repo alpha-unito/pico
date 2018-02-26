@@ -41,50 +41,42 @@ template<typename In, typename Out, typename Farm, typename TokenTypeIn,
 class MapBatch: public Farm {
 public:
 
-	MapBatch(int parallelism, std::function<Out(In&)>& mapf) {
-		auto e = new ForwardingEmitter<typename Farm::lb_t>(this->getlb());
+	MapBatch(int par, std::function<Out(In&)>& mapf) {
+		auto e = new ForwardingEmitter<typename Farm::lb_t>(this->getlb(), par);
 		this->setEmitterF(e);
-		this->setCollectorF(new ForwardingCollector(parallelism));
+		this->setCollectorF(new ForwardingCollector(par));
 		std::vector<ff_node *> w;
-		for (int i = 0; i < parallelism; ++i)
+		for (int i = 0; i < par; ++i)
 			w.push_back(new Worker(mapf));
 		this->add_workers(w);
 		this->cleanup_all();
 	}
 
 private:
-	class Worker: public ff_node {
+	class Worker: public base_filter {
 	public:
 		Worker(std::function<Out(In&)> kernel_) :
-				kernel(kernel_) {
+				mkernel(kernel_) {
 		}
 
-		void* svc(void* task) {
-			if (task != PICO_EOS && task != PICO_SYNC) {
-				auto in_microbatch = reinterpret_cast<mb_in*>(task);
-				mb_out *out_microbatch;
-				NEW(out_microbatch, mb_out, global_params.MICROBATCH_SIZE);
-				// iterate over microbatch
-				for (In &in : *in_microbatch) {
-					/* build item and enable copy elision */
-					new (out_microbatch->allocate()) Out(kernel(in));
-					out_microbatch->commit();
-				}
-				ff_send_out(reinterpret_cast<void*>(out_microbatch));
-				DELETE(in_microbatch, mb_in);
-			} else {
-#ifdef DEBUG
-				fprintf(stderr, "[MAPBATCH-%p] In SVC SENDING PICO_EOS\n", this);
-#endif
-				return task;
+		void kernel(base_microbatch *in_mb) {
+			auto in_microbatch = reinterpret_cast<mb_in*>(in_mb);
+			mb_out *out_microbatch;
+			NEW(out_microbatch, mb_out, global_params.MICROBATCH_SIZE);
+			// iterate over microbatch
+			for (In &in : *in_microbatch) {
+				/* build item and enable copy elision */
+				new (out_microbatch->allocate()) Out(mkernel(in));
+				out_microbatch->commit();
 			}
-			return GO_ON;
+			ff_send_out(reinterpret_cast<void*>(out_microbatch));
+			DELETE(in_microbatch, mb_in);
 		}
 
 	private:
 		typedef Microbatch<TokenTypeIn> mb_in;
 		typedef Microbatch<TokenTypeOut> mb_out;
-		std::function<Out(In&)> kernel;
+		std::function<Out(In&)> mkernel;
 	};
 };
 

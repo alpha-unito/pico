@@ -33,6 +33,7 @@
 #include "../../../Internals/utils.hpp"
 #include "../../SupportFFNodes/farms.hpp"
 
+#include "../../SupportFFNodes/base_nodes.hpp"
 #include "../../ff_config.hpp"
 
 using namespace ff;
@@ -69,32 +70,18 @@ struct prange {
  * https://www.gnu.org/software/libc/manual/html_node/Stream-Buffering.html
  *******************************************************************************
  */
-class getline_textfile: public ff_node {
+class getline_textfile: public base_filter {
 	typedef Microbatch<Token<std::string>> mb_t;
 
 public:
 	getline_textfile(std::string fname_) :
-			fname(fname_) {
-	}
-
-	int svc_init() {
-		file.open(fname);
+		file(fname_) {
 		assert(file.is_open());
-		return 0;
 	}
 
-	void svc_end() {
-		file.close();
-	}
-
-	/*
-	 * read a file-range line by line
-	 */
-	void *svc(void *r_) {
-		if (r_ == PICO_EOS || r_ == PICO_SYNC)
-			return r_;
-
-		prange *r = (prange *) r_;
+	void kernel(base_microbatch *in_mb) {
+		auto wmb = reinterpret_cast<mb_wrapped<prange> *>(in_mb);
+		prange *r = (prange *) wmb->get();
 		file.seekg(r->begin);
 		mb_t *mb = new mb_t(global_params.MICROBATCH_SIZE);
 		while (true) {
@@ -128,13 +115,11 @@ public:
 
 		/* clean up */
 		delete r;
-
-		return GO_ON;
+		DELETE(wmb, mb_wrapped<prange>);
 	}
 
 private:
 	std::ifstream file;
-	std::string fname;
 };
 
 /*
@@ -145,7 +130,7 @@ private:
  * https://www.gnu.org/software/libc/manual/html_node/Low_002dLevel-I_002fO.html
  *******************************************************************************
  */
-class read_textfile: public ff_node {
+class read_textfile: public base_filter {
 	typedef Microbatch<Token<std::string>> mb_t;
 
 public:
@@ -161,11 +146,9 @@ public:
 		fclose(fd);
 	}
 
-	void *svc(void *r_) {
-		if (r_ == PICO_EOS || r_ == PICO_SYNC)
-			return r_;
-
-		prange *r = (prange *) r_;
+	void kernel(base_microbatch *wmb) {
+		auto r_ = reinterpret_cast<mb_wrapped<prange> *>(wmb);
+		prange *r = (prange *) r_->get();
 		fseek(fd, r->begin, SEEK_SET);
 		ssize_t remainder = r->end - r->begin;
 		mb_t *mb = new mb_t(global_params.MICROBATCH_SIZE);
@@ -217,8 +200,7 @@ public:
 
 		/* clean up */
 		delete r;
-
-		return GO_ON;
+		DELETE(wmb, mb_wrapped<prange>);
 	}
 
 private:
@@ -253,11 +235,12 @@ private:
 	/*
 	 * A Partitioner partitions an input file and creates read-ranges
 	 */
-	class Partitioner: public ff_node {
+	class Partitioner: public base_emitter<NonOrderingFarm::lb_t> {
 	public:
 		Partitioner(const NonOrderingFarm &f_, std::string fname,
 				unsigned partitions_) :
-				farm(f_), partitions(partitions_) {
+				base_emitter<NonOrderingFarm::lb_t>(f_.getlb(), partitions_), //
+				partitions(partitions_) {
 			fd = fopen(fname.c_str(), "rb");
 			assert(fd); //todo - better reporting
 		}
@@ -266,19 +249,7 @@ private:
 			fclose(fd);
 		}
 
-		void *svc(void *in) {
-			if (in == PICO_EOS) {
-#ifdef DEBUG
-				fprintf(stderr, "[READ FROM FILE MB-%p] In SVC: SEND OUT PICO_EOS\n", this);
-#endif
-				farm.getlb()->broadcast_task(PICO_EOS);
-				return GO_ON;
-			}
-
-			/* forward PICO_SYNC */
-			assert(in == PICO_SYNC);
-			ff_send_out(PICO_SYNC);
-
+		void initialize() {
 			/* get file size */
 			fseek(fd, 0, SEEK_END);
 			off_t fsize = ftell(fd);
@@ -296,20 +267,27 @@ private:
 					++rend;
 				}
 				assert(rend > rbegin); //todo - better partitioning?
-				ff_send_out(new prange(rbegin, rend));
+				wrap_and_send(new prange(rbegin, rend));
 				rbegin = rend;
 
 			}
 			assert(fsize > rbegin); //todo - better partitioning?
-			ff_send_out(new prange(rbegin, fsize));
+			wrap_and_send(new prange(rbegin, fsize));
+		}
 
-			return GO_ON;
+		void kernel(base_microbatch *) {
+			assert(false);
 		}
 
 	private:
-		const NonOrderingFarm &farm;
 		FILE *fd;
 		unsigned partitions;
+
+		void wrap_and_send(prange *p) {
+			mb_wrapped<prange> *wmb;
+			NEW(wmb, mb_wrapped<prange>, p);
+			ff_send_out(wmb);
+		}
 	};
 
 	std::string fname;

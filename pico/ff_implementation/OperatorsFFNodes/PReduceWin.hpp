@@ -24,7 +24,6 @@
 #include <unordered_map>
 
 #include <ff/farm.hpp>
-#include "PReduceFFNode.hpp"
 
 #include "../../KeyValue.hpp"
 #include "../../Internals/utils.hpp"
@@ -64,65 +63,54 @@ public:
 	}
 
 private:
-	class PReduceWinWorker: public ff_node {
+	class PReduceWinWorker: public base_filter {
 	public:
 		PReduceWinWorker(std::function<V(V&, V&)>& reducef_, size_t win_size_ =
 				global_params.MICROBATCH_SIZE) :
-				kernel(reducef_), win_size(win_size_) {
+				rkernel(reducef_), win_size(win_size_) {
 		}
 
-		void* svc(void* task) {
-			if (task != PICO_EOS && task != PICO_SYNC) {
-				/* got a microbatch to process */
-				auto in_mb = reinterpret_cast<mb_t*>(task);
-				for (In& kv : *in_mb) {
-					auto k(kv.Key());
-					if (kvmap.find(k) != kvmap.end() && kvcountmap[k]) {
-						++kvcountmap[k];
-						kvmap[k] = kernel(kvmap[k], kv.Value());
-					}
-					else {
-						kvcountmap[k] = 1;
-						kvmap[k] = kv.Value();
-					}
-					if (kvcountmap[k] == win_size) {
-						mb_t *out_mb;
-						NEW(out_mb, mb_t, 1);
-						new (out_mb->allocate()) In(k, kvmap[k]);
-						out_mb->commit();
-						ff_send_out(reinterpret_cast<void*>(out_mb));
-						kvcountmap[k] = 0;
-					}
+		void kernel(base_microbatch *in_mb_) {
+			auto in_mb = reinterpret_cast<mb_t*>(in_mb_);
+			for (In& kv : *in_mb) {
+				auto k(kv.Key());
+				if (kvmap.find(k) != kvmap.end() && kvcountmap[k]) {
+					++kvcountmap[k];
+					kvmap[k] = rkernel(kvmap[k], kv.Value());
+				} else {
+					kvcountmap[k] = 1;
+					kvmap[k] = kv.Value();
 				}
-				DELETE(in_mb, mb_t);
-				return GO_ON;
-			} else {
-#ifdef DEBUG
-				fprintf(stderr, "[P-REDUCE-FFNODE-%p] In SVC RECEIVED PICO_EOS \n", this);
-#endif
-				/* stream out incomplete windows */
-				for(auto kc : kvcountmap) {
-					auto k(kc.first);
-					if(kc.second) {
-						mb_t *out_mb;
-						NEW(out_mb, mb_t, 1);
-						new (out_mb->allocate()) In(k, kvmap[k]);
-						out_mb->commit();
-						ff_send_out(reinterpret_cast<void*>(out_mb));
-						kvcountmap[k] = 0;
-					}
+				if (kvcountmap[k] == win_size) {
+					mb_t *out_mb;
+					NEW(out_mb, mb_t, 1);
+					new (out_mb->allocate()) In(k, kvmap[k]);
+					out_mb->commit();
+					ff_send_out(reinterpret_cast<void*>(out_mb));
+					kvcountmap[k] = 0;
 				}
-
-				return PICO_EOS;
 			}
+			DELETE(in_mb, mb_t);
+		}
 
-			assert(task == PICO_SYNC);
-			return PICO_SYNC;
+		void finalize() {
+			/* stream out incomplete windows */
+			for (auto kc : kvcountmap) {
+				auto k(kc.first);
+				if (kc.second) {
+					mb_t *out_mb;
+					NEW(out_mb, mb_t, 1);
+					new (out_mb->allocate()) In(k, kvmap[k]);
+					out_mb->commit();
+					ff_send_out(reinterpret_cast<void*>(out_mb));
+					kvcountmap[k] = 0;
+				}
+			}
 		}
 
 	private:
 		typedef Microbatch<TokenType> mb_t;
-		std::function<V(V&, V&)> kernel;
+		std::function<V(V&, V&)> rkernel;
 		std::unordered_map<K, V> kvmap; //partial per-window/key reduced value
 		std::unordered_map<K, size_t> kvcountmap; //per-window/key counter
 		size_t win_size;

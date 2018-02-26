@@ -24,52 +24,41 @@
 #include <ff/node.hpp>
 using namespace ff;
 
-#include "../../Internals/utils.hpp"
-
+#include "base_nodes.hpp"
 #include "farms.hpp"
 
 /*
  * Forwards non-sync tokens and broadcasts sync tokens.
  */
 template<typename lb_t>
-class ForwardingEmitter: public ff::ff_node {
+class ForwardingEmitter: public base_emitter<lb_t> {
 public:
-	ForwardingEmitter(lb_t *lb_) :
-			lb(lb_) {
+	ForwardingEmitter(lb_t *lb_, unsigned nw) :
+			base_emitter<lb_t>(lb_, nw) {
 	}
 
-	void *svc(void *in) {
-		if (in != pico::PICO_EOS && in != pico::PICO_SYNC)
-			return in;
-
-		/* broadcast sync token */
-		lb->broadcast_task(in);
-		return GO_ON;
+	void kernel(base_microbatch *mb) {
+		this->ff_send_out(mb);
 	}
-
-private:
-	lb_t *lb;
 };
 
 /*
  * Broadcasts each token.
  */
-class BCastEmitter: public ff::ff_node {
+template<typename lb_t>
+class BCastEmitter: public base_emitter<lb_t> {
 public:
-	BCastEmitter(ff::ff_loadbalancer * const lb_) :
-			lb(lb_) {
+	BCastEmitter(lb_t *lb_, unsigned nw) :
+			base_emitter<lb_t>(lb_, nw) {
 	}
 
-	void* svc(void * task) {
-		lb->broadcast_task(task);
-		return GO_ON;
+	void kernel(base_microbatch *mb) {
+		this->broadcast_task(mb);
 	}
-private:
-	ff::ff_loadbalancer * const lb;
 };
 
 //todo drop
 template<typename TokenType>
-using OFarmEmitter = ForwardingEmitter<ff::ff_loadbalancer>;
+using OFarmEmitter = ForwardingEmitter<NonOrderingFarm_lb>;
 
 #endif /* INTERNALS_FFOPERATORS_EMITTER_HPP_ */

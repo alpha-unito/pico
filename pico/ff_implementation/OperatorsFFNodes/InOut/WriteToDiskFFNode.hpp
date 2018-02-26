@@ -27,6 +27,8 @@
 #include "../../../Internals/Microbatch.hpp"
 #include "../../../Internals/utils.hpp"
 
+#include "../../SupportFFNodes/base_nodes.hpp"
+
 using namespace ff;
 using namespace pico;
 
@@ -35,39 +37,25 @@ using namespace pico;
  */
 
 template<typename In>
-class WriteToDiskFFNode: public ff_node {
+class WriteToDiskFFNode: public base_filter {
 public:
-	WriteToDiskFFNode(std::string fname_,
-			std::function<std::string(In)> kernel_) :
-			fname(fname_), kernel(kernel_) {
-	}
-
-	int svc_init() {
-		outfile.open(fname);
+	WriteToDiskFFNode(std::string fname, std::function<std::string(In)> kernel_) :
+			wkernel(kernel_), outfile(fname) {
 		if (!outfile.is_open()) {
 			std::cerr << "Unable to open output file\n";
-			return -1;
+			assert(false);
 		}
-		return 0;
 	}
-	void* svc(void* in) {
-		if (in == PICO_EOS || in == PICO_SYNC)
-			return in;
 
+	void kernel(base_microbatch *in) {
 		auto mb = reinterpret_cast<Microbatch<Token<In>>*>(in);
 		for (In& in : *mb)
-			outfile << kernel(in) << std::endl;
+			outfile << wkernel(in) << std::endl;
 		DELETE(mb, Microbatch<Token<In>>);
-		return GO_ON;
-	}
-
-	void svc_end() {
-		outfile.close();
 	}
 
 private:
-	std::string fname;
-	std::function<std::string(In)> kernel;
+	std::function<std::string(In)> wkernel;
 	std::ofstream outfile;
 };
 

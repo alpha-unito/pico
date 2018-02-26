@@ -26,9 +26,18 @@
 /*
  * A non-ordering farm.
  */
-class NonOrderingFarm: public ff::ff_farm<> {
+class NonOrderingFarm_lb: public ff::ff_loadbalancer {
 public:
-	typedef ff::ff_loadbalancer lb_t;
+	using ff::ff_loadbalancer::ff_loadbalancer;
+
+	void send_out_to(void *t, unsigned i) {
+		ff::ff_loadbalancer::ff_send_out_to(t, i);
+	}
+};
+
+class NonOrderingFarm: public ff::ff_farm<NonOrderingFarm_lb, ff::ff_gatherer> {
+public:
+	typedef NonOrderingFarm_lb lb_t;
 
 	void setEmitterF(ff_node* f) {
 		this->add_emitter(f);
@@ -42,6 +51,7 @@ public:
 /*
  * An ordering farm.
  */
+
 class OrderingFarm: public ff::ff_ofarm {
 public:
 	typedef ff::ofarm_lb lb_t;

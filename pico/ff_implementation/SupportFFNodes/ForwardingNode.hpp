@@ -23,15 +23,17 @@
 
 #include <ff/node.hpp>
 
+#include "base_nodes.hpp"
+
 /*
  * TODO only works with non-decorating token
  */
 
 /* implements the empty pipeline as forwarding node (i.e., identity map) */
-class ForwardingNode: public ff::ff_node {
+class ForwardingNode: public base_filter {
 public:
-	void* svc(void* task) {
-		return task;
+	void kernel(base_microbatch* task) {
+		ff_send_out(task);
 	}
 };
 

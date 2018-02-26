@@ -53,71 +53,60 @@ public:
 	}
 private:
 
-	class Worker: public ff_node {
+	class Worker: public base_filter {
 	public:
 		Worker(std::function<void(const In&, State&)> &foldf_) :
 				foldf(foldf_), state(new State()) {
 
 		}
 
-		void* svc(void* task) {
-			if (task != PICO_EOS && task != PICO_SYNC) {
-				mb_t *in_microbatch = reinterpret_cast<mb_t*>(task);
-				// iterate over microbatch
-				for (In &in : *in_microbatch) {
-					/* build item and enable copy elision */
-					foldf(in, *state);
-				}
-				DELETE(in_microbatch, mb_t);
-				return GO_ON;
-			} else if (task == PICO_EOS) {
-#ifdef DEBUG
-				fprintf(stderr, "[SORT-FFNODE-%p] In SVC RECEIVED PICO_EOS %p \n", this, task);
-#endif
-				ff_send_out(reinterpret_cast<void*>(state));
-				return PICO_EOS;
-
+		void kernel(base_microbatch *in_mb) {
+			mb_t *in_microbatch = reinterpret_cast<mb_t*>(in_mb);
+			// iterate over microbatch
+			for (In &in : *in_microbatch) {
+				/* build item and enable copy elision */
+				foldf(in, *state);
 			}
-			assert(task == PICO_SYNC);
-			return PICO_SYNC;
+			DELETE(in_microbatch, mb_t);
 		}
+
+		void finalize() {
+			/* wrap into a microbatch and send out */
+			mb_wrapped<State> *mb;
+			NEW(mb, mb_wrapped<State>, state);
+			ff_send_out(mb);
+		}
+
 	private:
 		typedef Microbatch<TokenTypeIn> mb_t;
 		std::function<void(const In&, State&)> &foldf;
 		State* state;
 	};
 
-	class Collector: public ff_node {
+	class Collector: public base_collector {
 	public:
 		Collector(int nworkers_,
 				std::function<void(const State&, State&)> &reducef_) :
-				nworkers(nworkers_), picoEOSrecv(0), picoSYNCrecv(0), reducef(reducef_){
+				reducef(reducef_) {
 		}
 
-		void* svc(void* task) {
-			if (task != PICO_EOS && task != PICO_SYNC) {
-				State* s = reinterpret_cast<State*>(task);
-				reducef(*s, state);
-				delete s;
-			}
+		void kernel(base_microbatch *in_mb) {
+			auto wmb = reinterpret_cast<mb_wrapped<State> *>(in_mb);
+			State* s = reinterpret_cast<State*>(wmb->get());
+			reducef(*s, state);
+			delete s;
+			DELETE(wmb, mb_wrapped<State>);
+		}
 
-			if (task == PICO_EOS) {
-				if (++picoEOSrecv == nworkers) {
-					mb_out * out_microbatch;
-					NEW(out_microbatch, mb_out, global_params.MICROBATCH_SIZE);
-					new (out_microbatch->allocate()) State(state);
-					out_microbatch->commit();
-					ff_send_out(PICO_SYNC);
-					ff_send_out(reinterpret_cast<void*>(out_microbatch));
-					return task;
-				}
-			}
-			return GO_ON;
+		void finalize() {
+			mb_out * out_microbatch;
+			NEW(out_microbatch, mb_out, global_params.MICROBATCH_SIZE);
+			new (out_microbatch->allocate()) State(state);
+			out_microbatch->commit();
+			ff_send_out(out_microbatch);
 		}
 
 	private:
-		unsigned nworkers;
-		unsigned picoEOSrecv, picoSYNCrecv;
 		State state;
 		std::function<void(const State&, State&)> &reducef;
 		typedef Microbatch<TokenTypeState> mb_out;

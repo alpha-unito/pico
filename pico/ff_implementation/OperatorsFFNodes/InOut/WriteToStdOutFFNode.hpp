@@ -36,26 +36,21 @@ using namespace pico;
  */
 
 template<typename In, typename TokenType>
-class WriteToStdOutFFNode: public ff_node {
+class WriteToStdOutFFNode: public base_filter {
 public:
 	WriteToStdOutFFNode(std::function<std::string(In&)> kernel_) :
-			kernel(kernel_) {
+		wkernel(kernel_) {
 	}
-	;
 
-	void* svc(void* in) {
-		if (in == PICO_EOS || in == PICO_SYNC)
-			return in;
-
-		auto in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(in);
+	void kernel(base_microbatch *in_mb) {
+		auto in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(in_mb);
 		for (In& tt : *in_microbatch)
-			std::cout << kernel(tt) << std::endl;
+			std::cout << wkernel(tt) << std::endl;
 		DELETE(in_microbatch, Microbatch<TokenType>);
-		return GO_ON;
 	}
 
 private:
-	std::function<std::string(In&)> kernel;
+	std::function<std::string(In&)> wkernel;
 };
 
 #endif /* INTERNALS_FFOPERATORS_INOUT_WRITETOSTDOUTFFNODE_HPP_ */
