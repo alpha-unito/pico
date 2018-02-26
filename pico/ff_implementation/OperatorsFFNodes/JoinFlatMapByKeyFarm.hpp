@@ -70,43 +70,35 @@ public:
 	 * The emitter dispatches microbatch items based on key and
 	 * keep tracking the origin.
 	 */
-	class Emitter: public ff::ff_node {
+	class Emitter: public base_emitter<NonOrderingFarm_lb> {
 	public:
 		Emitter(unsigned nworkers_, unsigned mbsize_, NonOrderingFarm &farm_) :
+				base_emitter<NonOrderingFarm_lb>(farm_.getlb(), nworkers_), //
 				nworkers(nworkers_), mbsize(mbsize_), farm(farm_), //
 				mb2w_from1(nworkers), mb2w_from2(nworkers) {
 		}
 
 	private:
-		void *svc(void *task) {
-			if (task != pico::PICO_SYNC && task != pico::PICO_EOS) {
-				/* unpack and dispatch, keep tracking the origin */
-				auto t = reinterpret_cast<task_from_t *>(task);
-				if (t->origin == 0) {
-					auto in_mb = reinterpret_cast<mb_in1*>(t->task);
-					dispatch<In1>(in_mb, mb2w_from1, 0);
-					DELETE(in_mb, mb_in1);
-				} else {
-					auto in_mb = reinterpret_cast<mb_in2*>(t->task);
-					dispatch<In2>(in_mb, mb2w_from2, 1);
-					DELETE(in_mb, mb_in2);
-				}
-				delete t;
-				return GO_ON;
+		void kernel(base_microbatch *task) {
+			//TODO wrap
+			auto t = reinterpret_cast<task_from_t *>(task);
+			if (t->origin == 0) {
+				auto in_mb = reinterpret_cast<mb_in1*>(t->task);
+				dispatch<In1>(in_mb, mb2w_from1, 0);
+				DELETE(in_mb, mb_in1);
+			} else {
+				auto in_mb = reinterpret_cast<mb_in2*>(t->task);
+				dispatch<In2>(in_mb, mb2w_from2, 1);
+				DELETE(in_mb, mb_in2);
 			}
+			delete t;
+		}
 
-			else if (task == PICO_EOS) {
-				for (unsigned i = 0; i < nworkers; ++i) {
-					send_remainder<mb_in1>(mb2w_from1, i, 0);
-					send_remainder<mb_in2>(mb2w_from2, i, 1);
-				}
-				farm.getlb()->broadcast_task(PICO_EOS);
-				return GO_ON;
+		void finalize() {
+			for (unsigned i = 0; i < nworkers; ++i) {
+				send_remainder<mb_in1>(mb2w_from1, i, 0);
+				send_remainder<mb_in2>(mb2w_from2, i, 1);
 			}
-
-			assert(task == PICO_SYNC);
-			farm.getlb()->broadcast_task(PICO_SYNC);
-			return GO_ON;
 		}
 
 		/* stream out (or store) microbatch items */
@@ -159,44 +151,34 @@ public:
 	/*
 	 * Workers generate and process pairs, while storing the whole collections.
 	 */
-	class Worker: public ff::ff_node {
+	class Worker: public base_filter {
 	public:
 		Worker(kernel_t kernel_) :
-				kernel(kernel_) {
+				fkernel(kernel_) {
 		}
 
-		void *svc(void *task) {
-			if (task != pico::PICO_SYNC && task != pico::PICO_EOS) {
-				/* unpack and process based on origin */
-				auto t = reinterpret_cast<mb_from_t *>(task);
-				if (t->from == 0)
-					process_and_store_from1(t);
-				else
-					process_and_store_from2(t);
+		void kernel(base_microbatch *mb_from) {
+			//TODO wrap
+			/* unpack and process based on origin */
+			auto t = reinterpret_cast<mb_from_t *>(mb_from);
+			if (t->from == 0)
+				process_and_store_from1(t);
+			else
+				process_and_store_from2(t);
 
-				/* cleanup */
-				DELETE(t, mb_from_t);
-				collector.clear();
+			/* cleanup */
+			DELETE(t, mb_from_t);
+			collector.clear();
+		}
 
-				return GO_ON;
-			}
-
-			else if (task == PICO_EOS) {
-				ff_send_out(PICO_EOS);
-
-				/* clear kv-stores */
-				for (auto kmb : kmb_from1)
-					for (auto mb_ptr : kmb.second)
-						DELETE(mb_ptr, mb_in1);
-				for (auto kmb : kmb_from2)
-					for (auto mb_ptr : kmb.second)
-						DELETE(mb_ptr, mb_in2);
-
-				return GO_ON;
-			}
-
-			assert(task == PICO_SYNC);
-			return PICO_SYNC;
+		void finalize() {
+			/* clear kv-stores */
+			for (auto kmb : kmb_from1)
+				for (auto mb_ptr : kmb.second)
+					DELETE(mb_ptr, mb_in1);
+			for (auto kmb : kmb_from2)
+				for (auto mb_ptr : kmb.second)
+					DELETE(mb_ptr, mb_in2);
 		}
 
 	private:
@@ -209,7 +191,7 @@ public:
 				/* match with the from-2 k-partition stored so far */
 				for (auto kmb_ptr : kmb_from2[k])
 					for (auto kv_match : *kmb_ptr)
-						kernel(kv_in, kv_match, collector);
+						fkernel(kv_in, kv_match, collector);
 			}
 			if (collector.begin())
 				ff_send_out(collector.begin());
@@ -227,7 +209,7 @@ public:
 				/* match with the from-1 k-partition stored so far */
 				for (auto kmb_ptr : kmb_from1[k])
 					for (auto kv_match : *kmb_ptr)
-						kernel(kv_match, kv_in, collector);
+						fkernel(kv_match, kv_in, collector);
 			}
 			if (collector.begin())
 				ff_send_out(collector.begin());
@@ -237,7 +219,7 @@ public:
 		}
 
 		TokenCollector<Out> collector;
-		kernel_t kernel;
+		kernel_t fkernel;
 
 		/* key-value store for both origins */
 		std::unordered_map<K, std::vector<mb_in1 *>> kmb_from1;
