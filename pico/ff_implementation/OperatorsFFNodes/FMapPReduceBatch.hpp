@@ -96,24 +96,23 @@ private:
 				/* clean up and skip to the next micro-batch */
 				auto it_ = it;
 				it = it->next;
-				DELETE(it_->mb, mb_out);
+				DELETE(it_->mb);
 				FREE(it_);
 			}
 
 			//clean up
-			DELETE(in_microbatch, mb_in);
+			DELETE(in_microbatch);
 			collector.clear();
 		}
 
 		void finalize() {
-			mb_out *mb;
-			NEW(mb, mb_out, global_params.MICROBATCH_SIZE);
+			auto mb = NEW<mb_out>(global_params.MICROBATCH_SIZE);
 			for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
 				new (mb->allocate()) Out(it->first, it->second);
 				mb->commit();
 				if (mb->full()) {
 					ff_send_out(reinterpret_cast<void*>(mb));
-					NEW(mb, mb_out, global_params.MICROBATCH_SIZE);
+					mb = NEW<mb_out>(global_params.MICROBATCH_SIZE);
 				}
 			}
 
@@ -121,7 +120,7 @@ private:
 			if (!mb->empty()) {
 				ff_send_out(reinterpret_cast<void*>(mb));
 			} else {
-				DELETE(mb, mb_out);
+				DELETE(mb);
 			}
 		}
 

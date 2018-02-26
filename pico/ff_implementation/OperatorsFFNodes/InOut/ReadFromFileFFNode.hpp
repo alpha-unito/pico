@@ -75,7 +75,7 @@ class getline_textfile: public base_filter {
 
 public:
 	getline_textfile(std::string fname_) :
-		file(fname_) {
+			file(fname_) {
 		assert(file.is_open());
 	}
 
@@ -83,7 +83,7 @@ public:
 		auto wmb = reinterpret_cast<mb_wrapped<prange> *>(in_mb);
 		prange *r = (prange *) wmb->get();
 		file.seekg(r->begin);
-		mb_t *mb = new mb_t(global_params.MICROBATCH_SIZE);
+		mb_t *mb = NEW<mb_t>(global_params.MICROBATCH_SIZE);
 		while (true) {
 			auto pos = file.tellg();
 			if (pos < r->end && pos != -1) {
@@ -95,7 +95,7 @@ public:
 					/* create next micro-batch if complete */
 					if (mb->full()) {
 						ff_send_out(reinterpret_cast<void*>(mb));
-						mb = new mb_t(global_params.MICROBATCH_SIZE);
+						mb = NEW<mb_t>(global_params.MICROBATCH_SIZE);
 					}
 				} else
 					assert(false);
@@ -111,11 +111,11 @@ public:
 		if (!mb->empty())
 			ff_send_out(reinterpret_cast<void*>(mb));
 		else
-			delete (mb);
+			DELETE(mb);
 
 		/* clean up */
 		delete r;
-		DELETE(wmb, mb_wrapped<prange>);
+		DELETE(wmb);
 	}
 
 private:
@@ -151,7 +151,7 @@ public:
 		prange *r = (prange *) r_->get();
 		fseek(fd, r->begin, SEEK_SET);
 		ssize_t remainder = r->end - r->begin;
-		mb_t *mb = new mb_t(global_params.MICROBATCH_SIZE);
+		auto mb = NEW<mb_t>(global_params.MICROBATCH_SIZE);
 		std::string *line = new (mb->allocate()) std::string();
 		bool continued = false;
 		do {
@@ -168,7 +168,7 @@ public:
 						/* create next micro-batch if complete */
 						if (mb->full()) {
 							ff_send_out(reinterpret_cast<void*>(mb));
-							mb = new mb_t(global_params.MICROBATCH_SIZE);
+							mb = NEW<mb_t>(global_params.MICROBATCH_SIZE);
 						}
 						line = new (mb->allocate()) std::string();
 					}
@@ -196,11 +196,11 @@ public:
 		if (!mb->empty())
 			ff_send_out(reinterpret_cast<void*>(mb));
 		else
-			delete mb;
+			DELETE(mb);
 
 		/* clean up */
 		delete r;
-		DELETE(wmb, mb_wrapped<prange>);
+		DELETE(wmb);
 	}
 
 private:
@@ -267,12 +267,12 @@ private:
 					++rend;
 				}
 				assert(rend > rbegin); //todo - better partitioning?
-				wrap_and_send(new prange(rbegin, rend));
+				wrap_and_send(NEW<prange>(rbegin, rend));
 				rbegin = rend;
 
 			}
 			assert(fsize > rbegin); //todo - better partitioning?
-			wrap_and_send(new prange(rbegin, fsize));
+			wrap_and_send(NEW<prange>(rbegin, fsize));
 		}
 
 		void kernel(base_microbatch *) {
@@ -284,8 +284,7 @@ private:
 		unsigned partitions;
 
 		void wrap_and_send(prange *p) {
-			mb_wrapped<prange> *wmb;
-			NEW(wmb, mb_wrapped<prange>, p);
+			auto wmb = NEW<mb_wrapped<prange>>(p);
 			ff_send_out(wmb);
 		}
 	};

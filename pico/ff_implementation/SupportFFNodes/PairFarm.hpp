@@ -75,6 +75,9 @@ private:
 };
 
 struct task_from_t {
+	task_from_t(ssize_t origin_, void *task_) :
+			origin(origin_), task(task_) {
+	}
 	ssize_t origin;
 	void *task;
 };
@@ -86,9 +89,9 @@ public:
 	}
 
 	void kernel(base_microbatch *in_mb) {
-		//TODO wrap
 		/* decorate with the origin and forwards */
-		ff_send_out(new task_from_t { gt.from(), in_mb });
+		auto t = NEW<task_from_t>(gt.from(), in_mb);
+		ff_send_out(NEW<mb_wrapped<task_from_t>>(t)); //wrap into mb
 	}
 
 private:

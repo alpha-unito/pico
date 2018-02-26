@@ -51,7 +51,7 @@ public:
 		auto mb = reinterpret_cast<Microbatch<Token<In>>*>(in);
 		for (In& in : *mb)
 			outfile << wkernel(in) << std::endl;
-		DELETE(mb, Microbatch<Token<In>>);
+		DELETE(mb);
 	}
 
 private:

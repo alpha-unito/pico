@@ -55,8 +55,7 @@ public:
 	void initialize() {
 		std::string tail;
 		char buffer[CHUNK_SIZE];
-		mb_t *microbatch;
-		NEW(microbatch, mb_t, global_params.MICROBATCH_SIZE);
+		auto microbatch = NEW<mb_t>(global_params.MICROBATCH_SIZE);
 		std::string *line = new (microbatch->allocate()) std::string();
 
 		bzero(buffer, sizeof(buffer));
@@ -70,7 +69,7 @@ public:
 					microbatch->commit();
 					if (microbatch->full()) {
 						ff_send_out(reinterpret_cast<void*>(microbatch));
-						NEW(microbatch, mb_t, global_params.MICROBATCH_SIZE);
+						microbatch = NEW<mb_t>(global_params.MICROBATCH_SIZE);
 					}
 					tail.clear();
 					line = new (microbatch->allocate()) std::string();
@@ -84,9 +83,8 @@ public:
 
 		if (!microbatch->empty()) {
 			ff_send_out(reinterpret_cast<void*>(microbatch));
-		} else {
-			DELETE(microbatch, mb_t);
-		}
+		} else
+			DELETE(microbatch);
 	}
 
 private:

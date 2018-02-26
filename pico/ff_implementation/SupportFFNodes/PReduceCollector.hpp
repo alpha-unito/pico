@@ -41,19 +41,18 @@ private:
 			else
 				kvmap[k] = kv;
 		}
-		DELETE(in_microbatch, mb_t);
+		DELETE(in_microbatch);
 	}
 
 	void finalize() {
 		/* stream the internal map downstream */
-		mb_t *out_microbatch;
-		NEW(out_microbatch, mb_t, mb_size);
+		auto out_microbatch = NEW<mb_t>(mb_size);
 		for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
 			new (out_microbatch->allocate()) KV(it->second);
 			out_microbatch->commit();
 			if (out_microbatch->full()) {
 				ff_send_out(reinterpret_cast<void*>(out_microbatch));
-				NEW(out_microbatch, mb_t, mb_size);
+				out_microbatch = NEW<mb_t>(mb_size);
 			}
 		}
 
@@ -61,7 +60,7 @@ private:
 		if (!out_microbatch->empty())
 			ff_send_out(reinterpret_cast<void*>(out_microbatch));
 		else
-			DELETE(out_microbatch, mb_out);
+			DELETE(out_microbatch);
 	}
 };
 

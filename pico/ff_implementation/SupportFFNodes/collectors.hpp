@@ -40,10 +40,8 @@ public:
 	using base_collector::base_collector;
 
 	void kernel(base_microbatch *mb) {
-		//TODO wrap
-		//auto wmb = reinterpret_cast<mb_wrapped<cnode_t> *>(mb);
-		//cnode_t *it_, *it = wmb->get();
-		cnode_t *it_, *it = reinterpret_cast<cnode_t *>(mb);
+		auto wmb = reinterpret_cast<mb_wrapped<cnode_t> *>(mb);
+		cnode_t *it_, *it = wmb->get();
 		/* send out all the micro-batches in the list */
 		while (it) {
 			ff_send_out(reinterpret_cast<void *>(it->mb));
@@ -53,7 +51,7 @@ public:
 			it = it->next;
 			FREE(it_);
 		};
-		//DELETE(mb, mb_wrapped<cnode_t>);
+		DELETE(wmb);
 	}
 };
 
