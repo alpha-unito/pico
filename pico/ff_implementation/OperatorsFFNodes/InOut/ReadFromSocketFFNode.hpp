@@ -78,8 +78,7 @@ public:
 			error("ERROR connecting");
 		}
 		bzero(buffer, sizeof(buffer));
-		mb_t *microbatch;
-		NEW(microbatch, mb_t, global_params.MICROBATCH_SIZE);
+		auto microbatch = NEW<mb_t>(global_params.MICROBATCH_SIZE);
 		std::string *line = new (microbatch->allocate()) std::string();
 
 		while ((n = read(sockfd, buffer, sizeof(buffer))) > 0) {
@@ -91,7 +90,7 @@ public:
 					microbatch->commit();
 					if (microbatch->full()) {
 						ff_send_out(reinterpret_cast<void*>(microbatch));
-						NEW(microbatch, mb_t, global_params.MICROBATCH_SIZE);
+						microbatch = NEW<mb_t>(global_params.MICROBATCH_SIZE);
 					}
 					tail.clear();
 					line = new (microbatch->allocate()) std::string();
@@ -106,7 +105,7 @@ public:
 		if (!microbatch->empty()) {
 			ff_send_out(reinterpret_cast<void*>(microbatch));
 		} else {
-			DELETE(microbatch, mb_t);
+			DELETE(microbatch);
 		}
 	}
 

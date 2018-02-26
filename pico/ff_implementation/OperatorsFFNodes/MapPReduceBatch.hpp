@@ -81,25 +81,25 @@ private:
 				else
 					kvmap[k] = kv.Value();
 			}
-			DELETE(in_microbatch, in_mb_t);
+			DELETE(in_microbatch);
 		}
 
 		void finalize() {
 			out_mb_t *out_mb;
-			NEW(out_mb, out_mb_t, global_params.MICROBATCH_SIZE);
+			out_mb = NEW<out_mb_t>(global_params.MICROBATCH_SIZE);
 			for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
 				new (out_mb->allocate()) Out(it->first, it->second);
 				out_mb->commit();
 				if (out_mb->full()) {
 					ff_send_out(reinterpret_cast<void*>(out_mb));
-					NEW(out_mb, out_mb_t, global_params.MICROBATCH_SIZE);
+					out_mb = NEW<out_mb_t>(global_params.MICROBATCH_SIZE);
 				}
 			}
 
 			if (!out_mb->empty())
 				ff_send_out(reinterpret_cast<void*>(out_mb));
 			else
-				DELETE(out_mb, out_mb_t); //spurious microbatch
+				DELETE(out_mb); //spurious microbatch
 		}
 
 	private:

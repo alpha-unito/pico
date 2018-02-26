@@ -83,14 +83,14 @@ private:
 				}
 				if (kvcountmap[k] == win_size) {
 					mb_t *out_mb;
-					NEW(out_mb, mb_t, 1);
+					out_mb = NEW<mb_t>(1);
 					new (out_mb->allocate()) In(k, kvmap[k]);
 					out_mb->commit();
 					ff_send_out(reinterpret_cast<void*>(out_mb));
 					kvcountmap[k] = 0;
 				}
 			}
-			DELETE(in_mb, mb_t);
+			DELETE(in_mb);
 		}
 
 		void finalize() {
@@ -99,7 +99,7 @@ private:
 				auto k(kc.first);
 				if (kc.second) {
 					mb_t *out_mb;
-					NEW(out_mb, mb_t, 1);
+					out_mb = NEW<mb_t>(1);
 					new (out_mb->allocate()) In(k, kvmap[k]);
 					out_mb->commit();
 					ff_send_out(reinterpret_cast<void*>(out_mb));

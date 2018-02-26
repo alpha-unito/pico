@@ -67,13 +67,12 @@ private:
 				/* build item and enable copy elision */
 				foldf(in, *state);
 			}
-			DELETE(in_microbatch, mb_t);
+			DELETE(in_microbatch);
 		}
 
 		void finalize() {
 			/* wrap into a microbatch and send out */
-			mb_wrapped<State> *mb;
-			NEW(mb, mb_wrapped<State>, state);
+			auto mb = NEW<mb_wrapped<State>>(state);
 			ff_send_out(mb);
 		}
 
@@ -95,12 +94,11 @@ private:
 			State* s = reinterpret_cast<State*>(wmb->get());
 			reducef(*s, state);
 			delete s;
-			DELETE(wmb, mb_wrapped<State>);
+			DELETE(wmb);
 		}
 
 		void finalize() {
-			mb_out * out_microbatch;
-			NEW(out_microbatch, mb_out, global_params.MICROBATCH_SIZE);
+			auto out_microbatch = NEW<mb_out>(global_params.MICROBATCH_SIZE);
 			new (out_microbatch->allocate()) State(state);
 			out_microbatch->commit();
 			ff_send_out(out_microbatch);

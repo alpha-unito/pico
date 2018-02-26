@@ -61,8 +61,7 @@ private:
 
 		void kernel(base_microbatch *in_mb) {
 			auto in_microbatch = reinterpret_cast<mb_in*>(in_mb);
-			mb_out *out_microbatch;
-			NEW(out_microbatch, mb_out, global_params.MICROBATCH_SIZE);
+			auto out_microbatch = NEW<mb_out>(global_params.MICROBATCH_SIZE);
 			// iterate over microbatch
 			for (In &in : *in_microbatch) {
 				/* build item and enable copy elision */
@@ -70,7 +69,7 @@ private:
 				out_microbatch->commit();
 			}
 			ff_send_out(reinterpret_cast<void*>(out_microbatch));
-			DELETE(in_microbatch, mb_in);
+			DELETE(in_microbatch);
 		}
 
 	private:

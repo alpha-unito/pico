@@ -79,19 +79,20 @@ public:
 		}
 
 	private:
-		void kernel(base_microbatch *task) {
-			//TODO wrap
-			auto t = reinterpret_cast<task_from_t *>(task);
+		void kernel(base_microbatch *in_mb) {
+			auto wmb = reinterpret_cast<mb_wrapped<task_from_t> *>(in_mb);
+			auto t = wmb->get();
 			if (t->origin == 0) {
 				auto in_mb = reinterpret_cast<mb_in1*>(t->task);
 				dispatch<In1>(in_mb, mb2w_from1, 0);
-				DELETE(in_mb, mb_in1);
+				DELETE(in_mb);
 			} else {
 				auto in_mb = reinterpret_cast<mb_in2*>(t->task);
 				dispatch<In2>(in_mb, mb2w_from2, 1);
-				DELETE(in_mb, mb_in2);
+				DELETE(in_mb);
 			}
-			delete t;
+			DELETE(t);
+			DELETE(wmb);
 		}
 
 		void finalize() {
@@ -109,16 +110,15 @@ public:
 				auto dst = key_to_worker(k);
 				// create k-dst microbatch if not existing
 				if (mb2w_from[dst].find(k) == mb2w_from[dst].end())
-					NEW(mb2w_from[dst][k], mb_t, mbsize);
+					mb2w_from[dst][k] = NEW<mb_t>(mbsize);
 				// copy token into dst's microbatch
 				new (mb2w_from[dst][k]->allocate()) In(tt);
 				mb2w_from[dst][k]->commit();
 				if (mb2w_from[dst][k]->full()) {
-					mb_from_t *mb_from;
-					//TODO wrap
-					NEW(mb_from, mb_from_t, mb2w_from[dst][k], from);
-					farm.getlb()->ff_send_out_to(mb_from, dst);
-					NEW(mb2w_from[dst][k], mb_t, mbsize);
+					auto mb_from = NEW<mb_from_t>(mb2w_from[dst][k], from);
+					auto wmb = NEW<mb_wrapped<mb_from_t>>(mb_from);
+					farm.getlb()->ff_send_out_to(wmb, dst);
+					mb2w_from[dst][k] = NEW<mb_t>(mbsize);
 				}
 			}
 		}
@@ -128,12 +128,11 @@ public:
 		void send_remainder(mb2w_from_t &mb2w, unsigned dst, unsigned from) {
 			for (auto kmb : mb2w[dst])
 				if (!kmb.second->empty()) {
-					mb_from_t *mb_from;
-					//TODO wrap
-					NEW(mb_from, mb_from_t, kmb.second, from);
-					farm.getlb()->ff_send_out_to(mb_from, dst);
+					auto mb_from = NEW<mb_from_t>(kmb.second, from);
+					auto wmb = NEW<mb_wrapped<mb_from_t>>(mb_from);
+					farm.getlb()->ff_send_out_to(wmb, dst);
 				} else
-					DELETE(kmb.second, mb_t); //spurious microbatch
+					DELETE(kmb.second); //spurious microbatch
 		}
 
 		unsigned nworkers;
@@ -154,33 +153,35 @@ public:
 	 * Workers generate and process pairs, while storing the whole collections.
 	 */
 	class Worker: public base_filter {
+		typedef typename TokenCollector<Out>::cnode cnode_t;
 	public:
 		Worker(kernel_t kernel_) :
 				fkernel(kernel_) {
 		}
 
-		void kernel(base_microbatch *mb_from) {
-			//TODO wrap
+		void kernel(base_microbatch *in_mb) {
 			/* unpack and process based on origin */
-			auto t = reinterpret_cast<mb_from_t *>(mb_from);
+			auto wmb = reinterpret_cast<mb_wrapped<mb_from_t> *>(in_mb);
+			auto t = wmb->get();
 			if (t->from == 0)
 				process_and_store_from1(t);
 			else
 				process_and_store_from2(t);
 
 			/* cleanup */
-			DELETE(t, mb_from_t);
 			collector.clear();
+			DELETE(t);
+			DELETE(wmb);
 		}
 
 		void finalize() {
 			/* clear kv-stores */
 			for (auto kmb : kmb_from1)
 				for (auto mb_ptr : kmb.second)
-					DELETE(mb_ptr, mb_in1);
+					DELETE(mb_ptr);
 			for (auto kmb : kmb_from2)
 				for (auto mb_ptr : kmb.second)
-					DELETE(mb_ptr, mb_in2);
+					DELETE(mb_ptr);
 		}
 
 	private:
@@ -196,8 +197,7 @@ public:
 						fkernel(kv_in, kv_match, collector);
 			}
 			if (collector.begin())
-				//TODO wrap
-				ff_send_out(collector.begin());
+				ff_send_out(NEW<mb_wrapped<cnode_t>>(collector.begin()));
 
 			/* store */
 			kmb_from1[k].push_back(in_mb);
@@ -215,8 +215,7 @@ public:
 						fkernel(kv_match, kv_in, collector);
 			}
 			if (collector.begin())
-				//TODO wrap
-				ff_send_out(collector.begin());
+				ff_send_out(NEW<mb_wrapped<cnode_t>>(collector.begin()));
 
 			/* store */
 			kmb_from2[k].push_back(in_mb);

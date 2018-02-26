@@ -127,7 +127,7 @@ private:
 	inline cnode * allocate() {
 		cnode *res = (cnode *) MALLOC(sizeof(cnode));
 		res->next = nullptr;
-		NEW(res->mb, mb_t, global_params.MICROBATCH_SIZE);
+		res->mb = NEW<mb_t>(global_params.MICROBATCH_SIZE);
 		return res;
 	}
 };

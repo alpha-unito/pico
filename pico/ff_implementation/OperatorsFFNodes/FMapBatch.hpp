@@ -51,6 +51,7 @@ public:
 private:
 
 	class Worker: public base_filter {
+		typedef typename TokenCollector<Out>::cnode cnode_t;
 	public:
 		Worker(std::function<void(In&, FlatMapCollector<Out> &)> kernel_) :
 				mkernel(kernel_) {
@@ -64,10 +65,10 @@ private:
 			}
 			if (collector.begin())
 				//TODO wrap
-				ff_send_out(reinterpret_cast<void*>(collector.begin()));
+				ff_send_out(NEW<mb_wrapped<cnode_t>>(collector.begin()));
 
 			//clean up
-			DELETE(in_microbatch, Microbatch<TokenTypeIn>);
+			DELETE(in_microbatch);
 			collector.clear();
 		}
 

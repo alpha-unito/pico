@@ -39,7 +39,7 @@ public:
 					nworkers_) {
 		/* prepare a microbatch for each worker */
 		for (unsigned i = 0; i < nworkers; ++i)
-			NEW(worker_mb[i], mb_t, global_params.MICROBATCH_SIZE);
+			worker_mb[i] = NEW<mb_t>(global_params.MICROBATCH_SIZE);
 	}
 
 	void kernel(base_microbatch *in_mb) {
@@ -50,12 +50,11 @@ public:
 			new (worker_mb[dst]->allocate()) DataType(tt);
 			worker_mb[dst]->commit();
 			if (worker_mb[dst]->full()) {
-				auto mb = reinterpret_cast<base_microbatch *>(worker_mb[dst]);
-				send_out_to(mb, dst);
-				NEW(worker_mb[dst], mb_t, global_params.MICROBATCH_SIZE);
+				send_out_to(worker_mb[dst], dst);
+				worker_mb[dst] = NEW<mb_t>(global_params.MICROBATCH_SIZE);
 			}
 		}
-		DELETE(in_microbatch, mb_t);
+		DELETE(in_microbatch);
 	}
 
 	void finalize() {
@@ -63,7 +62,7 @@ public:
 			if (!worker_mb[i]->empty())
 				send_out_to(worker_mb[i], i);
 			else
-				DELETE(worker_mb[i], mb_t); //spurious microbatch
+				DELETE(worker_mb[i]); //spurious microbatch
 		}
 	}
 

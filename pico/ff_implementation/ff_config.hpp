@@ -15,21 +15,44 @@
 
 #ifdef FF_ALLOC
 #include <ff/allocator.hpp>
-#define MALLOC         ff::ff_malloc
-#define FREE           ff::ff_free
-#define POSIX_MEMALIGN ff::ff_posix_memalign
-#define NEW(ptr, type, ...) \
-    (ptr) = (type *)MALLOC(sizeof(type)); \
-    new (ptr) type(__VA_ARGS__)
-#define DELETE(ptr, type) \
-    (ptr)->~type(); \
-    FREE(ptr)
+
+static inline void *MALLOC(size_t size) {
+	return ff::ff_malloc(size);
+}
+static inline void FREE(void *ptr) {
+	ff::ff_free(ptr);
+}
+static inline int POSIX_MEMALIGN(void **dst, size_t align, size_t size) {
+	return ff::ff_posix_memalign(dst, align, size);
+}
+template<typename _Tp, typename ... _Args>
+static inline _Tp *NEW(_Args&&... __args) {
+	auto ptr = (_Tp *)MALLOC(sizeof(_Tp));
+	return (ptr) _Tp(std::forward<_Args>(__args)...);
+}
+template<typename _Tp>
+static inline void DELETE(_Tp *p) {
+	(p)->~_Tp();
+	FREE(p);
+}
 #else
-#define MALLOC         malloc
-#define FREE           free
-#define POSIX_MEMALIGN posix_memalign
-#define NEW(ptr, type, ...) (ptr) = new type(__VA_ARGS__)
-#define DELETE(ptr, type) delete (ptr);
+static inline void *MALLOC(size_t size) {
+	return ::malloc(size);
+}
+static inline void FREE(void *ptr) {
+	::free(ptr);
+}
+static inline int POSIX_MEMALIGN(void **dst, size_t align, size_t size) {
+	return ::posix_memalign(dst, align, size);
+}
+template<typename _Tp, typename ... _Args>
+static inline _Tp *NEW(_Args&&... __args) {
+	return new _Tp(std::forward<_Args>(__args)...);
+}
+template<typename _Tp>
+static inline void DELETE(_Tp *p) {
+	delete p;
+}
 #endif
 
 #endif /* INTERNALS_FFOPERATORS_FF_CONFIG_HPP_ */
