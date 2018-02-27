@@ -64,9 +64,9 @@ public:
 		ff_pipe->load_result(&res);
 		assert(res == PICO_SYNC);
 		ff_pipe->load_result(&res);
-//		assert(reinterpret_cast<base_microbatch *>(res)->nil());
-//		DELETE(reinterpret_cast<base_microbatch *>(res), base_microbatch);
-		assert(res == PICO_EOS);
+		auto eos = reinterpret_cast<base_microbatch *>(res);
+		assert(eos->nil());
+		DELETE(eos);
 
 		ff_pipe->wait();
 	}
