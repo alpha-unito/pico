@@ -31,12 +31,12 @@
 
 using namespace pico;
 
+typedef base_emitter<typename NonOrderingFarm::lb_t> bk_emitter_t;
 template<typename TokenType>
-class ByKeyEmitter: public base_emitter<NonOrderingFarm_lb> {
+class ByKeyEmitter: public bk_emitter_t {
 public:
-	ByKeyEmitter(unsigned nworkers_, NonOrderingFarm_lb * lb_) :
-			base_emitter<NonOrderingFarm_lb>(lb_, nworkers_), nworkers(
-					nworkers_) {
+	ByKeyEmitter(unsigned nworkers_, typename NonOrderingFarm::lb_t * lb_) :
+			bk_emitter_t(lb_, nworkers_), nworkers(nworkers_) {
 		/* prepare a microbatch for each worker */
 		for (unsigned i = 0; i < nworkers; ++i)
 			worker_mb[i] = NEW<mb_t>(global_params.MICROBATCH_SIZE);

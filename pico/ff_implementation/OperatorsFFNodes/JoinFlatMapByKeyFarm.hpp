@@ -70,10 +70,11 @@ public:
 	 * The emitter dispatches microbatch items based on key and
 	 * keep tracking the origin.
 	 */
-	class Emitter: public base_emitter<NonOrderingFarm_lb> {
+	typedef base_emitter<typename NonOrderingFarm::lb_t> emitter_t;
+	class Emitter: public emitter_t {
 	public:
 		Emitter(unsigned nworkers_, unsigned mbsize_, NonOrderingFarm &farm_) :
-				base_emitter<NonOrderingFarm_lb>(farm_.getlb(), nworkers_), //
+				emitter_t(farm_.getlb(), nworkers_), //
 				nworkers(nworkers_), mbsize(mbsize_), farm(farm_), //
 				mb2w_from1(nworkers), mb2w_from2(nworkers) {
 		}

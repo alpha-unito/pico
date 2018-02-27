@@ -22,10 +22,11 @@
  *
  *******************************************************************************
  */
-class PairEmitterToNone: public base_emitter<NonOrderingFarm_lb> {
+typedef base_emitter<typename NonOrderingFarm::lb_t> PairEmitter_base_t;
+class PairEmitterToNone: public PairEmitter_base_t {
 public:
-	PairEmitterToNone(NonOrderingFarm_lb &lb_) :
-			base_emitter<NonOrderingFarm_lb>(&lb_, 2) {
+	PairEmitterToNone(typename NonOrderingFarm::lb_t &lb_) :
+		PairEmitter_base_t(&lb_, 2) {
 	}
 
 	void kernel(base_microbatch *) {
@@ -34,10 +35,10 @@ public:
 };
 
 template<int To>
-class PairEmitterTo: public base_emitter<NonOrderingFarm_lb> {
+class PairEmitterTo: public PairEmitter_base_t {
 public:
-	PairEmitterTo(NonOrderingFarm_lb &lb_) :
-			base_emitter<NonOrderingFarm_lb>(&lb_, 2) {
+	PairEmitterTo(typename NonOrderingFarm::lb_t &lb_) :
+		PairEmitter_base_t(&lb_, 2) {
 	}
 
 	void kernel(base_microbatch *in_mb) {
@@ -98,6 +99,6 @@ private:
 	PairGatherer &gt;
 };
 
-typedef ff::ff_farm<NonOrderingFarm_lb, PairGatherer> PairFarm;
+typedef ff::ff_farm<typename NonOrderingFarm::lb_t, PairGatherer> PairFarm;
 
 #endif /* PICO_FF_IMPLEMENTATION_SUPPORTFFNODES_PAIRFARM_HPP_ */
