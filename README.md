@@ -11,7 +11,7 @@ The DSL we propose is entirely implemented in C++11, exploiting the FastFlow lib
 
 ## How to compile
 To build any PiCo application, the FastFlow library should be provided.
-FastFlow can be downloaded from the [GitHub repository](https://github.com/alpha-unito/PiCo) and then add a symbolic link to the FastFlow library into the PiCo directory:
+FastFlow can be downloaded from the [GitHub repository](https://github.com/fastflow/fastflow) and then add a symbolic link to the FastFlow library into the PiCo directory:
 
 `$ ln -s /path/to/FastFlow/ff /PiCo/root/dir`
 
