@@ -21,9 +21,6 @@
 #ifndef INTERNALS_WINDOWPOLICY_HPP_
 #define INTERNALS_WINDOWPOLICY_HPP_
 
-#include "ff_implementation/SupportFFNodes/ByKeyEmitter.hpp"
-#include "ff_implementation/SupportFFNodes/emitters.hpp"
-
 namespace pico {
 
 class WindowPolicy {
@@ -54,7 +51,6 @@ public:
 		return w_size;
 	}
 
-	virtual ff::ff_node* window_farm(int, typename NonOrderingFarm::lb_t *)=0;
 	virtual WindowPolicy *clone() = 0;
 
 	virtual ~WindowPolicy() {
@@ -81,10 +77,6 @@ public:
 			WindowPolicy(w_size_, w_size_) {
 	}
 
-	ff::ff_node* window_farm(int nw, typename NonOrderingFarm::lb_t *lb_) {
-		return new OFarmEmitter<TokenType>(lb_, nw);
-	}
-
 	BatchWindow *clone() {
 		return new BatchWindow(*this);
 	}
@@ -106,37 +98,10 @@ public:
 			WindowPolicy(w_size_, w_size_) {
 	}
 
-	ff::ff_node* window_farm(int nw, typename NonOrderingFarm::lb_t * lb_) {
-		return new ByKeyEmitter<TokenType>(nw, lb_);
-	}
-
 	ByKeyWindow *clone() {
 		return new ByKeyWindow(*this);
 	}
 };
-
-/*
- template<typename TokenType>
- class noWindow: public WindowPolicy {
- public:
- noWindow() :
- WindowPolicy(global_params.MICROBATCH_SIZE, 1) {
- }
-
- noWindow(const noWindow &copy) :
- WindowPolicy(copy) {
- }
-
- ff::ff_node* window_farm(int nworkers_, ff_loadbalancer * const lb_) {
- return new FarmEmitter<TokenType>(nworkers_, lb_);
- }
-
- noWindow *clone() {
- return new noWindow(*this);
- }
- };
- */
-
 } /* namespace pico */
 
 #endif /* INTERNALS_WINDOWPOLICY_HPP_ */

@@ -142,7 +142,7 @@ public:
 		const unsigned mbsize;
 		NonOrderingFarm &farm;
 
-		//TODO per-tag
+		//TODO per-tag state
 		/* for both origins, one per-key microbatch for each worker */
 		std::vector<std::unordered_map<K, mb_in1 *>> mb2w_from1;
 		std::vector<std::unordered_map<K, mb_in2 *>> mb2w_from2;
