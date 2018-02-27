@@ -43,10 +43,7 @@ using namespace pico;
 using base_node = ff::ff_node_t<base_microbatch, base_microbatch>;
 
 static base_microbatch *make_eos() {
-//	base_microbatch *eos;
-//	NEW(eos, base_microbatch);
-//	return eos;
-	return reinterpret_cast<base_microbatch *>(PICO_EOS);
+	return NEW<base_microbatch>();
 }
 
 class base_filter: public base_node {
@@ -65,7 +62,7 @@ public:
 	virtual void handle_eos(base_microbatch *eos) {
 		finalize();
 		ff_send_out(make_eos());
-		//DELETE(eos, base_microbatch);
+		DELETE(eos);
 	}
 
 	virtual void handle_sync() {
@@ -75,8 +72,7 @@ public:
 
 protected:
 	inline bool is_eos(base_microbatch *in) {
-		//return in->nil();
-		return in == PICO_EOS;
+		return in->nil();
 	}
 
 	inline bool is_sync(base_microbatch *in) {
@@ -119,7 +115,7 @@ private:
 		finalize();
 		for (unsigned i = 0; i < nw; ++i)
 			send_out_to(make_eos(), i);
-		//DELETE(eos, base_microbatch);
+		DELETE(eos);
 	}
 
 	void handle_sync() {
@@ -146,7 +142,7 @@ public:
 			finalize();
 			ff_send_out(make_eos());
 		}
-		//DELETE(eos, base_microbatch);
+		DELETE(eos);
 	}
 
 	void handle_sync() {
