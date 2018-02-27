@@ -35,10 +35,6 @@
 using namespace ff;
 using namespace pico;
 
-/*
- * TODO only works with non-decorating token
- */
-
 template<typename In, typename Out, typename TokenTypeIn, typename TokenTypeOut>
 class MapPReduceBatch: public NonOrderingFarm {
 	typedef typename Out::keytype OutK;

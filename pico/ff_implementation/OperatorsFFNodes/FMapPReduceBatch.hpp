@@ -34,10 +34,6 @@
 using namespace ff;
 using namespace pico;
 
-/*
- * TODO only works with non-decorating token
- */
-
 template<typename In, typename Out, typename TokenTypeIn, typename TokenTypeOut>
 class FMapPReduceBatch: public NonOrderingFarm {
 	typedef typename Out::keytype OutK;
@@ -77,7 +73,7 @@ private:
 			 * got a microbatch to process and delete
 			 */
 			auto in_microbatch = reinterpret_cast<mb_in*>(in_mb);
-			tag = in_mb->tag(); //TODO
+			tag = in_mb->tag();
 			collector.tag(tag);
 
 			// iterate over microbatch
@@ -128,10 +124,6 @@ private:
 		}
 
 	private:
-		/*
-		 * ingests and emits Microbatches of non-decorated data items
-		 * todo force non-decorated tokens
-		 */
 		typedef Microbatch<TokenTypeIn> mb_in;
 		typedef Microbatch<TokenTypeOut> mb_out;
 
@@ -140,7 +132,7 @@ private:
 		std::function<OutV(OutV&, OutV&)> reduce_kernel;
 		std::unordered_map<OutK, OutV> kvmap;
 
-		//todo tag-partitioned state
+		//TODO per-tag state
 		base_microbatch::tag_t tag = 0;
 
 #ifdef TRACE_FASTFLOW

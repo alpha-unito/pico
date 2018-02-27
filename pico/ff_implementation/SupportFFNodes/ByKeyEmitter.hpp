@@ -71,10 +71,8 @@ private:
 	typedef typename TokenType::datatype DataType;
 	typedef typename DataType::keytype keytype;
 	typedef Microbatch<TokenType> mb_t;
-	std::unordered_map<size_t, mb_t *> worker_mb;
+	std::unordered_map<size_t, mb_t *> worker_mb; //TODO per-tag state
 	unsigned nworkers;
-
-	//TODO per-tag state
 
 	inline size_t key_to_worker(const keytype& k) {
 		return std::hash<keytype> { }(k) % nworkers;
