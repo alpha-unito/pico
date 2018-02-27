@@ -154,7 +154,7 @@ public:
 
 private:
 	unsigned nw;
-	unsigned picoEOSrecv, picoSYNCrecv;
+	unsigned picoEOSrecv, picoSYNCrecv; //TODO per-tag
 };
 
 #endif /* PICO_FF_IMPLEMENTATION_BASE_NODES_HPP_ */

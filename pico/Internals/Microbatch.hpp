@@ -29,18 +29,33 @@
 
 namespace pico {
 
+/*
+ * The generic micro-batch represents either an untyped data chunk or
+ * a tagged meta-data (e.g., a synchronization token for a specific collection).
+ *
+ * Micro-batches are tagged to group them into logical collections (i.e,
+ * same tag -> same collection)
+ */
 class base_microbatch {
 public:
 	typedef unsigned long long tag_t;
+
+	/* a simple concurrent generator of fresh tags */
 	static inline tag_t fresh_tag() {
 		std::atomic<tag_t> tag(0);
 		return ++tag;
 	}
 
+	/*
+	 * the empty constructor generates a tagged nil micro-batch
+	 */
 	base_microbatch(tag_t tag__) :
 			tag_(tag__), chunk(nullptr) {
 	}
 
+	/*
+	 * this constructor generates a tagged micro-batch storing a data chunk
+	 */
 	base_microbatch(tag_t tag__, char *chunk_) :
 			tag_(tag__), chunk(chunk_) {
 	}
@@ -97,11 +112,6 @@ class Microbatch: public base_microbatch {
 	typedef typename TokenType::datatype DataType;
 
 public:
-	/**
-	 * The empty constructor
-	 */
-	using base_microbatch::base_microbatch;
-
 	/**
 	 * The constructor only allocates the chunk, it does not initialize items.
 	 */
@@ -207,10 +217,12 @@ private:
 	unsigned int allocated, committed;
 };
 
+/*
+ * A utility class for wrapping a pointer into a micro-batch.
+ */
 template<typename T>
 class mb_wrapped: public Microbatch<Token<T *>> {
 public:
-	using Microbatch<Token<T *>>::Microbatch;
 	mb_wrapped(base_microbatch::tag_t tag, T *ptr) :
 			Microbatch<Token<T *>>(tag, 1) {
 		*(this->allocate()) = ptr;
