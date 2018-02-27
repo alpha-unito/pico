@@ -77,6 +77,8 @@ private:
 			 * got a microbatch to process and delete
 			 */
 			auto in_microbatch = reinterpret_cast<mb_in*>(in_mb);
+			tag = in_mb->tag(); //TODO
+			collector.tag(tag);
 
 			// iterate over microbatch
 			for (In &in : *in_microbatch)
@@ -107,13 +109,13 @@ private:
 		}
 
 		void finalize() {
-			auto mb = NEW<mb_out>(global_params.MICROBATCH_SIZE);
+			auto mb = NEW<mb_out>(tag, global_params.MICROBATCH_SIZE);
 			for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
 				new (mb->allocate()) Out(it->first, it->second);
 				mb->commit();
 				if (mb->full()) {
 					ff_send_out(reinterpret_cast<void*>(mb));
-					mb = NEW<mb_out>(global_params.MICROBATCH_SIZE);
+					mb = NEW<mb_out>(tag, global_params.MICROBATCH_SIZE);
 				}
 			}
 
@@ -137,6 +139,9 @@ private:
 		std::function<void(In&, FlatMapCollector<Out> &)> map_kernel;
 		std::function<OutV(OutV&, OutV&)> reduce_kernel;
 		std::unordered_map<OutK, OutV> kvmap;
+
+		//todo tag-partitioned state
+		base_microbatch::tag_t tag = 0;
 
 #ifdef TRACE_FASTFLOW
 		duration_t user_svc;

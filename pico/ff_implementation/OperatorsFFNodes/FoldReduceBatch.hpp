@@ -62,6 +62,7 @@ private:
 
 		void kernel(base_microbatch *in_mb) {
 			mb_t *in_microbatch = reinterpret_cast<mb_t*>(in_mb);
+			tag = in_mb->tag(); //TODO
 			// iterate over microbatch
 			for (In &in : *in_microbatch) {
 				/* build item and enable copy elision */
@@ -72,7 +73,7 @@ private:
 
 		void finalize() {
 			/* wrap into a microbatch and send out */
-			auto mb = NEW<mb_wrapped<State>>(state);
+			auto mb = NEW<mb_wrapped<State>>(tag, state);
 			ff_send_out(mb);
 		}
 
@@ -80,6 +81,9 @@ private:
 		typedef Microbatch<TokenTypeIn> mb_t;
 		std::function<void(const In&, State&)> &foldf;
 		State* state;
+
+		//TODO tag-partitioned state
+		base_microbatch::tag_t tag = 0;
 	};
 
 	class Collector: public base_collector {
@@ -91,6 +95,7 @@ private:
 
 		void kernel(base_microbatch *in_mb) {
 			auto wmb = reinterpret_cast<mb_wrapped<State> *>(in_mb);
+			tag = in_mb->tag(); //TODO
 			State* s = reinterpret_cast<State*>(wmb->get());
 			reducef(*s, state);
 			delete s;
@@ -98,16 +103,19 @@ private:
 		}
 
 		void finalize() {
-			auto out_microbatch = NEW<mb_out>(global_params.MICROBATCH_SIZE);
-			new (out_microbatch->allocate()) State(state);
-			out_microbatch->commit();
-			ff_send_out(out_microbatch);
+			auto out_mb = NEW<mb_out>(tag, global_params.MICROBATCH_SIZE);
+			new (out_mb->allocate()) State(state);
+			out_mb->commit();
+			ff_send_out(out_mb);
 		}
 
 	private:
 		State state;
 		std::function<void(const State&, State&)> &reducef;
 		typedef Microbatch<TokenTypeState> mb_out;
+
+		//TODO tag-partitioned state
+		base_microbatch::tag_t tag = 0;
 
 	};
 };

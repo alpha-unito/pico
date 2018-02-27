@@ -42,8 +42,8 @@ using namespace pico;
 
 using base_node = ff::ff_node_t<base_microbatch, base_microbatch>;
 
-static base_microbatch *make_eos() {
-	return NEW<base_microbatch>();
+static base_microbatch *make_eos(base_microbatch::tag_t tag) {
+	return NEW<base_microbatch>(tag);
 }
 
 class base_filter: public base_node {
@@ -61,7 +61,7 @@ public:
 
 	virtual void handle_eos(base_microbatch *eos) {
 		finalize();
-		ff_send_out(make_eos());
+		ff_send_out(make_eos(eos->tag()));
 		DELETE(eos);
 	}
 
@@ -114,7 +114,7 @@ private:
 	void handle_eos(base_microbatch *eos) {
 		finalize();
 		for (unsigned i = 0; i < nw; ++i)
-			send_out_to(make_eos(), i);
+			send_out_to(make_eos(eos->tag()), i);
 		DELETE(eos);
 	}
 
@@ -140,7 +140,7 @@ public:
 	void handle_eos(base_microbatch *eos) {
 		if (++picoEOSrecv == nw) {
 			finalize();
-			ff_send_out(make_eos());
+			ff_send_out(make_eos(eos->tag()));
 		}
 		DELETE(eos);
 	}

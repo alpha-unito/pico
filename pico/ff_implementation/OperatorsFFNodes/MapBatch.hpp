@@ -61,14 +61,15 @@ private:
 
 		void kernel(base_microbatch *in_mb) {
 			auto in_microbatch = reinterpret_cast<mb_in*>(in_mb);
-			auto out_microbatch = NEW<mb_out>(global_params.MICROBATCH_SIZE);
+			auto tag = in_mb->tag();
+			auto out_mb = NEW<mb_out>(tag, global_params.MICROBATCH_SIZE);
 			// iterate over microbatch
 			for (In &in : *in_microbatch) {
 				/* build item and enable copy elision */
-				new (out_microbatch->allocate()) Out(mkernel(in));
-				out_microbatch->commit();
+				new (out_mb->allocate()) Out(mkernel(in));
+				out_mb->commit();
 			}
-			ff_send_out(reinterpret_cast<void*>(out_microbatch));
+			ff_send_out(reinterpret_cast<void*>(out_mb));
 			DELETE(in_microbatch);
 		}
 

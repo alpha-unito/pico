@@ -58,17 +58,18 @@ private:
 		}
 
 		void kernel(base_microbatch *mb) {
-			auto in_microbatch = reinterpret_cast<Microbatch<TokenTypeIn>*>(mb);
+			auto in_mb = reinterpret_cast<Microbatch<TokenTypeIn>*>(mb);
+			auto tag = mb->tag();
+			collector.tag(tag);
 			// iterate over microbatch
-			for (In &tt : *in_microbatch) {
+			for (In &tt : *in_mb) {
 				mkernel(tt, collector);
 			}
 			if (collector.begin())
-				//TODO wrap
-				ff_send_out(NEW<mb_wrapped<cnode_t>>(collector.begin()));
+				ff_send_out(NEW<mb_wrapped<cnode_t>>(tag, collector.begin()));
 
 			//clean up
-			DELETE(in_microbatch);
+			DELETE(in_mb);
 			collector.clear();
 		}
 

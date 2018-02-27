@@ -82,14 +82,15 @@ public:
 	private:
 		void kernel(base_microbatch *in_mb) {
 			auto wmb = reinterpret_cast<mb_wrapped<task_from_t> *>(in_mb);
+			auto tag = in_mb->tag();
 			auto t = wmb->get();
 			if (t->origin == 0) {
 				auto in_mb = reinterpret_cast<mb_in1*>(t->task);
-				dispatch<In1>(in_mb, mb2w_from1, 0);
+				dispatch<In1>(tag, in_mb, mb2w_from1, 0);
 				DELETE(in_mb);
 			} else {
 				auto in_mb = reinterpret_cast<mb_in2*>(t->task);
-				dispatch<In2>(in_mb, mb2w_from2, 1);
+				dispatch<In2>(tag, in_mb, mb2w_from2, 1);
 				DELETE(in_mb);
 			}
 			DELETE(t);
@@ -105,21 +106,22 @@ public:
 
 		/* stream out (or store) microbatch items */
 		template<typename In, typename mb_t, typename mb2w_from_t>
-		void dispatch(mb_t *in_mb, mb2w_from_t &mb2w_from, unsigned from) {
+		void dispatch(base_microbatch::tag_t tag, mb_t *in_mb, mb2w_from_t &mb2w_from, unsigned from) {
 			for (auto tt : *in_mb) {
 				auto k = tt.Key();
 				auto dst = key_to_worker(k);
 				// create k-dst microbatch if not existing
 				if (mb2w_from[dst].find(k) == mb2w_from[dst].end())
-					mb2w_from[dst][k] = NEW<mb_t>(mbsize);
+					mb2w_from[dst][k] = NEW<mb_t>(tag, mbsize);
 				// copy token into dst's microbatch
 				new (mb2w_from[dst][k]->allocate()) In(tt);
 				mb2w_from[dst][k]->commit();
 				if (mb2w_from[dst][k]->full()) {
 					auto mb_from = NEW<mb_from_t>(mb2w_from[dst][k], from);
-					auto wmb = NEW<mb_wrapped<mb_from_t>>(mb_from);
+					auto tag_ = mb2w_from[dst][k]->tag();
+					auto wmb = NEW<mb_wrapped<mb_from_t>>(tag_, mb_from);
 					farm.getlb()->ff_send_out_to(wmb, dst);
-					mb2w_from[dst][k] = NEW<mb_t>(mbsize);
+					mb2w_from[dst][k] = NEW<mb_t>(tag, mbsize); //TODO unknown tag
 				}
 			}
 		}
@@ -130,7 +132,7 @@ public:
 			for (auto kmb : mb2w[dst])
 				if (!kmb.second->empty()) {
 					auto mb_from = NEW<mb_from_t>(kmb.second, from);
-					auto wmb = NEW<mb_wrapped<mb_from_t>>(mb_from);
+					auto wmb = NEW<mb_wrapped<mb_from_t>>(kmb.second->tag(), mb_from);
 					farm.getlb()->ff_send_out_to(wmb, dst);
 				} else
 					DELETE(kmb.second); //spurious microbatch
@@ -140,6 +142,7 @@ public:
 		const unsigned mbsize;
 		NonOrderingFarm &farm;
 
+		//TODO per-tag
 		/* for both origins, one per-key microbatch for each worker */
 		std::vector<std::unordered_map<K, mb_in1 *>> mb2w_from1;
 		std::vector<std::unordered_map<K, mb_in2 *>> mb2w_from2;
@@ -188,9 +191,11 @@ public:
 	private:
 		void process_and_store_from1(mb_from_t *mb_from) {
 			auto in_mb = reinterpret_cast<mb_in1 *>(mb_from->mb);
+			auto tag = in_mb->tag();
 			auto k = (*in_mb->begin()).Key();
 
 			/* process */
+			collector.tag(tag);
 			for (auto kv_in : *in_mb) {
 				/* match with the from-2 k-partition stored so far */
 				for (auto kmb_ptr : kmb_from2[k])
@@ -198,7 +203,7 @@ public:
 						fkernel(kv_in, kv_match, collector);
 			}
 			if (collector.begin())
-				ff_send_out(NEW<mb_wrapped<cnode_t>>(collector.begin()));
+				ff_send_out(NEW<mb_wrapped<cnode_t>>(tag, collector.begin()));
 
 			/* store */
 			kmb_from1[k].push_back(in_mb);
@@ -206,9 +211,11 @@ public:
 
 		void process_and_store_from2(mb_from_t *mb_from) {
 			auto in_mb = reinterpret_cast<mb_in2 *>(mb_from->mb);
+			auto tag = in_mb->tag();
 			auto k = (*in_mb->begin()).Key();
 
 			/* process */
+			collector.tag(tag);
 			for (auto kv_in : *in_mb) {
 				/* match with the from-1 k-partition stored so far */
 				for (auto kmb_ptr : kmb_from1[k])
@@ -216,7 +223,7 @@ public:
 						fkernel(kv_match, kv_in, collector);
 			}
 			if (collector.begin())
-				ff_send_out(NEW<mb_wrapped<cnode_t>>(collector.begin()));
+				ff_send_out(NEW<mb_wrapped<cnode_t>>(tag, collector.begin()));
 
 			/* store */
 			kmb_from2[k].push_back(in_mb);

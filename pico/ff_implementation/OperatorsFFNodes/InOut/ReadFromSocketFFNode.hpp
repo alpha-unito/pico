@@ -71,6 +71,9 @@ public:
 	}
 
 	void initialize() {
+		/* get a fresh tag */
+		tag = base_microbatch::fresh_tag();
+
 		std::string tail;
 		char buffer[CHUNK_SIZE];
 		if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))
@@ -78,8 +81,8 @@ public:
 			error("ERROR connecting");
 		}
 		bzero(buffer, sizeof(buffer));
-		auto microbatch = NEW<mb_t>(global_params.MICROBATCH_SIZE);
-		std::string *line = new (microbatch->allocate()) std::string();
+		auto mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+		std::string *line = new (mb->allocate()) std::string();
 
 		while ((n = read(sockfd, buffer, sizeof(buffer))) > 0) {
 			tail.append(buffer, n);
@@ -87,13 +90,13 @@ public:
 			/* initialize a new string within the micro-batch */
 			while (std::getline(f, *line, delimiter)) {
 				if (!f.eof()) {         // line contains another delimiter
-					microbatch->commit();
-					if (microbatch->full()) {
-						ff_send_out(reinterpret_cast<void*>(microbatch));
-						microbatch = NEW<mb_t>(global_params.MICROBATCH_SIZE);
+					mb->commit();
+					if (mb->full()) {
+						ff_send_out(reinterpret_cast<void*>(mb));
+						mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
 					}
 					tail.clear();
-					line = new (microbatch->allocate()) std::string();
+					line = new (mb->allocate()) std::string();
 				} else { // trunked line, store for next parsing
 					tail.clear();
 					tail.append(*line);
@@ -102,10 +105,10 @@ public:
 			bzero(buffer, sizeof(buffer));
 		} // end while read
 
-		if (!microbatch->empty()) {
-			ff_send_out(reinterpret_cast<void*>(microbatch));
+		if (!mb->empty()) {
+			ff_send_out(reinterpret_cast<void*>(mb));
 		} else {
-			DELETE(microbatch);
+			DELETE(mb);
 		}
 	}
 
@@ -125,6 +128,7 @@ private:
 	struct sockaddr_in serv_addr;
 	struct hostent *server = nullptr;
 	char delimiter;
+	base_microbatch::tag_t tag = 0; //a tag for the generated collection
 
 	void error(const char *msg) {
 		perror(msg);
