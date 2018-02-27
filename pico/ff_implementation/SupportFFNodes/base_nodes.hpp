@@ -34,17 +34,19 @@
 #include "../../Internals/Microbatch.hpp"
 #include "../../Internals/utils.hpp"
 
+#include "farms.hpp"
+
 //#include "../defs.hpp"
 
 using namespace pico;
 
 using base_node = ff::ff_node_t<base_microbatch, base_microbatch>;
 
-static void *make_eos() {
+static base_microbatch *make_eos() {
 //	base_microbatch *eos;
 //	NEW(eos, base_microbatch);
 //	return eos;
-	return PICO_EOS;
+	return reinterpret_cast<base_microbatch *>(PICO_EOS);
 }
 
 class base_filter: public base_node {
@@ -109,22 +111,14 @@ public:
 
 protected:
 	void send_out_to(base_microbatch *task, unsigned i) {
-		lb->send_out_to(task, i);
-	}
-
-	void broadcast_task(base_microbatch *task) {
-		lb->broadcast_task(task);
+		lb->ff::ff_loadbalancer::ff_send_out_to(task, i);
 	}
 
 private:
 	void handle_eos(base_microbatch *eos) {
 		finalize();
-#if 0
-		for(unsigned i=0; i < nw; ++i)
-			lb->send_out_to(make_eos(), i);
-#else
-		lb->broadcast_task(make_eos()); //todo
-#endif
+		for (unsigned i = 0; i < nw; ++i)
+			send_out_to(make_eos(), i);
 		//DELETE(eos, base_microbatch);
 	}
 

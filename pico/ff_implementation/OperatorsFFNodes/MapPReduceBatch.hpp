@@ -43,12 +43,13 @@ template<typename In, typename Out, typename TokenTypeIn, typename TokenTypeOut>
 class MapPReduceBatch: public NonOrderingFarm {
 	typedef typename Out::keytype OutK;
 	typedef typename Out::valuetype OutV;
+	typedef ForwardingEmitter<typename NonOrderingFarm::lb_t> emitter_t;
 
 public:
 	MapPReduceBatch(int par, //
 			std::function<Out(In&)>& mapf, //
 			std::function<OutV(OutV&, OutV&)> reducef) {
-		auto e = new ForwardingEmitter<NonOrderingFarm_lb>(this->getlb(), par);
+		auto e = new emitter_t(this->getlb(), par);
 		this->setEmitterF(e);
 		auto c = new PReduceCollector<Out, TokenTypeOut>(par, reducef);
 		this->setCollectorF(c);

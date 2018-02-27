@@ -42,12 +42,13 @@ template<typename In, typename Out, typename TokenTypeIn, typename TokenTypeOut>
 class FMapPReduceBatch: public NonOrderingFarm {
 	typedef typename Out::keytype OutK;
 	typedef typename Out::valuetype OutV;
+	typedef ForwardingEmitter<typename NonOrderingFarm::lb_t> fw_emitter_t;
 
 public:
 	FMapPReduceBatch(int par,
 			std::function<void(In&, FlatMapCollector<Out> &)>& flatmapf,
 			std::function<OutV(OutV&, OutV&)> reducef) {
-		auto e = new ForwardingEmitter<NonOrderingFarm_lb>(this->getlb(), par);
+		auto e = new fw_emitter_t(this->getlb(), par);
 		this->setEmitterF(e);
 		auto c = new PReduceCollector<Out, TokenTypeOut>(par, reducef);
 		this->setCollectorF(c);

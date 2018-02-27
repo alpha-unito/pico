@@ -59,6 +59,6 @@ public:
 
 //todo drop
 template<typename TokenType>
-using OFarmEmitter = ForwardingEmitter<NonOrderingFarm_lb>;
+using OFarmEmitter = ForwardingEmitter<typename NonOrderingFarm::lb_t>;
 
 #endif /* INTERNALS_FFOPERATORS_EMITTER_HPP_ */
