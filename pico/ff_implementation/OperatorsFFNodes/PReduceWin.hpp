@@ -83,7 +83,7 @@ private:
 				}
 				if (kvcountmap[k] == win_size) {
 					mb_t *out_mb;
-					out_mb = NEW<mb_t>(1);
+					out_mb = NEW<mb_t>(tag, 1);
 					new (out_mb->allocate()) In(k, kvmap[k]);
 					out_mb->commit();
 					ff_send_out(reinterpret_cast<void*>(out_mb));
@@ -99,7 +99,7 @@ private:
 				auto k(kc.first);
 				if (kc.second) {
 					mb_t *out_mb;
-					out_mb = NEW<mb_t>(1);
+					out_mb = NEW<mb_t>(tag, 1);
 					new (out_mb->allocate()) In(k, kvmap[k]);
 					out_mb->commit();
 					ff_send_out(reinterpret_cast<void*>(out_mb));
@@ -114,6 +114,9 @@ private:
 		std::unordered_map<K, V> kvmap; //partial per-window/key reduced value
 		std::unordered_map<K, size_t> kvcountmap; //per-window/key counter
 		size_t win_size;
+
+		//TODO per-tag state
+		base_microbatch::tag_t tag = 0;
 	};
 };
 

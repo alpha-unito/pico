@@ -81,9 +81,10 @@ public:
 
 	void kernel(base_microbatch *in_mb) {
 		auto wmb = reinterpret_cast<mb_wrapped<prange> *>(in_mb);
+		auto tag = in_mb->tag();
 		prange *r = (prange *) wmb->get();
 		file.seekg(r->begin);
-		mb_t *mb = NEW<mb_t>(global_params.MICROBATCH_SIZE);
+		mb_t *mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
 		while (true) {
 			auto pos = file.tellg();
 			if (pos < r->end && pos != -1) {
@@ -95,7 +96,7 @@ public:
 					/* create next micro-batch if complete */
 					if (mb->full()) {
 						ff_send_out(reinterpret_cast<void*>(mb));
-						mb = NEW<mb_t>(global_params.MICROBATCH_SIZE);
+						mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
 					}
 				} else
 					assert(false);
@@ -148,10 +149,11 @@ public:
 
 	void kernel(base_microbatch *wmb) {
 		auto r_ = reinterpret_cast<mb_wrapped<prange> *>(wmb);
+		auto tag = wmb->tag();
 		prange *r = (prange *) r_->get();
 		fseek(fd, r->begin, SEEK_SET);
 		ssize_t remainder = r->end - r->begin;
-		auto mb = NEW<mb_t>(global_params.MICROBATCH_SIZE);
+		auto mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
 		std::string *line = new (mb->allocate()) std::string();
 		bool continued = false;
 		do {
@@ -168,7 +170,7 @@ public:
 						/* create next micro-batch if complete */
 						if (mb->full()) {
 							ff_send_out(reinterpret_cast<void*>(mb));
-							mb = NEW<mb_t>(global_params.MICROBATCH_SIZE);
+							mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
 						}
 						line = new (mb->allocate()) std::string();
 					}
@@ -250,6 +252,9 @@ private:
 		}
 
 		void initialize() {
+			/* get a fresh tag */
+			tag = base_microbatch::fresh_tag();
+
 			/* get file size */
 			fseek(fd, 0, SEEK_END);
 			off_t fsize = ftell(fd);
@@ -282,9 +287,10 @@ private:
 	private:
 		FILE *fd;
 		unsigned partitions;
+		base_microbatch::tag_t tag = 0; //a tag for the generated collection
 
 		void wrap_and_send(prange *p) {
-			auto wmb = NEW<mb_wrapped<prange>>(p);
+			auto wmb = NEW<mb_wrapped<prange>>(tag, p);
 			ff_send_out(wmb);
 		}
 	};

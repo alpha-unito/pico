@@ -31,12 +31,22 @@ namespace pico {
 
 class base_microbatch {
 public:
-	base_microbatch() :
-			chunk(nullptr) {
+	typedef unsigned long long tag_t;
+	static inline tag_t fresh_tag() {
+		std::atomic<tag_t> tag(0);
+		return ++tag;
 	}
 
-	base_microbatch(char *chunk_) :
-			chunk(chunk_) {
+	base_microbatch(tag_t tag__) :
+			tag_(tag__), chunk(nullptr) {
+	}
+
+	base_microbatch(tag_t tag__, char *chunk_) :
+			tag_(tag__), chunk(chunk_) {
+	}
+
+	inline tag_t tag() const {
+		return tag_;
 	}
 
 	inline bool nil() const {
@@ -44,6 +54,7 @@ public:
 	}
 
 protected:
+	tag_t tag_;
 	char *chunk;
 };
 
@@ -94,8 +105,8 @@ public:
 	/**
 	 * The constructor only allocates the chunk, it does not initialize items.
 	 */
-	Microbatch(unsigned int slots_) :
-			base_microbatch((char *) MALLOC(slots_ * slot_size)), //
+	Microbatch(base_microbatch::tag_t tag, unsigned int slots_) :
+			base_microbatch(tag, (char *) MALLOC(slots_ * slot_size)), //
 			slots(slots_), allocated(0), committed(0) {
 		assert(slots_);
 	}
@@ -200,8 +211,8 @@ template<typename T>
 class mb_wrapped: public Microbatch<Token<T *>> {
 public:
 	using Microbatch<Token<T *>>::Microbatch;
-	mb_wrapped(T *ptr) :
-			Microbatch<Token<T *>>(1) {
+	mb_wrapped(base_microbatch::tag_t tag, T *ptr) :
+			Microbatch<Token<T *>>(tag, 1) {
 		*(this->allocate()) = ptr;
 		this->commit();
 	}

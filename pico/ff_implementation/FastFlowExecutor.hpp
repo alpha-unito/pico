@@ -57,7 +57,7 @@ public:
 	void run() const {
 		ff_pipe->run();
 		ff_pipe->offload(PICO_SYNC);
-		ff_pipe->offload(make_eos());
+		ff_pipe->offload(make_eos(base_microbatch::fresh_tag()));
 		ff_pipe->offload(EOS);
 
 		void *res;

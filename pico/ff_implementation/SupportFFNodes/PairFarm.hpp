@@ -92,7 +92,7 @@ public:
 	void kernel(base_microbatch *in_mb) {
 		/* decorate with the origin and forwards */
 		auto t = NEW<task_from_t>(gt.from(), in_mb);
-		ff_send_out(NEW<mb_wrapped<task_from_t>>(t)); //wrap into mb
+		ff_send_out(NEW<mb_wrapped<task_from_t>>(in_mb->tag(), t)); //wrap into mb
 	}
 
 private:

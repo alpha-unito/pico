@@ -37,21 +37,22 @@ class ByKeyEmitter: public bk_emitter_t {
 public:
 	ByKeyEmitter(unsigned nworkers_, typename NonOrderingFarm::lb_t * lb_) :
 			bk_emitter_t(lb_, nworkers_), nworkers(nworkers_) {
-		/* prepare a microbatch for each worker */
-		for (unsigned i = 0; i < nworkers; ++i)
-			worker_mb[i] = NEW<mb_t>(global_params.MICROBATCH_SIZE);
 	}
 
 	void kernel(base_microbatch *in_mb) {
 		auto in_microbatch = reinterpret_cast<mb_t *>(in_mb);
+		auto tag = in_mb->tag();
 		for (auto tt : *in_microbatch) {
 			auto dst = key_to_worker(tt.Key());
+			/* prepare a microbatch for each worker */
+			if (!worker_mb[dst])
+				worker_mb[dst] = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
 			// add token to dst's microbatch
 			new (worker_mb[dst]->allocate()) DataType(tt);
 			worker_mb[dst]->commit();
 			if (worker_mb[dst]->full()) {
 				send_out_to(worker_mb[dst], dst);
-				worker_mb[dst] = NEW<mb_t>(global_params.MICROBATCH_SIZE);
+				worker_mb[dst] = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
 			}
 		}
 		DELETE(in_microbatch);
@@ -72,6 +73,8 @@ private:
 	typedef Microbatch<TokenType> mb_t;
 	std::unordered_map<size_t, mb_t *> worker_mb;
 	unsigned nworkers;
+
+	//TODO per-tag state
 
 	inline size_t key_to_worker(const keytype& k) {
 		return std::hash<keytype> { }(k) % nworkers;

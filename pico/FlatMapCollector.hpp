@@ -41,6 +41,18 @@ public:
 
 	virtual ~FlatMapCollector() {
 	}
+
+	void tag(base_microbatch::tag_t tag__) {
+		tag_ = tag__;
+	}
+
+protected:
+	base_microbatch::tag_t tag() const {
+		return tag_;
+	}
+
+private:
+	base_microbatch::tag_t tag_ = 0;
 };
 
 /**
@@ -84,6 +96,7 @@ public:
 	 */
 	inline void clear() {
 		first = head = nullptr;
+		this->tag(0);
 	}
 
 	/**
@@ -125,9 +138,10 @@ private:
 	}
 
 	inline cnode * allocate() {
+		assert(this->tag());
 		cnode *res = (cnode *) MALLOC(sizeof(cnode));
 		res->next = nullptr;
-		res->mb = NEW<mb_t>(global_params.MICROBATCH_SIZE);
+		res->mb = NEW<mb_t>(this->tag(), global_params.MICROBATCH_SIZE);
 		return res;
 	}
 };

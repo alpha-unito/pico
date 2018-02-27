@@ -31,8 +31,12 @@ private:
 	std::function<V(V&, V&)> rk;
 	const int mb_size = global_params.MICROBATCH_SIZE;
 
+	//TODO per-tag state
+	base_microbatch::tag_t tag = 0;
+
 	void kernel(base_microbatch *in) {
 		auto in_microbatch = reinterpret_cast<mb_t *>(in);
+		tag = in->tag();
 		/* update the internal map */
 		for (KV &kv : *in_microbatch) {
 			auto &k(kv.Key());
@@ -46,13 +50,13 @@ private:
 
 	void finalize() {
 		/* stream the internal map downstream */
-		auto out_microbatch = NEW<mb_t>(mb_size);
+		auto out_microbatch = NEW<mb_t>(tag, mb_size);
 		for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
 			new (out_microbatch->allocate()) KV(it->second);
 			out_microbatch->commit();
 			if (out_microbatch->full()) {
 				ff_send_out(reinterpret_cast<void*>(out_microbatch));
-				out_microbatch = NEW<mb_t>(mb_size);
+				out_microbatch = NEW<mb_t>(tag, mb_size);
 			}
 		}
 
