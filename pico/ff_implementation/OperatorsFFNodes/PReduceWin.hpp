@@ -73,6 +73,7 @@ private:
 
 		void kernel(base_microbatch *in_mb_) {
 			auto in_mb = reinterpret_cast<mb_t*>(in_mb_);
+			auto tag = in_mb_->tag();
 			for (In& kv : *in_mb) {
 				auto k(kv.Key());
 				if (kvmap.find(k) != kvmap.end() && kvcountmap[k]) {
@@ -94,7 +95,7 @@ private:
 			DELETE(in_mb);
 		}
 
-		void finalize() {
+		void finalize(base_microbatch::tag_t tag) {
 			/* stream out incomplete windows */
 			for (auto kc : kvcountmap) {
 				auto k(kc.first);
@@ -117,7 +118,6 @@ private:
 		size_t win_size;
 
 		//TODO per-tag state
-		base_microbatch::tag_t tag = 0;
 	};
 };
 

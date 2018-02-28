@@ -55,18 +55,19 @@ public:
 	}
 
 	void run() const {
+		auto tag = base_microbatch::fresh_tag();
 		ff_pipe->run();
-		ff_pipe->offload(PICO_SYNC);
-		ff_pipe->offload(make_eos(base_microbatch::fresh_tag()));
+		ff_pipe->offload(make_sync(tag));
+		ff_pipe->offload(make_eos(tag));
 		ff_pipe->offload(EOS);
 
-		void *res;
-		ff_pipe->load_result(&res);
-		assert(res == PICO_SYNC);
-		ff_pipe->load_result(&res);
-		auto eos = reinterpret_cast<base_microbatch *>(res);
-		assert(eos->nil());
-		DELETE(eos);
+		base_microbatch *res;
+		ff_pipe->load_result((void **)&res);
+		assert(res->payload() == PICO_BS);
+		DELETE(res);
+		ff_pipe->load_result((void **)&res);
+		assert(res->payload() == PICO_ES);
+		DELETE(res);
 
 		ff_pipe->wait();
 	}

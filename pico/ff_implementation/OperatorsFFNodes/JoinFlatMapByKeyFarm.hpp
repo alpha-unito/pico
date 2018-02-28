@@ -97,7 +97,7 @@ public:
 			DELETE(wmb);
 		}
 
-		void finalize() {
+		void finalize(base_microbatch::tag_t tag) {
 			for (unsigned i = 0; i < nworkers; ++i) {
 				send_remainder<mb_in1>(mb2w_from1, i, 0);
 				send_remainder<mb_in2>(mb2w_from2, i, 1);
@@ -178,7 +178,7 @@ public:
 			DELETE(wmb);
 		}
 
-		void finalize() {
+		void finalize(base_microbatch::tag_t tag) {
 			/* clear kv-stores */
 			for (auto kmb : kmb_from1)
 				for (auto mb_ptr : kmb.second)
@@ -235,6 +235,8 @@ public:
 		/* key-value store for both origins */
 		std::unordered_map<K, std::vector<mb_in1 *>> kmb_from1;
 		std::unordered_map<K, std::vector<mb_in2 *>> kmb_from2;
+
+		//TODO per-tag state
 	};
 
 	const unsigned nworkers;

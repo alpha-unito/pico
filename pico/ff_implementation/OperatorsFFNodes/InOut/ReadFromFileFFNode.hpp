@@ -251,7 +251,7 @@ private:
 			fclose(fd);
 		}
 
-		void initialize() {
+		void initialize(base_microbatch::tag_t) {
 			/* get a fresh tag */
 			tag = base_microbatch::fresh_tag();
 

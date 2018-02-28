@@ -46,10 +46,6 @@ enum OpClass {
 
 typedef std::map<StructureType, bool> st_map_t;
 
-/* FF tokens for pico protocol */
-static void *PICO_EOS = (void*) (ff::FF_EOS - 0xb);
-static void *PICO_SYNC = (void*) (ff::FF_EOS - 0xc);
-
 } /* namespace pico */
 
 #endif /* INTERNALS_UTILS_HPP_ */

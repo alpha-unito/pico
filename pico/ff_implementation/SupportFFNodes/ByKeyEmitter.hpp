@@ -58,7 +58,7 @@ public:
 		DELETE(in_microbatch);
 	}
 
-	void finalize() {
+	void finalize(base_microbatch::tag_t tag) {
 		for (unsigned i = 0; i < nworkers; ++i) {
 			if (!worker_mb[i]->empty())
 				send_out_to(worker_mb[i], i);
