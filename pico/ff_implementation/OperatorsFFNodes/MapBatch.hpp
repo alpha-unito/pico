@@ -32,10 +32,6 @@
 using namespace ff;
 using namespace pico;
 
-/*
- * TODO only works with non-decorating token
- */
-
 template<typename In, typename Out, typename Farm, typename TokenTypeIn,
 		typename TokenTypeOut>
 class MapBatch: public Farm {

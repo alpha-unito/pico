@@ -70,7 +70,7 @@ private:
 
 		void kernel(base_microbatch *in_mb) {
 			auto in_microbatch = reinterpret_cast<in_mb_t*>(in_mb);
-			tag = in_mb->tag();
+			//auto tag = in_mb->tag();
 			for (In &x : *in_microbatch) {
 				Out kv = map_kernel(x);
 				const OutK &k(kv.Key());
@@ -82,7 +82,7 @@ private:
 			DELETE(in_microbatch);
 		}
 
-		void finalize() {
+		void finalize(base_microbatch::tag_t tag) {
 			out_mb_t *out_mb;
 			out_mb = NEW<out_mb_t>(tag, global_params.MICROBATCH_SIZE);
 			for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
@@ -108,7 +108,6 @@ private:
 		std::unordered_map<OutK, OutV> kvmap;
 
 		//TODO per-tag state
-		base_microbatch::tag_t tag = 0;
 
 #ifdef TRACE_FASTFLOW
 		duration_t user_svc;

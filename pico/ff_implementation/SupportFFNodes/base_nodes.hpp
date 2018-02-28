@@ -36,14 +36,18 @@
 
 #include "farms.hpp"
 
-//#include "../defs.hpp"
+#include "../defs.hpp"
 
 using namespace pico;
 
 using base_node = ff::ff_node_t<base_microbatch, base_microbatch>;
 
 static base_microbatch *make_eos(base_microbatch::tag_t tag) {
-	return NEW<base_microbatch>(tag);
+	return NEW<base_microbatch>(tag, PICO_ES);
+}
+
+static base_microbatch *make_sync(base_microbatch::tag_t tag) {
+	return NEW<base_microbatch>(tag, PICO_BS);
 }
 
 class base_filter: public base_node {
@@ -53,30 +57,31 @@ public:
 
 	virtual void kernel(base_microbatch *) = 0;
 
-	virtual void initialize() {
+	virtual void initialize(base_microbatch::tag_t) {
 	}
 
-	virtual void finalize() {
+	virtual void finalize(base_microbatch::tag_t) {
 	}
 
 	virtual void handle_eos(base_microbatch *eos) {
-		finalize();
+		finalize(eos->tag());
 		ff_send_out(make_eos(eos->tag()));
 		DELETE(eos);
 	}
 
-	virtual void handle_sync() {
-		ff_send_out(PICO_SYNC);
-		initialize();
+	virtual void handle_sync(base_microbatch *bos) {
+		ff_send_out(make_sync(bos->tag()));
+		initialize(bos->tag());
+		DELETE(bos);
 	}
 
 protected:
 	inline bool is_eos(base_microbatch *in) {
-		return in->nil();
+		return in->payload() == PICO_ES;
 	}
 
 	inline bool is_sync(base_microbatch *in) {
-		return in == PICO_SYNC;
+		return in->payload() == PICO_BS;
 	}
 
 private:
@@ -85,7 +90,7 @@ private:
 			kernel(in);
 
 		else if (is_sync(in))
-			handle_sync();
+			handle_sync(in);
 		else {
 			assert(is_eos(in));
 			handle_eos(in);
@@ -112,15 +117,17 @@ protected:
 
 private:
 	void handle_eos(base_microbatch *eos) {
-		finalize();
+		finalize(eos->tag());
 		for (unsigned i = 0; i < nw; ++i)
 			send_out_to(make_eos(eos->tag()), i);
 		DELETE(eos);
 	}
 
-	void handle_sync() {
-		lb->broadcast_task(PICO_SYNC);
-		initialize();
+	void handle_sync(base_microbatch *bos) {
+		for (unsigned i = 0; i < nw; ++i)
+			send_out_to(make_sync(bos->tag()), i);
+		initialize(bos->tag());
+		DELETE(bos);
 	}
 
 private:
@@ -139,17 +146,18 @@ public:
 
 	void handle_eos(base_microbatch *eos) {
 		if (++picoEOSrecv == nw) {
-			finalize();
+			finalize(eos->tag());
 			ff_send_out(make_eos(eos->tag()));
 		}
 		DELETE(eos);
 	}
 
-	void handle_sync() {
+	void handle_sync(base_microbatch *bos) {
 		if (++picoSYNCrecv == nw) {
-			ff_send_out(PICO_SYNC);
-			initialize();
+			ff_send_out(make_sync(bos->tag()));
+			initialize(bos->tag());
 		}
+		DELETE(bos);
 	}
 
 private:

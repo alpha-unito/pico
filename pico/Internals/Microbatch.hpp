@@ -64,8 +64,8 @@ public:
 		return tag_;
 	}
 
-	inline bool nil() const {
-		return !chunk;
+	inline char *payload() const {
+		return chunk;
 	}
 
 protected:

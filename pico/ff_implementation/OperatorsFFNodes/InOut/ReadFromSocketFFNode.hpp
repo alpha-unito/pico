@@ -70,7 +70,7 @@ public:
 		serv_addr.sin_port = htons(port);
 	}
 
-	void initialize() {
+	void initialize(base_microbatch::tag_t) {
 		/* get a fresh tag */
 		tag = base_microbatch::fresh_tag();
 
@@ -112,7 +112,7 @@ public:
 		}
 	}
 
-	void finalize() {
+	void finalize(base_microbatch::tag_t) {
 		close(sockfd);
 	}
 

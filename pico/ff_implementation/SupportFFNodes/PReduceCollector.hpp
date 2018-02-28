@@ -32,11 +32,10 @@ private:
 	const int mb_size = global_params.MICROBATCH_SIZE;
 
 	//TODO per-tag state
-	base_microbatch::tag_t tag = 0;
 
 	void kernel(base_microbatch *in) {
 		auto in_microbatch = reinterpret_cast<mb_t *>(in);
-		tag = in->tag();
+		//auto tag = in->tag();
 		/* update the internal map */
 		for (KV &kv : *in_microbatch) {
 			auto &k(kv.Key());
@@ -48,7 +47,7 @@ private:
 		DELETE(in_microbatch);
 	}
 
-	void finalize() {
+	void finalize(base_microbatch::tag_t tag) {
 		/* stream the internal map downstream */
 		auto out_microbatch = NEW<mb_t>(tag, mb_size);
 		for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
