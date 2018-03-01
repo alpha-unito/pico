@@ -70,9 +70,10 @@ public:
 		serv_addr.sin_port = htons(port);
 	}
 
-	void initialize(base_microbatch::tag_t) {
+	void begin_callback() {
 		/* get a fresh tag */
 		tag = base_microbatch::fresh_tag();
+		begin_cstream(tag);
 
 		std::string tail;
 		char buffer[CHUNK_SIZE];
@@ -110,9 +111,11 @@ public:
 		} else {
 			DELETE(mb);
 		}
+
+		end_cstream(tag);
 	}
 
-	void finalize(base_microbatch::tag_t) {
+	void end_callback() {
 		close(sockfd);
 	}
 

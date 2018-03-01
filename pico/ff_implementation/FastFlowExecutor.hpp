@@ -35,6 +35,8 @@
 #include <pico/PEGOptimizations.hpp>
 
 #include "../Pipe.hpp"
+#include "../Operators/UnaryOperator.hpp"
+#include "../Operators/BinaryOperator.hpp"
 
 #include "SupportFFNodes/ForwardingNode.hpp"
 #include "SupportFFNodes/PairFarm.hpp"
@@ -55,19 +57,18 @@ public:
 	}
 
 	void run() const {
-		auto tag = base_microbatch::fresh_tag();
+		auto tag = base_microbatch::root_tag();
+
 		ff_pipe->run();
-		ff_pipe->offload(make_sync(tag));
-		ff_pipe->offload(make_eos(tag));
+		ff_pipe->offload(make_sync(tag, PICO_BEGIN));
+		ff_pipe->offload(make_sync(tag, PICO_END));
 		ff_pipe->offload(EOS);
 
 		base_microbatch *res;
-		ff_pipe->load_result((void **)&res);
-		assert(res->payload() == PICO_BS);
-		DELETE(res);
-		ff_pipe->load_result((void **)&res);
-		assert(res->payload() == PICO_ES);
-		DELETE(res);
+		assert(ff_pipe->load_result((void ** ) &res));
+		assert(res->payload() == PICO_BEGIN && res->tag() == tag);
+		assert(ff_pipe->load_result((void ** ) &res));
+		assert(res->payload() == PICO_END && res->tag() == tag);
 
 		ff_pipe->wait();
 	}
@@ -79,12 +80,15 @@ public:
 private:
 	const Pipe &pipe;
 	ff::ff_pipeline *ff_pipe = nullptr;
+	const int par_deg = global_params.PARALLELISM;
 
 	ff::ff_pipeline *make_ff_term(const Pipe &p, bool accelerator) const {
 		/* create the ff pipeline with automatic node cleanup */
 		auto *res = new ff::ff_pipeline(accelerator);
 		res->cleanup_nodes();
 		Operator *op;
+		base_UnaryOperator *uop;
+		base_BinaryOperator *bop;
 
 		switch (p.term_node_type()) {
 		case Pipe::EMPTY:
@@ -93,7 +97,8 @@ private:
 			break;
 		case Pipe::OPERATOR:
 			op = p.get_operator_ptr();
-			res->add_stage(op->node_operator(global_params.PARALLELISM));
+			uop = dynamic_cast<base_UnaryOperator *>(op);
+			res->add_stage(uop->node_operator(par_deg));
 			break;
 		case Pipe::TO:
 			add_chain(res, p.children());
@@ -122,7 +127,10 @@ private:
 			assert(op);
 			assert(p.children().size() == 2);
 			res->add_stage(make_pair_farm(*p.children()[0], *p.children()[1]));
-			res->add_stage(op->node_operator(global_params.PARALLELISM));
+			/* add the operator */
+			bop = dynamic_cast<base_BinaryOperator *>(op);
+			bool left_input = p.children()[0]->in_deg();
+			res->add_stage(bop->node_operator(par_deg, left_input));
 			break;
 		}
 		return res;
@@ -152,9 +160,9 @@ private:
 
 		/* add emitter */
 		ff::ff_node *e;
-		if(p1.in_deg())
+		if (p1.in_deg())
 			e = new PairEmitterToFirst(*res->getlb());
-		else if(p2.in_deg())
+		else if (p2.in_deg())
 			e = new PairEmitterToSecond(*res->getlb());
 		else
 			e = new PairEmitterToNone(*res->getlb());
@@ -193,7 +201,8 @@ private:
 	void add_plain(ff::ff_pipeline *p, ItType it) const {
 		if ((*it)->term_node_type() == Pipe::OPERATOR) {
 			/* standalone operator */
-			auto op = (*it)->get_operator_ptr();
+			base_UnaryOperator *op;
+			op = dynamic_cast<base_UnaryOperator *>((*it)->get_operator_ptr());
 			p->add_stage(op->node_operator(global_params.PARALLELISM));
 		} else
 			/* complex sub-term */

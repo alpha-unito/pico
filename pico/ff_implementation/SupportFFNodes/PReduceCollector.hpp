@@ -23,35 +23,39 @@ class PReduceCollector: public base_collector {
 
 public:
 	PReduceCollector(unsigned nworkers_, std::function<V(V&, V&)>& rk_) :
-			base_collector(nworkers_), rk(rk_) {
+		base_collector(nworkers_), rk(rk_) {
 	}
 
 private:
-	std::unordered_map<K, KV> kvmap;
 	std::function<V(V&, V&)> rk;
 	const int mb_size = global_params.MICROBATCH_SIZE;
 
-	//TODO per-tag state
+	struct key_state {
+		std::unordered_map<K, V> kvmap;
+	};
+	std::unordered_map<base_microbatch::tag_t, key_state> tag_state;
 
 	void kernel(base_microbatch *in) {
 		auto in_microbatch = reinterpret_cast<mb_t *>(in);
-		//auto tag = in->tag();
+		auto tag = in->tag();
+		auto &s(tag_state[tag]);
 		/* update the internal map */
 		for (KV &kv : *in_microbatch) {
 			auto &k(kv.Key());
-			if (kvmap.find(k) != kvmap.end())
-				kvmap[k] = KV(k, rk(kv.Value(), kvmap[k].Value()));
+			if (s.kvmap.find(k) != s.kvmap.end())
+				s.kvmap[k] = rk(kv.Value(), s.kvmap[k]);
 			else
-				kvmap[k] = kv;
+				s.kvmap[k] = kv.Value();
 		}
 		DELETE(in_microbatch);
 	}
 
-	void finalize(base_microbatch::tag_t tag) {
+	void cstream_end_callback(base_microbatch::tag_t tag) {
 		/* stream the internal map downstream */
+		auto &s(tag_state[tag]);
 		auto out_microbatch = NEW<mb_t>(tag, mb_size);
-		for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
-			new (out_microbatch->allocate()) KV(it->second);
+		for (auto it = s.kvmap.begin(); it != s.kvmap.end(); ++it) {
+			new (out_microbatch->allocate()) KV(it->first, it->second);
 			out_microbatch->commit();
 			if (out_microbatch->full()) {
 				ff_send_out(reinterpret_cast<void*>(out_microbatch));

@@ -70,22 +70,23 @@ private:
 
 		void kernel(base_microbatch *in_mb) {
 			auto in_microbatch = reinterpret_cast<in_mb_t*>(in_mb);
-			//auto tag = in_mb->tag();
+			auto &s(tag_state[in_mb->tag()]);
 			for (In &x : *in_microbatch) {
 				Out kv = map_kernel(x);
 				const OutK &k(kv.Key());
-				if (kvmap.find(k) != kvmap.end())
-					kvmap[k] = reduce_kernel(kv.Value(), kvmap[k]);
+				if (s.kvmap.find(k) != s.kvmap.end())
+					s.kvmap[k] = reduce_kernel(kv.Value(), s.kvmap[k]);
 				else
-					kvmap[k] = kv.Value();
+					s.kvmap[k] = kv.Value();
 			}
 			DELETE(in_microbatch);
 		}
 
-		void finalize(base_microbatch::tag_t tag) {
+		void cstream_end_callback(base_microbatch::tag_t tag) {
+			auto &s(tag_state[tag]);
 			out_mb_t *out_mb;
 			out_mb = NEW<out_mb_t>(tag, global_params.MICROBATCH_SIZE);
-			for (auto it = kvmap.begin(); it != kvmap.end(); ++it) {
+			for (auto it = s.kvmap.begin(); it != s.kvmap.end(); ++it) {
 				new (out_mb->allocate()) Out(it->first, it->second);
 				out_mb->commit();
 				if (out_mb->full()) {
@@ -105,9 +106,10 @@ private:
 		typedef Microbatch<TokenTypeOut> out_mb_t;
 		std::function<Out(In&)> map_kernel;
 		std::function<OutV(OutV&, OutV&)> reduce_kernel;
-		std::unordered_map<OutK, OutV> kvmap;
-
-		//TODO per-tag state
+		struct key_state {
+			std::unordered_map<OutK, OutV> kvmap;
+		};
+		std::unordered_map<base_microbatch::tag_t, key_state> tag_state;
 
 #ifdef TRACE_FASTFLOW
 		duration_t user_svc;

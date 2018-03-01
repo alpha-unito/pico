@@ -39,7 +39,12 @@ template<typename In, typename TokenType>
 class WriteToStdOutFFNode: public base_filter {
 public:
 	WriteToStdOutFFNode(std::function<std::string(In&)> kernel_) :
-		wkernel(kernel_) {
+			wkernel(kernel_) {
+	}
+
+	/* sink node */
+	bool propagate_cstream_sync() {
+		return false;
 	}
 
 	void kernel(base_microbatch *in_mb) {

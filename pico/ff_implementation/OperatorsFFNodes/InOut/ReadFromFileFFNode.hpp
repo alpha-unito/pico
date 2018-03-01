@@ -251,9 +251,10 @@ private:
 			fclose(fd);
 		}
 
-		void initialize(base_microbatch::tag_t) {
+		void begin_callback() {
 			/* get a fresh tag */
 			tag = base_microbatch::fresh_tag();
+			begin_cstream(tag);
 
 			/* get file size */
 			fseek(fd, 0, SEEK_END);
@@ -278,6 +279,8 @@ private:
 			}
 			assert(fsize > rbegin); //todo - better partitioning?
 			wrap_and_send(NEW<prange>(rbegin, fsize));
+
+			end_cstream(tag);
 		}
 
 		void kernel(base_microbatch *) {

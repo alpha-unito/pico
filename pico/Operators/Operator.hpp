@@ -101,8 +101,6 @@ public:
 		return out_deg;
 	}
 
-	virtual ff::ff_node* node_operator(int par_deg)=0;
-
 	virtual ff::ff_node* opt_node(int, PEGOptimization_t, opt_args_t) {
 		assert(false);
 		return nullptr;

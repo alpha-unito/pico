@@ -26,10 +26,19 @@ typedef base_emitter<typename NonOrderingFarm::lb_t> PairEmitter_base_t;
 class PairEmitterToNone: public PairEmitter_base_t {
 public:
 	PairEmitterToNone(typename NonOrderingFarm::lb_t &lb_) :
-		PairEmitter_base_t(&lb_, 2) {
+			PairEmitter_base_t(&lb_, 2) {
 	}
 
+	/* ensure no c-streams are sent to input-less pipes */
 	void kernel(base_microbatch *) {
+		assert(false);
+	}
+
+	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
+		assert(false);
+	}
+
+	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
 		assert(false);
 	}
 };
@@ -38,11 +47,22 @@ template<int To>
 class PairEmitterTo: public PairEmitter_base_t {
 public:
 	PairEmitterTo(typename NonOrderingFarm::lb_t &lb_) :
-		PairEmitter_base_t(&lb_, 2) {
+			PairEmitter_base_t(&lb_, 2) {
 	}
 
 	void kernel(base_microbatch *in_mb) {
 		send_out_to(in_mb, To);
+	}
+
+	/* do not notify input-less pipe about c-stream begin/end */
+	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
+		send_out_to(make_sync(tag, PICO_CSTREAM_BEGIN), To);
+		//cstream_begin_callback(tag);
+	}
+
+	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
+		//cstream_end_callback(tag);
+		send_out_to(make_sync(tag, PICO_CSTREAM_END), To);
 	}
 };
 
@@ -75,24 +95,30 @@ private:
 	ssize_t from_;
 };
 
-struct task_from_t {
-	task_from_t(ssize_t origin_, void *task_) :
-			origin(origin_), task(task_) {
-	}
-	ssize_t origin;
-	void *task;
-};
-
 class PairCollector: public base_collector {
 public:
 	PairCollector(PairGatherer &gt_) :
 			base_collector(2), gt(gt_) {
 	}
 
+	/* on c-stream begin, forward and notify about origin */
+	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
+		send_sync(make_sync(tag, PICO_CSTREAM_BEGIN));
+		if(!gt.from())
+			send_sync(make_sync(tag, PICO_CSTREAM_FROM_LEFT));
+		else
+			send_sync(make_sync(tag, PICO_CSTREAM_FROM_RIGHT));
+	}
+
+	/* on c-stream end, notify */
+	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
+		//cstream_end_callback(tag);
+		send_sync(make_sync(tag, PICO_CSTREAM_END));
+	}
+
+	/* forward data */
 	void kernel(base_microbatch *in_mb) {
-		/* decorate with the origin and forwards */
-		auto t = NEW<task_from_t>(gt.from(), in_mb);
-		ff_send_out(NEW<mb_wrapped<task_from_t>>(in_mb->tag(), t)); //wrap into mb
+		ff_send_out(in_mb);
 	}
 
 private:
