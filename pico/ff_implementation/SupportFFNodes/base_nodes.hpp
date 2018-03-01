@@ -74,7 +74,7 @@ protected:
 	}
 
 	/*
-	 * to be called by user code
+	 * to be called by user code and runtime
 	 */
 	void begin_cstream(base_microbatch::tag_t tag) {
 		send_sync(make_sync(tag, PICO_CSTREAM_BEGIN));
@@ -90,9 +90,6 @@ protected:
 		return res;
 	}
 
-	/*
-	 * to be called by runtime sub-classes
-	 */
 	virtual void send_sync(base_microbatch *sync_mb) {
 		ff_send_out(sync_mb);
 	}
