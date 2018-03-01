@@ -47,6 +47,11 @@ public:
 		}
 	}
 
+	/* sink node */
+	bool propagate_cstream_sync() {
+		return false;
+	}
+
 	void kernel(base_microbatch *in) {
 		auto mb = reinterpret_cast<Microbatch<Token<In>>*>(in);
 		for (In& in : *mb)

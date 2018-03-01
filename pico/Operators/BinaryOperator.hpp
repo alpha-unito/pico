@@ -28,8 +28,13 @@ namespace pico {
  * Base class for actor nodes with *two* input streams and *one* output stream, either bound or unbound and grouped or plain.
  * It is provided with methods for input/output type checking.
  */
+class base_BinaryOperator : public Operator {
+public:
+	virtual ff::ff_node* node_operator(int par_deg, bool left_input)=0;
+};
+
 template<typename In1, typename In2, typename Out>
-class BinaryOperator: public Operator {
+class BinaryOperator: public base_BinaryOperator {
 public:
 	typedef In1 inFirstT;
 	typedef In2 inSecondT;

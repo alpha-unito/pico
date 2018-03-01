@@ -64,9 +64,9 @@ public:
 		return OpClass::BFMAP;
 	}
 
-	ff::ff_node* node_operator(int parallelism) {
+	ff::ff_node* node_operator(int parallelism, bool left_input) {
 		using t = JoinFlatMapByKeyFarm<Token<In1>, Token<In2>, Token<Out>>;
-		return new t(parallelism, kernel);
+		return new t(parallelism, kernel, left_input);
 	}
 
 protected:

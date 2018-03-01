@@ -39,31 +39,38 @@ public:
 			bk_emitter_t(lb_, nworkers_), nworkers(nworkers_) {
 	}
 
+	void cstream_begin_callback(base_microbatch::tag_t tag) {
+		/* prepare a microbatch for each worker */
+		auto &s(tag_state[tag]);
+		for (unsigned dst = 0; dst < nworkers; ++dst)
+			s.worker_mb[dst] = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+	}
+
 	void kernel(base_microbatch *in_mb) {
 		auto in_microbatch = reinterpret_cast<mb_t *>(in_mb);
 		auto tag = in_mb->tag();
+		auto &s(tag_state[tag]);
 		for (auto tt : *in_microbatch) {
 			auto dst = key_to_worker(tt.Key());
-			/* prepare a microbatch for each worker */
-			if (!worker_mb[dst])
-				worker_mb[dst] = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
 			// add token to dst's microbatch
-			new (worker_mb[dst]->allocate()) DataType(tt);
-			worker_mb[dst]->commit();
-			if (worker_mb[dst]->full()) {
-				send_out_to(worker_mb[dst], dst);
-				worker_mb[dst] = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+			new (s.worker_mb[dst]->allocate()) DataType(tt);
+			s.worker_mb[dst]->commit();
+			if (s.worker_mb[dst]->full()) {
+				send_out_to(s.worker_mb[dst], dst);
+				s.worker_mb[dst] = NEW<mb_t>(tag,
+						global_params.MICROBATCH_SIZE);
 			}
 		}
 		DELETE(in_microbatch);
 	}
 
-	void finalize(base_microbatch::tag_t tag) {
+	void cstream_end_callback(base_microbatch::tag_t tag) {
+		auto &s(tag_state[tag]);
 		for (unsigned i = 0; i < nworkers; ++i) {
-			if (!worker_mb[i]->empty())
-				send_out_to(worker_mb[i], i);
+			if (!s.worker_mb[i]->empty())
+				send_out_to(s.worker_mb[i], i);
 			else
-				DELETE(worker_mb[i]); //spurious microbatch
+				DELETE (s.worker_mb[i]); //spurious microbatch
 		}
 	}
 
@@ -71,8 +78,12 @@ private:
 	typedef typename TokenType::datatype DataType;
 	typedef typename DataType::keytype keytype;
 	typedef Microbatch<TokenType> mb_t;
-	std::unordered_map<size_t, mb_t *> worker_mb; //TODO per-tag state
 	unsigned nworkers;
+
+	struct w_state {
+		std::unordered_map<size_t, mb_t *> worker_mb;
+	};
+	std::unordered_map<base_microbatch::tag_t, w_state> tag_state;
 
 	inline size_t key_to_worker(const keytype& k) {
 		return std::hash<keytype> { }(k) % nworkers;

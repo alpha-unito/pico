@@ -56,33 +56,38 @@ private:
 	class Worker: public base_filter {
 	public:
 		Worker(std::function<void(const In&, State&)> &foldf_) :
-				foldf(foldf_), state(new State()) {
+				foldf(foldf_) {
 
+		}
+
+		void cstream_begin_callback(base_microbatch::tag_t tag) {
+			tag_state[tag].state_ = NEW<State>();
 		}
 
 		void kernel(base_microbatch *in_mb) {
 			mb_t *in_microbatch = reinterpret_cast<mb_t*>(in_mb);
-			//tag = in_mb->tag();
+			auto &s(tag_state[in_mb->tag()]);
 			// iterate over microbatch
 			for (In &in : *in_microbatch) {
 				/* build item and enable copy elision */
-				foldf(in, *state);
+				foldf(in, *s.state_);
 			}
 			DELETE(in_microbatch);
 		}
 
-		void finalize(base_microbatch::tag_t tag) {
-			/* wrap into a microbatch and send out */
-			auto mb = NEW<mb_wrapped<State>>(tag, state);
-			ff_send_out(mb);
+		void cstream_end_callback(base_microbatch::tag_t tag) {
+			/* wrap state into a microbatch and send out */
+			auto &s(tag_state[tag]);
+			ff_send_out(NEW<mb_wrapped<State>>(tag, s.state_));
 		}
 
 	private:
 		typedef Microbatch<TokenTypeIn> mb_t;
 		std::function<void(const In&, State&)> &foldf;
-		State* state;
-
-		//TODO per-tag state
+		struct state {
+			State* state_;
+		};
+		std::unordered_map<base_microbatch::tag_t, state> tag_state;
 	};
 
 	class Collector: public base_collector {
@@ -92,29 +97,34 @@ private:
 				reducef(reducef_) {
 		}
 
+		void cstream_begin_callback(base_microbatch::tag_t tag) {
+			tag_state[tag].state_ = NEW<State>();
+		}
+
 		void kernel(base_microbatch *in_mb) {
 			auto wmb = reinterpret_cast<mb_wrapped<State> *>(in_mb);
-			//auto tag = in_mb->tag();
-			State* s = reinterpret_cast<State*>(wmb->get());
-			reducef(*s, state);
-			delete s;
+			auto &s(tag_state[in_mb->tag()]);
+			auto in = reinterpret_cast<State*>(wmb->get());
+			reducef(*in, *s.state_);
+			DELETE(in);
 			DELETE(wmb);
 		}
 
-		void finalize(base_microbatch::tag_t tag) {
-			auto out_mb = NEW<mb_out>(tag, global_params.MICROBATCH_SIZE);
-			new (out_mb->allocate()) State(state);
+		void cstream_end_callback(base_microbatch::tag_t tag) {
+			auto &s(tag_state[tag]);
+			auto out_mb = NEW<mb_out>(tag, 1);
+			new (out_mb->allocate()) State(s.state_);
 			out_mb->commit();
 			ff_send_out(out_mb);
 		}
 
 	private:
-		State state;
 		std::function<void(const State&, State&)> &reducef;
 		typedef Microbatch<TokenTypeState> mb_out;
-
-		//TODO per-tag state
-
+		struct state {
+			State* state_;
+		};
+		std::unordered_map<base_microbatch::tag_t, state> tag_state;
 	};
 };
 

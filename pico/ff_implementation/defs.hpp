@@ -9,7 +9,12 @@
 #define PICO_FF_IMPLEMENTATION_DEFS_HPP_
 
 /* FF tokens for pico protocol */
-static char *PICO_ES = (char*) (ff::FF_EOS - 0xb);
-static char *PICO_BS = (char*) (ff::FF_EOS - 0xc);
+static char *PICO_BEGIN = (char*) (ff::FF_EOS - 0xb);
+static char *PICO_END = (char*) (ff::FF_EOS - 0xc);
+
+static char *PICO_CSTREAM_BEGIN = (char*) (ff::FF_EOS - 0xd);
+static char *PICO_CSTREAM_END = (char*) (ff::FF_EOS - 0xe);
+static char *PICO_CSTREAM_FROM_LEFT = (char*) (ff::FF_EOS - 0xf);
+static char *PICO_CSTREAM_FROM_RIGHT = (char*) (ff::FF_EOS - 0x10);
 
 #endif /* PICO_FF_IMPLEMENTATION_DEFS_HPP_ */

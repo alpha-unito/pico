@@ -40,9 +40,12 @@ class base_microbatch {
 public:
 	typedef unsigned long long tag_t;
 
-	/* a simple concurrent generator of fresh tags */
+	/* a simple concurrent generator of fresh tags - TODO improve */
+	static inline tag_t root_tag() {
+		return 0;
+	}
 	static inline tag_t fresh_tag() {
-		std::atomic<tag_t> tag(0);
+		static std::atomic<tag_t> tag(root_tag());
 		return ++tag;
 	}
 
@@ -109,9 +112,9 @@ protected:
  */
 template<typename TokenType>
 class Microbatch: public base_microbatch {
+public:
 	typedef typename TokenType::datatype DataType;
 
-public:
 	/**
 	 * The constructor only allocates the chunk, it does not initialize items.
 	 */

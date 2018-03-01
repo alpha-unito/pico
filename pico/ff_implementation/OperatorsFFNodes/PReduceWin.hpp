@@ -33,7 +33,6 @@
 #include "../SupportFFNodes/ByKeyEmitter.hpp"
 #include "../SupportFFNodes/collectors.hpp"
 
-
 #include "../ff_config.hpp"
 
 using namespace ff;
@@ -74,38 +73,40 @@ private:
 		void kernel(base_microbatch *in_mb_) {
 			auto in_mb = reinterpret_cast<mb_t*>(in_mb_);
 			auto tag = in_mb_->tag();
+			auto &s(tag_state[tag]);
 			for (In& kv : *in_mb) {
 				auto k(kv.Key());
-				if (kvmap.find(k) != kvmap.end() && kvcountmap[k]) {
-					++kvcountmap[k];
-					kvmap[k] = rkernel(kvmap[k], kv.Value());
+				if (s.kvmap.find(k) != s.kvmap.end() && s.kvcountmap[k]) {
+					++s.kvcountmap[k];
+					s.kvmap[k] = rkernel(s.kvmap[k], kv.Value());
 				} else {
-					kvcountmap[k] = 1;
-					kvmap[k] = kv.Value();
+					s.kvcountmap[k] = 1;
+					s.kvmap[k] = kv.Value();
 				}
-				if (kvcountmap[k] == win_size) {
+				if (s.kvcountmap[k] == win_size) {
 					mb_t *out_mb;
 					out_mb = NEW<mb_t>(tag, 1);
-					new (out_mb->allocate()) In(k, kvmap[k]);
+					new (out_mb->allocate()) In(k, s.kvmap[k]);
 					out_mb->commit();
 					ff_send_out(reinterpret_cast<void*>(out_mb));
-					kvcountmap[k] = 0;
+					s.kvcountmap[k] = 0;
 				}
 			}
 			DELETE(in_mb);
 		}
 
-		void finalize(base_microbatch::tag_t tag) {
+		void cstream_end_callback(base_microbatch::tag_t tag) {
+			auto &s(tag_state[tag]);
 			/* stream out incomplete windows */
-			for (auto kc : kvcountmap) {
+			for (auto kc : s.kvcountmap) {
 				auto k(kc.first);
 				if (kc.second) {
 					mb_t *out_mb;
 					out_mb = NEW<mb_t>(tag, 1);
-					new (out_mb->allocate()) In(k, kvmap[k]);
+					new (out_mb->allocate()) In(k, s.kvmap[k]);
 					out_mb->commit();
 					ff_send_out(reinterpret_cast<void*>(out_mb));
-					kvcountmap[k] = 0;
+					s.kvcountmap[k] = 0;
 				}
 			}
 		}
@@ -113,11 +114,12 @@ private:
 	private:
 		typedef Microbatch<TokenType> mb_t;
 		std::function<V(V&, V&)> rkernel;
-		std::unordered_map<K, V> kvmap; //partial per-window/key reduced value
-		std::unordered_map<K, size_t> kvcountmap; //per-window/key counter
+		struct key_state {
+			std::unordered_map<K, V> kvmap; //partial per-window/key reduced value
+			std::unordered_map<K, size_t> kvcountmap; //per-window/key counter
+		};
+		std::unordered_map<base_microbatch::tag_t, key_state> tag_state;
 		size_t win_size;
-
-		//TODO per-tag state
 	};
 };
 

@@ -42,12 +42,8 @@ using namespace pico;
 
 using base_node = ff::ff_node_t<base_microbatch, base_microbatch>;
 
-static base_microbatch *make_eos(base_microbatch::tag_t tag) {
-	return NEW<base_microbatch>(tag, PICO_ES);
-}
-
-static base_microbatch *make_sync(base_microbatch::tag_t tag) {
-	return NEW<base_microbatch>(tag, PICO_BS);
+static base_microbatch *make_sync(base_microbatch::tag_t tag, char *token) {
+	return NEW<base_microbatch>(tag, token);
 }
 
 class base_filter: public base_node {
@@ -55,45 +51,104 @@ public:
 	virtual ~base_filter() {
 	}
 
+protected:
+	/*
+	 * to be overridden by user code
+	 */
 	virtual void kernel(base_microbatch *) = 0;
 
-	virtual void initialize(base_microbatch::tag_t) {
+	virtual void begin_callback() {
 	}
 
-	virtual void finalize(base_microbatch::tag_t) {
+	virtual void end_callback() {
 	}
 
-	virtual void handle_eos(base_microbatch *eos) {
-		finalize(eos->tag());
-		ff_send_out(make_eos(eos->tag()));
-		DELETE(eos);
+	virtual void cstream_begin_callback(base_microbatch::tag_t) {
 	}
 
-	virtual void handle_sync(base_microbatch *bos) {
-		ff_send_out(make_sync(bos->tag()));
-		initialize(bos->tag());
-		DELETE(bos);
+	virtual void cstream_end_callback(base_microbatch::tag_t) {
 	}
 
-protected:
-	inline bool is_eos(base_microbatch *in) {
-		return in->payload() == PICO_ES;
+	virtual bool propagate_cstream_sync() {
+		return true;
 	}
 
-	inline bool is_sync(base_microbatch *in) {
-		return in->payload() == PICO_BS;
+	/*
+	 * to be called by user code
+	 */
+	void begin_cstream(base_microbatch::tag_t tag) {
+		send_sync(make_sync(tag, PICO_CSTREAM_BEGIN));
+	}
+
+	void end_cstream(base_microbatch::tag_t tag) {
+		send_sync(make_sync(tag, PICO_CSTREAM_END));
+	}
+
+	base_microbatch *recv_sync() {
+		base_microbatch *res;
+		while(!this->pop((void **)&res));
+		return res;
+	}
+
+	/*
+	 * to be called by runtime sub-classes
+	 */
+	virtual void send_sync(base_microbatch *sync_mb) {
+		ff_send_out(sync_mb);
 	}
 
 private:
-	base_microbatch* svc(base_microbatch* in) {
-		if (!is_sync(in) && !is_eos(in))
-			kernel(in);
+	virtual void handle_begin(base_microbatch::tag_t tag) {
+		//fprintf(stderr, "> %p begin tag=%llu\n", this, tag);
+		assert(tag == base_microbatch::root_tag());
+		send_sync(make_sync(tag, PICO_BEGIN));
+		begin_callback();
+	}
 
-		else if (is_sync(in))
-			handle_sync(in);
+	virtual void handle_end(base_microbatch::tag_t tag) {
+		//fprintf(stderr, "> %p end tag=%llu\n", this, tag);
+		assert(tag == base_microbatch::root_tag());
+		end_callback();
+		send_sync(make_sync(tag, PICO_END));
+	}
+
+	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
+		//fprintf(stderr, "> %p c-begin tag=%llu\n", this, tag);
+		if (propagate_cstream_sync())
+			begin_cstream(tag);
+		cstream_begin_callback(tag);
+	}
+
+	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
+		//fprintf(stderr, "> %p c-end tag=%llu\n", this, tag);
+		cstream_end_callback(tag);
+		if (propagate_cstream_sync())
+			end_cstream(tag);
+	}
+
+	bool is_sync(char *token) {
+		return token <= PICO_BEGIN && token >= PICO_CSTREAM_END;
+	}
+
+	void handle_sync(base_microbatch *sync_mb) {
+		char *token = sync_mb->payload();
+		auto tag = sync_mb->tag();
+		if (token == PICO_BEGIN)
+			handle_begin(tag);
+		else if (token == PICO_END)
+			handle_end(tag);
+		else if (token == PICO_CSTREAM_BEGIN)
+			handle_cstream_begin(tag);
+		else if (token == PICO_CSTREAM_END)
+			handle_cstream_end(tag);
+	}
+
+	base_microbatch* svc(base_microbatch* in) {
+		if (!is_sync(in->payload()))
+			kernel(in);
 		else {
-			assert(is_eos(in));
-			handle_eos(in);
+			handle_sync(in);
+			DELETE(in);
 		}
 
 		return GO_ON;
@@ -115,19 +170,9 @@ protected:
 		lb->ff::ff_loadbalancer::ff_send_out_to(task, i);
 	}
 
-private:
-	void handle_eos(base_microbatch *eos) {
-		finalize(eos->tag());
+	void send_sync(base_microbatch *sync_mb) {
 		for (unsigned i = 0; i < nw; ++i)
-			send_out_to(make_eos(eos->tag()), i);
-		DELETE(eos);
-	}
-
-	void handle_sync(base_microbatch *bos) {
-		for (unsigned i = 0; i < nw; ++i)
-			send_out_to(make_sync(bos->tag()), i);
-		initialize(bos->tag());
-		DELETE(bos);
+			send_out_to(make_sync(sync_mb->tag(), sync_mb->payload()), i);
 	}
 
 private:
@@ -138,31 +183,58 @@ private:
 class base_collector: public base_filter {
 public:
 	base_collector(unsigned nw_) :
-			nw(nw_), picoEOSrecv(0), picoSYNCrecv(0) {
+			nw(nw_) {
+		pending_begin = pending_end = nw;
 	}
 
 	virtual ~base_collector() {
 	}
 
-	void handle_eos(base_microbatch *eos) {
-		if (++picoEOSrecv == nw) {
-			finalize(eos->tag());
-			ff_send_out(make_eos(eos->tag()));
-		}
-		DELETE(eos);
+private:
+	void handle_end(base_microbatch::tag_t tag) {
+		assert(tag == base_microbatch::root_tag());
+		assert(pending_begin < pending_end);
+		if (!--pending_end)
+			send_sync(make_sync(tag, PICO_END));
+		assert(pending_begin <= pending_end);
 	}
 
-	void handle_sync(base_microbatch *bos) {
-		if (++picoSYNCrecv == nw) {
-			ff_send_out(make_sync(bos->tag()));
-			initialize(bos->tag());
+	void handle_begin(base_microbatch::tag_t tag) {
+		assert(tag == base_microbatch::root_tag());
+		assert(pending_begin <= pending_end);
+		if (pending_begin-- == nw)
+			send_sync(make_sync(tag, PICO_BEGIN));
+		assert(pending_begin < pending_end);
+	}
+
+	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
+		assert(pending_cstream_begin.find(tag) != pending_cstream_begin.end());
+		if (pending_cstream_end.find(tag) == pending_cstream_end.end())
+			pending_cstream_end[tag] = nw;
+		assert(pending_cstream_begin[tag] < pending_cstream_end[tag]);
+		if (!--pending_cstream_end[tag]) {
+			cstream_end_callback(tag);
+			if (propagate_cstream_sync())
+				send_sync(make_sync(tag, PICO_CSTREAM_END));
 		}
-		DELETE(bos);
+	}
+
+	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
+		if (pending_cstream_begin.find(tag) == pending_cstream_begin.end()) {
+			if (propagate_cstream_sync())
+				send_sync(make_sync(tag, PICO_CSTREAM_BEGIN));
+			pending_cstream_begin[tag] = nw;
+		}
+		if (pending_cstream_end.find(tag) != pending_cstream_end.end())
+			assert(pending_cstream_end[tag] <= pending_cstream_begin[tag]);
+		--pending_cstream_begin[tag];
 	}
 
 private:
 	unsigned nw;
-	unsigned picoEOSrecv, picoSYNCrecv; //TODO per-tag state
+	std::unordered_map<base_microbatch::tag_t, unsigned> pending_cstream_begin;
+	std::unordered_map<base_microbatch::tag_t, unsigned> pending_cstream_end;
+	unsigned pending_end, pending_begin;
 };
 
 #endif /* PICO_FF_IMPLEMENTATION_BASE_NODES_HPP_ */
