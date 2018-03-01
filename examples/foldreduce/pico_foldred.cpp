@@ -13,7 +13,7 @@
 typedef KeyValue<std::string, int> KV;
 typedef std::map<std::string, std::vector<int>> stype;
 
-auto writer = WriteToDisk<stype>([](stype in) {
+auto writer_function = [](stype in) {
 	std::string result;
 	for( auto it = in.begin(); it != in.end(); ++it ) {
 		result.append(it->first);
@@ -25,7 +25,7 @@ auto writer = WriteToDisk<stype>([](stype in) {
 		result.append("]\n");
 	}
 	return result;
-});
+};
 
 int main(int argc, char* argv[]) {
 
@@ -37,22 +37,26 @@ int main(int argc, char* argv[]) {
 		state.insert(in.begin(), in.end());
 	};
 
+	auto app_args = parse_PiCo_args(argc, argv);
+
 	// parse command line
 	if (argc < 2) {
 		std::cerr
-				<< "Usage: ./pico_foldred -i <input file> -o <output file> [-w workers] [-b batch-size] \n";
+				<< "Usage: ./pico_foldred [-w workers] [-b batch-size] <input file> <output file> \n";
 		return -1;
 	}
-	parse_PiCo_args(argc, argv);
+
+	std::string in_fname(app_args.argv[0]), out_fname(app_args.argv[1]);
 
 	/* define the pipeline */
-	auto foldreduce = Pipe(ReadFromFile()) //
+
+	auto foldreduce = Pipe() //
+	.add(ReadFromFile(in_fname)) //
 	.add(
 			Map<std::string, KV>(
 					[](std::string& s) {return KV(s, atoi(s.c_str()));})) //
 	.add(FoldReduce<KV, stype, stype>(foldf, reducef)) //
-	.add(writer);
-
+	.add(WriteToDisk<stype>(out_fname, writer_function));
 	/* print the semantic graph and generate dot file */
 	foldreduce.print_semantics();
 	foldreduce.to_dotfile("pico_foldred.dot");

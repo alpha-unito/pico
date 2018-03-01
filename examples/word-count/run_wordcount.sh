@@ -10,6 +10,6 @@ do
 	for i in `seq 1 $N`
 	do
 		echo $i / $N
-		./pico_wc -i testdata/words1m -w $j -b $B -o foo.txt 2> /dev/null | awk '{for (i=0; i<=NF; i++){if ($i == "in"){print $(i+1);exit}}}' >> $fname
+		./pico_wc -w $j -b $B testdata/words1m foo.txt 2> /dev/null | awk '{for (i=0; i<=NF; i++){if ($i == "in"){print $(i+1);exit}}}' >> $fname
 	done
 done
