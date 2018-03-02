@@ -55,8 +55,20 @@ std::unordered_map<char, std::unordered_multiset<int>> seq_flatmap_join(
 	return res;
 }
 
+/* parse test output into char-int pairs */
 
-TEST_CASE( "flatmap join by key", "flatmap join by key tag" ) {
+std::unordered_map<char, std::unordered_multiset<int>> get_result(std::string output_file){
+	std::unordered_map<char, std::unordered_multiset<int>> observed;
+	auto output_pairs_str = read_lines(output_file);
+	for (auto pair : output_pairs_str) {
+		auto kv = KV::from_string(pair);
+		observed[kv.Key()].insert(kv.Value());
+	}
+	return observed;
+}
+
+
+TEST_CASE( "JoinFlatMapByKey general tests", "[JoinFlatMapByKeyTag]" ) {
 
 	std::string input_file = "./testdata/pairs.txt";
 	std::string output_file = "output.txt";
@@ -72,28 +84,13 @@ TEST_CASE( "flatmap join by key", "flatmap join by key tag" ) {
 	Map<std::string, KV> pairs_creator([](std::string line) { //creates the pairs
 				auto res = KV::from_string(line);
 				return res;
-			});
+	});
 
 	/* compose the pipeline */
 
 	auto p = Pipe() //the empty pipeline
-	.add(reader) //
-	.add(pairs_creator);
-
-	auto test_pipe = p //
-	.pair_with(p, JoinFlatMapByKey<KV, KV, KV>(kernel)) //
-	.to(writer);
-
-
-	test_pipe.run();
-
-	/* parse output into char-int pairs */
-	std::unordered_map<char, std::unordered_multiset<int>> observed;
-	auto output_pairs_str = read_lines(output_file);
-	for (auto pair : output_pairs_str) {
-		auto kv = KV::from_string(pair);
-		observed[kv.Key()].insert(kv.Value());
-	}
+			.add(reader) //
+			.add(pairs_creator);
 
 	/* compute expected output */
 	std::unordered_map<char, std::unordered_multiset<int>> partitions;
@@ -104,7 +101,29 @@ TEST_CASE( "flatmap join by key", "flatmap join by key tag" ) {
 	}
 	auto expected = seq_flatmap_join(partitions);
 
+	SECTION("pair_with direct duplication"){
 
-	REQUIRE(expected == observed);
+		auto test_pipe = p //
+			.pair_with(p, JoinFlatMapByKey<KV, KV, KV>(kernel)) //
+			.add(writer);
 
+		test_pipe.run();
+		auto observed = get_result(output_file);
+
+		REQUIRE(expected == observed);
+	}
+
+
+	SECTION("pair_with indirect duplication"){
+
+		auto empty_pipe = Pipe();
+		auto pair_pipe = empty_pipe.pair_with(p, JoinFlatMapByKey<KV,KV,KV>(kernel));
+		auto test_pipe = p.to(pair_pipe)
+			.add(writer);
+
+		test_pipe.run();
+		auto observed = get_result(output_file);
+
+		REQUIRE(expected == observed);
+	}
 }
