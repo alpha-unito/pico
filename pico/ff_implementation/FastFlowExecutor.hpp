@@ -57,7 +57,7 @@ public:
 	}
 
 	void run() const {
-		auto tag = base_microbatch::root_tag();
+		auto tag = base_microbatch::nil_tag();
 
 		ff_pipe->run();
 		ff_pipe->offload(make_sync(tag, PICO_BEGIN));

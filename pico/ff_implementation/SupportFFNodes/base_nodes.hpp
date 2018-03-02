@@ -89,14 +89,14 @@ protected:
 private:
 	virtual void handle_begin(base_microbatch::tag_t tag) {
 		//fprintf(stderr, "> %p begin tag=%llu\n", this, tag);
-		assert(tag == base_microbatch::root_tag());
+		assert(tag == base_microbatch::nil_tag());
 		send_sync(make_sync(tag, PICO_BEGIN));
 		begin_callback();
 	}
 
 	virtual void handle_end(base_microbatch::tag_t tag) {
 		//fprintf(stderr, "> %p end tag=%llu\n", this, tag);
-		assert(tag == base_microbatch::root_tag());
+		assert(tag == base_microbatch::nil_tag());
 		end_callback();
 		send_sync(make_sync(tag, PICO_END));
 	}
@@ -181,7 +181,7 @@ public:
 
 private:
 	void handle_end(base_microbatch::tag_t tag) {
-		assert(tag == base_microbatch::root_tag());
+		assert(tag == base_microbatch::nil_tag());
 		assert(pending_begin < pending_end);
 		if (!--pending_end)
 			send_sync(make_sync(tag, PICO_END));
@@ -189,7 +189,7 @@ private:
 	}
 
 	void handle_begin(base_microbatch::tag_t tag) {
-		assert(tag == base_microbatch::root_tag());
+		assert(tag == base_microbatch::nil_tag());
 		assert(pending_begin <= pending_end);
 		if (pending_begin-- == nw)
 			send_sync(make_sync(tag, PICO_BEGIN));
