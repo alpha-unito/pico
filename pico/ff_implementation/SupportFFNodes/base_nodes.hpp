@@ -32,6 +32,10 @@
 
 using namespace pico;
 
+/**
+ * TODO try factorizing base_filter and base_switch
+ */
+
 using base_node = ff::ff_node_t<base_microbatch, base_microbatch>;
 
 static base_microbatch *make_sync(base_microbatch::tag_t tag, char *token) {
@@ -78,7 +82,8 @@ protected:
 
 	base_microbatch *recv_sync() {
 		base_microbatch *res;
-		while(!this->pop((void **)&res));
+		while (!this->pop((void **) &res))
+			;
 		return res;
 	}
 
@@ -224,6 +229,118 @@ private:
 	std::unordered_map<base_microbatch::tag_t, unsigned> pending_cstream_begin;
 	std::unordered_map<base_microbatch::tag_t, unsigned> pending_cstream_end;
 	unsigned pending_end, pending_begin;
+};
+
+class base_switch: public ff::ff_monode_t<base_microbatch, base_microbatch> {
+public:
+	virtual ~base_switch() {
+	}
+
+protected:
+	/*
+	 * to be overridden by user code
+	 */
+	virtual void kernel(base_microbatch *) = 0;
+
+	virtual void begin_callback() {
+	}
+
+	virtual void end_callback() {
+	}
+
+	virtual void cstream_begin_callback(base_microbatch::tag_t) {
+	}
+
+	virtual void cstream_end_callback(base_microbatch::tag_t) {
+	}
+
+	virtual bool propagate_cstream_sync() {
+		return true;
+	}
+
+	/*
+	 * to be called by user code and runtime
+	 */
+	void begin_cstream(base_microbatch::tag_t tag) {
+		send_sync(make_sync(tag, PICO_CSTREAM_BEGIN));
+	}
+
+	void end_cstream(base_microbatch::tag_t tag) {
+		send_sync(make_sync(tag, PICO_CSTREAM_END));
+	}
+
+	base_microbatch *recv_sync() {
+		base_microbatch *res;
+		while (!this->pop((void **) &res))
+			;
+		return res;
+	}
+
+	virtual void send_sync(base_microbatch *sync_mb) {
+		ff_send_out(sync_mb);
+	}
+
+protected:
+	void send_out_to(base_microbatch *task, unsigned dst) {
+		this->ff_send_out_to(task, dst);
+	}
+
+private:
+	virtual void handle_begin(base_microbatch::tag_t tag) {
+		//fprintf(stderr, "> %p begin tag=%llu\n", this, tag);
+		assert(tag == base_microbatch::nil_tag());
+		send_sync(make_sync(tag, PICO_BEGIN));
+		begin_callback();
+	}
+
+	virtual void handle_end(base_microbatch::tag_t tag) {
+		//fprintf(stderr, "> %p end tag=%llu\n", this, tag);
+		assert(tag == base_microbatch::nil_tag());
+		end_callback();
+		send_sync(make_sync(tag, PICO_END));
+	}
+
+	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
+		//fprintf(stderr, "> %p c-begin tag=%llu\n", this, tag);
+		if (propagate_cstream_sync())
+			begin_cstream(tag);
+		cstream_begin_callback(tag);
+	}
+
+	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
+		//fprintf(stderr, "> %p c-end tag=%llu\n", this, tag);
+		cstream_end_callback(tag);
+		if (propagate_cstream_sync())
+			end_cstream(tag);
+	}
+
+	bool is_sync(char *token) {
+		return token <= PICO_BEGIN && token >= PICO_CSTREAM_END;
+	}
+
+	void handle_sync(base_microbatch *sync_mb) {
+		char *token = sync_mb->payload();
+		auto tag = sync_mb->tag();
+		if (token == PICO_BEGIN)
+			handle_begin(tag);
+		else if (token == PICO_END)
+			handle_end(tag);
+		else if (token == PICO_CSTREAM_BEGIN)
+			handle_cstream_begin(tag);
+		else if (token == PICO_CSTREAM_END)
+			handle_cstream_end(tag);
+	}
+
+	base_microbatch* svc(base_microbatch* in) {
+		if (!is_sync(in->payload()))
+			kernel(in);
+		else {
+			handle_sync(in);
+			DELETE(in);
+		}
+
+		return GO_ON;
+	}
 };
 
 #endif /* PICO_FF_IMPLEMENTATION_BASE_NODES_HPP_ */

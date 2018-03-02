@@ -168,6 +168,8 @@ public:
 		/* recursively delete the term tree */
 		if (has_operator())
 			delete term_value.op;
+		else if (has_termination())
+			delete term_value.cond;
 		for (Pipe *p : children_)
 			delete p;
 
@@ -356,7 +358,7 @@ public:
 		res.in_deg_ = res.out_deg_ = 1;
 		res.st_map[StructureType::BAG] = true;
 		res.st_map[StructureType::STREAM] = false;
-		res.term_value.cond = cond;
+		res.term_value.cond = new TermCond(cond);
 		res.term_node_type_ = ITERATE;
 		res.children_.push_back(new Pipe(*this));
 
@@ -399,14 +401,14 @@ public:
 			assert(notempty.out_deg_);
 
 			/* check typing: non-empty pipe output vs matching operator input */
-			if(empty_subject)
+			if (empty_subject)
 				assert(same_data_type(typeid(opt2), notempty.out_dtype));
 			else
 				assert(same_data_type(typeid(opt1), notempty.out_dtype));
 			assert(struct_type_check(notempty.st_map, op.stype()));
 
 			/* infer types */
-			if(empty_subject)
+			if (empty_subject)
 				res.in_dtype = typeid(opt1);
 			else
 				res.in_dtype = typeid(opt2);
@@ -571,6 +573,11 @@ public:
 		return term_value.op;
 	}
 
+	TerminationCondition *get_termination_ptr() const {
+		assert(has_termination());
+		return term_value.cond;
+	}
+
 	term_node_t term_node_type() const {
 		return term_node_type_;
 	}
@@ -648,6 +655,10 @@ private:
 		return (term_node_type_ == OPERATOR || term_node_type_ == PAIR);
 	}
 
+	bool has_termination() const {
+		return (term_node_type_ == ITERATE);
+	}
+
 	/* data and structure types */
 	TypeInfoRef in_dtype = typeid(void);
 	TypeInfoRef out_dtype = typeid(void);
@@ -660,8 +671,14 @@ private:
 		term_value_t(Operator *op_) :
 				op(op_) {
 		}
+		term_value_t(TerminationCondition *cond_) :
+				cond(cond_) {
+		}
+		term_value_t(std::nullptr_t) :
+				op(nullptr) {
+		}
 		Operator *op;
-		TerminationCondition cond;
+		TerminationCondition *cond;
 	} term_value;
 	std::vector<Pipe *> children_;
 

@@ -25,10 +25,16 @@
 #ifndef PICO_TERMINATIONCONDITION_HPP_
 #define PICO_TERMINATIONCONDITION_HPP_
 
+#include "ff_implementation/iteration/fixed_length.hpp"
+
 namespace pico {
 
 class TerminationCondition {
+public:
+	virtual ~TerminationCondition() {
+	}
 
+	virtual base_switch *iteration_switch() = 0;
 };
 
 class FixedIterations: public TerminationCondition {
@@ -37,13 +43,12 @@ public:
 			iters(iters_) {
 	}
 
+	base_switch *iteration_switch() {
+		return new fixed_length_iteration_dispatcher(iters);
+	}
+
 private:
 	unsigned iters;
-	unsigned current = 0;
-
-	bool cond() {
-		return current < iters;
-	}
 };
 
 } /* namespace pico */
