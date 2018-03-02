@@ -230,7 +230,7 @@ public:
 				send_sync(make_sync(tag, PICO_CSTREAM_BEGIN));
 				non_cached_tags.push_back(tag);
 			} else {
-				assert(cached_tag == base_microbatch::root_tag());
+				assert(cached_tag == base_microbatch::nil_tag());
 				cached_tag = tag;
 			}
 
@@ -264,7 +264,7 @@ public:
 
 		void end_callback() {
 			/* clear cached collection from store */
-			if (cached_tag != base_microbatch::root_tag()) {
+			if (cached_tag != base_microbatch::nil_tag()) {
 				auto &s(tag_state[cached_tag]);
 				assert(tag_state.find(cached_tag) != tag_state.end());
 				clear_tag_state(s);
@@ -303,7 +303,7 @@ public:
 			auto k = (*in_mb->begin()).Key();
 			auto &s(tag_state[tag]);
 
-			if (!s.cached && cached_tag != base_microbatch::root_tag()) {
+			if (!s.cached && cached_tag != base_microbatch::nil_tag()) {
 				auto &match_kmbs = tag_state[cached_tag].kmb_from_right[k];
 				from_left_(in_mb, match_kmbs, tag);
 			} else if (s.cached) {
@@ -322,7 +322,7 @@ public:
 			auto k = (*in_mb->begin()).Key();
 			auto &s(tag_state[tag]);
 
-			if (!s.cached && cached_tag != base_microbatch::root_tag()) {
+			if (!s.cached && cached_tag != base_microbatch::nil_tag()) {
 				auto &match_kmbs = tag_state[cached_tag].kmb_from_left[k];
 				from_right_(in_mb, match_kmbs, tag);
 			} else if (s.cached) {
@@ -384,7 +384,7 @@ public:
 
 		bool cache_from_left; //tells if caching tag from left-input pipe
 		std::vector<tag_t> non_cached_tags;
-		tag_t cached_tag = base_microbatch::root_tag();
+		tag_t cached_tag = base_microbatch::nil_tag();
 
 		bool cache_complete = false;
 		std::vector<tag_t> uncleared_tags;

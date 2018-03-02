@@ -41,11 +41,11 @@ public:
 	typedef unsigned long long tag_t;
 
 	/* a simple concurrent generator of fresh tags - TODO improve */
-	static inline tag_t root_tag() {
+	static inline tag_t nil_tag() {
 		return 0;
 	}
 	static inline tag_t fresh_tag() {
-		static std::atomic<tag_t> tag(root_tag());
+		static std::atomic<tag_t> tag(nil_tag());
 		return ++tag;
 	}
 
