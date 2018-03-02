@@ -67,6 +67,10 @@ public:
 		return tag_;
 	}
 
+	inline void tag(tag_t tag__) {
+		tag_ = tag__;
+	}
+
 	inline char *payload() const {
 		return chunk;
 	}

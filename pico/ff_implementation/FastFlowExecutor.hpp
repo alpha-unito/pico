@@ -89,6 +89,7 @@ private:
 		Operator *op;
 		base_UnaryOperator *uop;
 		base_BinaryOperator *bop;
+		TerminationCondition *cond;
 
 		switch (p.term_node_type()) {
 		case Pipe::EMPTY:
@@ -110,11 +111,10 @@ private:
 			res->add_stage(make_multito_farm(p));
 			break;
 		case Pipe::ITERATE:
-			std::cerr << "ITERATION not implemented yet\n";
-			assert(false);
+			cond = p.get_termination_ptr();
 			assert(p.children().size() == 1);
-			res->add_stage(make_ff_term(*p.children()[0], false));
-			//TODO add termination stage
+			res->add_stage(make_ff_term(*p.children().front(), false));
+			res->add_stage(cond->iteration_switch());
 			res->wrap_around();
 			break;
 		case Pipe::MERGE:
