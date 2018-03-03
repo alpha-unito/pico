@@ -18,13 +18,16 @@ using namespace pico;
 
 typedef KeyValue<char, int> KV;
 
+typedef KeyValue<char, std::string> CC;
+
 /* JoinFlatMapByKey kernel function */
 static auto kernel = [](KV& in1, KV& in2, FlatMapCollector<KV>& collector) {
 	KV res = in1+in2;
-	int res_value = std::abs(res.Value());
-	if(res_value < 10) {
-		for(int i = 0; i < res_value; ++i)
-		collector.add(res); //add copies of res
+	int res_value = res.Value();
+	int res_abs = std::abs(res_value);
+	if(res_value % 2 == 0) {
+		for(int i = 0; i < res_abs % 10; ++i)
+			collector.add(res); //add copies of res
 	} //else filters out the pairs
 };
 
@@ -44,9 +47,9 @@ std::unordered_map<char, std::unordered_multiset<int>> seq_flatmap_join(
 		for (auto in1 : values) {
 			for (auto in2 : values) { //join
 				sum = in1 + in2;
-				sum_abs = std::abs(sum);
-				if (sum_abs < 10) {
-					for (int i = 0; i < sum_abs; ++i)
+				if (sum % 2 == 0) {
+					sum_abs = std::abs(sum);
+					for (int i = 0; i < sum_abs % 10; ++i)
 						res[key].insert(sum);
 				}
 			}
@@ -67,18 +70,10 @@ std::unordered_map<char, std::unordered_multiset<int>> get_result(std::string ou
 	return observed;
 }
 
-
-TEST_CASE( "JoinFlatMapByKey general tests", "[JoinFlatMapByKeyTag]" ) {
-
-	std::string input_file = "./testdata/pairs.txt";
-	std::string output_file = "output.txt";
-
-	/* define i/o operators from/to file */
+Pipe pipe_pairs_creator(std::string input_file){
+	/* define input operator from file */
 	ReadFromFile reader(input_file);
 
-	WriteToDisk<KV> writer(output_file, [&](KV in) {
-		return in.to_string();
-	});
 
 	/* define map operator  */
 	Map<std::string, KV> pairs_creator([](std::string line) { //creates the pairs
@@ -91,6 +86,24 @@ TEST_CASE( "JoinFlatMapByKey general tests", "[JoinFlatMapByKeyTag]" ) {
 	auto p = Pipe() //the empty pipeline
 			.add(reader) //
 			.add(pairs_creator);
+
+	return p;
+}
+
+WriteToDisk<KV> get_writer(std::string output_file){
+	return WriteToDisk<KV> (output_file, [&](KV in) {
+		return in.to_string();
+	});
+}
+
+TEST_CASE( "JoinFlatMapByKey general tests", "[JoinFlatMapByKeyTag]" ) {
+
+	std::string input_file = "./testdata/pairs.txt";
+	std::string output_file = "output.txt";
+
+	auto writer = get_writer(output_file);
+
+	auto p = pipe_pairs_creator(input_file);
 
 	/* compute expected output */
 	std::unordered_map<char, std::unordered_multiset<int>> partitions;
@@ -126,4 +139,45 @@ TEST_CASE( "JoinFlatMapByKey general tests", "[JoinFlatMapByKeyTag]" ) {
 
 		REQUIRE(expected == observed);
 	}
+}
+
+/* JoinFlatMapByKey kernel function */
+static auto kernel_kv_and_cc = [](KV& in1, CC& in2, FlatMapCollector<KV>& collector) {
+	KV kv = KV(in2.Key(), std::stoi(in2.Value())); //(Re)convert in2 to a KV
+	kernel(in1, kv, collector);
+};
+
+
+TEST_CASE("pairs pipes with different types", "[JoinFlatMapByKeyTag]"){
+
+	std::string input_file = "./testdata/pairs.txt";
+	std::string output_file = "output.txt";
+
+	auto writer = get_writer(output_file);
+	auto p1 = pipe_pairs_creator(input_file);
+
+	auto kv_to_cc = [](KV kv) {return CC(kv.Key(), std::to_string(kv.Value()));};
+	auto p2 = p1.add(Map<KV,CC>(kv_to_cc)); //converts KV to CC
+
+	auto test_pipe = p1.
+			pair_with(p2, JoinFlatMapByKey<KV,CC,KV>(kernel_kv_and_cc))
+			.add(writer);
+
+	test_pipe.run();
+
+	/* compute expected output */
+	std::unordered_map<char, std::unordered_multiset<int>> partitions;
+	auto input_pairs_str = read_lines(input_file);
+	for (auto pair : input_pairs_str) {
+		auto kv = KV::from_string(pair);
+		auto cc = CC(kv.Key(), std::to_string(kv.Value())); // emulate the map that converts kv to cc
+		kv = KV(cc.Key(), std::stoi(cc.Value())); // (re)convert cc to kv
+		partitions[kv.Key()].insert(kv.Value());
+	}
+
+	auto expected = seq_flatmap_join(partitions);
+
+	auto observed = get_result(output_file);
+
+	REQUIRE(expected == observed);
 }
