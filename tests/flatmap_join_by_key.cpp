@@ -24,8 +24,9 @@ typedef KeyValue<char, std::string> CC;
 static auto kernel = [](KV& in1, KV& in2, FlatMapCollector<KV>& collector) {
 	KV res = in1+in2;
 	int res_value = res.Value();
+	int res_abs = std::abs(res_value);
 	if(res_value % 2 == 0) {
-		for(int i = 0; i < res_value % 10; ++i)
+		for(int i = 0; i < res_abs % 10; ++i)
 			collector.add(res); //add copies of res
 	} //else filters out the pairs
 };
@@ -39,7 +40,7 @@ std::unordered_map<char, std::unordered_multiset<int>> seq_flatmap_join(
 	std::unordered_multiset<int> values;
 	std::unordered_map<char, std::unordered_multiset<int>> res;
 	char key;
-	int sum;
+	int sum, sum_abs;
 	for (auto part : partitions) {
 		key = part.first;
 		values = part.second;
@@ -47,7 +48,8 @@ std::unordered_map<char, std::unordered_multiset<int>> seq_flatmap_join(
 			for (auto in2 : values) { //join
 				sum = in1 + in2;
 				if (sum % 2 == 0) {
-					for (int i = 0; i < sum % 10; ++i)
+					sum_abs = std::abs(sum);
+					for (int i = 0; i < sum_abs % 10; ++i)
 						res[key].insert(sum);
 				}
 			}
@@ -178,5 +180,4 @@ TEST_CASE("pairs pipes with different types", "[JoinFlatMapByKeyTag]"){
 	auto observed = get_result(output_file);
 
 	REQUIRE(expected == observed);
-
 }
