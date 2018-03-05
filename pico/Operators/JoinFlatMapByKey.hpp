@@ -34,8 +34,8 @@ namespace pico {
  * The FlatMap produces zero or more elements in output, for each input pair,
  * according to the callable kernel.
  */
-template <typename In1, typename In2, typename Out>
-class JoinFlatMapByKey : public BinaryOperator<In1, In2, Out> {
+template<typename In1, typename In2, typename Out>
+class JoinFlatMapByKey: public BinaryOperator<In1, In2, Out> {
 public:
 	/**
 	 * \ingroup op-api
@@ -53,7 +53,8 @@ public:
 		this->stype(StructureType::STREAM, false);
 	}
 
-	JoinFlatMapByKey(const JoinFlatMapByKey &copy) : kernel(copy.kernel) {
+	JoinFlatMapByKey(const JoinFlatMapByKey &copy) :
+			kernel(copy.kernel) {
 	}
 
 	std::string name_short() {
@@ -68,6 +69,15 @@ public:
 		using t = JoinFlatMapByKeyFarm<Token<In1>, Token<In2>, Token<Out>>;
 		return new t(parallelism, kernel, left_input);
 	}
+
+#if 0
+	ff::ff_node *opt_node(int pardeg, PEGOptimization_t opt, opt_args_t a) {
+		assert(opt == PJFMAP_PREDUCE);
+		using t = JoinFlatMapReduceByKeyFarm<Token<In1>, Token<In2>, Token<Out>>;
+		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);
+		return new t(pardeg, kernel, nextop->kernel());
+	}
+#endif
 
 protected:
 	JoinFlatMapByKey* clone() {

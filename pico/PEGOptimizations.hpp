@@ -13,7 +13,7 @@ namespace pico {
 class Operator;
 
 enum PEGOptimization_t {
-	MAP_PREDUCE, FMAP_PREDUCE
+	MAP_PREDUCE, FMAP_PREDUCE, PJFMAP_PREDUCE
 };
 
 union opt_args_t {
