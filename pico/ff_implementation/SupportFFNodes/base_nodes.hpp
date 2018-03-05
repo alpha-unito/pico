@@ -76,14 +76,25 @@ protected:
 		send_sync(make_sync(tag, PICO_CSTREAM_END));
 	}
 
-	base_microbatch *recv_sync() {
+	virtual void send_mb(base_microbatch *mb) {
+		ff_send_out(mb);
+	}
+
+	base_microbatch *recv_mb() {
 		base_microbatch *res;
-		while(!this->pop((void **)&res));
+		while (!this->pop((void **) &res)) {
+		}
 		return res;
 	}
 
-	virtual void send_sync(base_microbatch *sync_mb) {
-		ff_send_out(sync_mb);
+	//TODO remove
+	inline base_microbatch *recv_sync() {
+		return recv_mb();
+	}
+
+	//TODO remove
+	inline void send_sync(base_microbatch *sync_mb) {
+		send_mb(sync_mb);
 	}
 
 private:
@@ -159,7 +170,7 @@ protected:
 		lb->ff::ff_loadbalancer::ff_send_out_to(task, i);
 	}
 
-	void send_sync(base_microbatch *sync_mb) {
+	void send_mb(base_microbatch *sync_mb) {
 		for (unsigned i = 0; i < nw; ++i)
 			send_out_to(make_sync(sync_mb->tag(), sync_mb->payload()), i);
 	}

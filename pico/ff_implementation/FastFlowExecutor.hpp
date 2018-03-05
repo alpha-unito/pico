@@ -193,6 +193,11 @@ private:
 			res = res && (opc1 == OpClass::FMAP && opc2 == OpClass::REDUCE);
 			res = res && (!op2->windowing() && op2->partitioning());
 			break;
+		case PJFMAP_PREDUCE:
+			//TODO check batch
+			res = res && (opc1 == OpClass::BFMAP && opc2 == OpClass::REDUCE);
+			res = res && (!op2->windowing() && op2->partitioning());
+			break;
 		}
 		return res;
 	}
