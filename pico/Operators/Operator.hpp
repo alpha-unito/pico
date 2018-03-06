@@ -28,7 +28,6 @@
 
 #include "../Internals/utils.hpp"
 #include "../WindowPolicy.hpp"
-#include "../PEGOptimizations.hpp"
 
 namespace pico {
 
@@ -99,11 +98,6 @@ public:
 
 	size_t o_degree() const {
 		return out_deg;
-	}
-
-	virtual ff::ff_node* opt_node(int, PEGOptimization_t, opt_args_t) {
-		assert(false);
-		return nullptr;
 	}
 
 	const st_map_t stype() const {

@@ -104,7 +104,7 @@ public:
 	/* on c-stream begin, forward and notify about origin */
 	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
 		send_sync(make_sync(tag, PICO_CSTREAM_BEGIN));
-		if(!gt.from())
+		if (!gt.from())
 			send_sync(make_sync(tag, PICO_CSTREAM_FROM_LEFT));
 		else
 			send_sync(make_sync(tag, PICO_CSTREAM_FROM_RIGHT));
@@ -127,4 +127,32 @@ private:
 
 typedef ff::ff_farm<typename NonOrderingFarm::lb_t, PairGatherer> PairFarm;
 
+static ff::ff_pipeline *make_ff_pipe(const Pipe &p1, bool, unsigned); //forward
+
+static PairFarm *make_pair_farm(const Pipe &p1, const Pipe &p2, unsigned par) {
+	/* create and configure */
+	auto res = new PairFarm();
+	res->cleanup_all();
+
+	/* add emitter */
+	ff::ff_node *e;
+	if (p1.in_deg())
+		e = new PairEmitterToFirst(*res->getlb());
+	else if (p2.in_deg())
+		e = new PairEmitterToSecond(*res->getlb());
+	else
+		e = new PairEmitterToNone(*res->getlb());
+	res->add_emitter(e);
+
+	/* add argument pipelines as workers */
+	std::vector<ff::ff_node *> w;
+	w.push_back(make_ff_pipe(p1, false, par));
+	w.push_back(make_ff_pipe(p2, false, par));
+	res->add_workers(w);
+
+	/* add collector */
+	res->add_collector(new PairCollector(*res->getgt()));
+
+	return res;
+}
 #endif /* PICO_FF_IMPLEMENTATION_SUPPORTFFNODES_PAIRFARM_HPP_ */

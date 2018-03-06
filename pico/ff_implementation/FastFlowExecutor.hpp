@@ -32,11 +32,11 @@
 #include <ff/pipeline.hpp>
 #include <ff/farm.hpp>
 #include <ff/fftree.hpp>
-#include <pico/PEGOptimizations.hpp>
 
 #include "../Pipe.hpp"
 #include "../Operators/UnaryOperator.hpp"
 #include "../Operators/BinaryOperator.hpp"
+#include "../PEGOptimizations.hpp"
 
 #include "SupportFFNodes/ForwardingNode.hpp"
 #include "SupportFFNodes/PairFarm.hpp"
@@ -45,11 +45,132 @@
 
 using namespace pico;
 
+static ff::ff_pipeline *make_ff_pipe(const Pipe &, bool, unsigned);
+static ff::ff_farm<> *make_merge_farm(const Pipe &, unsigned);
+static ff::ff_farm<> *make_multito_farm(const Pipe &, unsigned);
+static void add_chain(ff::ff_pipeline *, const std::vector<Pipe *> &, unsigned);
+
+template<typename ItType>
+void add_plain(ff::ff_pipeline *p, ItType it, unsigned par) {
+	if ((*it)->term_node_type() == Pipe::OPERATOR) {
+		/* standalone operator */
+		base_UnaryOperator *op;
+		op = dynamic_cast<base_UnaryOperator *>((*it)->get_operator_ptr());
+		p->add_stage(op->node_operator(par));
+	} else
+		/* complex sub-term */
+		p->add_stage(make_ff_pipe(**it, false, par));
+}
+
+static ff::ff_pipeline *make_ff_pipe(const Pipe &p, bool acc, unsigned par) {
+	/* create the ff pipeline with automatic node cleanup */
+	auto *res = new ff::ff_pipeline(acc);
+	res->cleanup_nodes();
+	Operator *op;
+	base_UnaryOperator *uop;
+	base_BinaryOperator *bop;
+
+	switch (p.term_node_type()) {
+	case Pipe::EMPTY:
+		std::cerr << "warning: adding forwarding node\n";
+		res->add_stage(new ForwardingNode());
+		break;
+	case Pipe::OPERATOR:
+		op = p.get_operator_ptr();
+		uop = dynamic_cast<base_UnaryOperator *>(op);
+		res->add_stage(uop->node_operator(par));
+		break;
+	case Pipe::TO:
+		add_chain(res, p.children(), par);
+		break;
+	case Pipe::MULTITO:
+		std::cerr << "MULTI-TO not implemented yet\n";
+		assert(false);
+		res->add_stage(make_ff_pipe(*p.children().front(), false, par));
+		res->add_stage(make_multito_farm(p, par));
+		break;
+	case Pipe::ITERATE:
+		std::cerr << "ITERATION not implemented yet\n";
+		assert(false);
+		assert(p.children().size() == 1);
+		res->add_stage(make_ff_pipe(*p.children()[0], false, par));
+		//TODO add termination stage
+		res->wrap_around();
+		break;
+	case Pipe::MERGE:
+		std::cerr << "MERGE not implemented yet\n";
+		assert(false);
+		res->add_stage(make_merge_farm(p, par));
+		break;
+	case Pipe::PAIR:
+		op = p.get_operator_ptr();
+		assert(op);
+		assert(p.children().size() == 2);
+		res->add_stage(make_pair_farm(*p.children()[0], *p.children()[1], par));
+		/* add the operator */
+		bop = dynamic_cast<base_BinaryOperator *>(op);
+		bool left_input = p.children()[0]->in_deg();
+		res->add_stage(bop->node_operator(par, left_input));
+		break;
+	}
+	return res;
+}
+
+static ff::ff_farm<> *make_merge_farm(const Pipe &p, unsigned par) {
+	/*
+	 auto *res = new ff::ff_farm<>();
+	 auto nw = p.children().size();
+	 res->add_emitter(new BCastEmitter(nw, res->getlb()));
+	 res->add_collector(new MergeCollector());
+	 std::vector<ff::ff_node *> w;
+	 for (auto p_ : p.children())
+	 w.push_back(make_ff_term(*p_, false));
+	 res->add_workers(w);
+	 res->cleanup_all();
+	 return res;
+	 */
+	assert(false);
+	return nullptr;
+}
+
+void add_chain(ff::ff_pipeline *p, const std::vector<Pipe *> &s, unsigned par) {
+	/* apply PEG optimizations */
+	auto it = s.begin();
+	for (; it != s.end() - 1; ++it) {
+		/* try to add an optimized compound */
+		if (add_optimized(p, it, it + 1, par))
+			++it;
+		else
+			/* add a regular sub-term */
+			add_plain(p, it, par);
+	}
+	/* add last sub-term if any */
+	if (it != s.end())
+		add_plain(p, it, par);
+}
+
+ff::ff_farm<> *make_multito_farm(const Pipe &p, unsigned par) {
+	/*
+	 auto *res = new ff::ff_farm<>();
+	 auto nw = p.children().size() - 1;
+	 res->add_emitter(new BCastEmitter(nw, res->getlb()));
+	 res->add_collector(new MergeCollector());
+	 std::vector<ff::ff_node *> w;
+	 for (auto it = p.children().begin() + 1; it != p.children().end(); ++it)
+	 w.push_back(make_ff_term(**it, false));
+	 res->add_workers(w);
+	 res->cleanup_all();
+	 return res;
+	 */
+	assert(false);
+	return nullptr;
+}
+
 class FastFlowExecutor {
 public:
 	FastFlowExecutor(const Pipe &pipe_) :
 			pipe(pipe_) {
-		ff_pipe = make_ff_term(pipe, true /* accelerator */);
+		ff_pipe = make_ff_pipe(pipe, true /* accelerator */, par_deg);
 	}
 
 	~FastFlowExecutor() {
@@ -81,196 +202,6 @@ private:
 	const Pipe &pipe;
 	ff::ff_pipeline *ff_pipe = nullptr;
 	const int par_deg = global_params.PARALLELISM;
-
-	ff::ff_pipeline *make_ff_term(const Pipe &p, bool accelerator) const {
-		/* create the ff pipeline with automatic node cleanup */
-		auto *res = new ff::ff_pipeline(accelerator);
-		res->cleanup_nodes();
-		Operator *op;
-		base_UnaryOperator *uop;
-		base_BinaryOperator *bop;
-
-		switch (p.term_node_type()) {
-		case Pipe::EMPTY:
-			std::cerr << "warning: adding forwarding node\n";
-			res->add_stage(new ForwardingNode());
-			break;
-		case Pipe::OPERATOR:
-			op = p.get_operator_ptr();
-			uop = dynamic_cast<base_UnaryOperator *>(op);
-			res->add_stage(uop->node_operator(par_deg));
-			break;
-		case Pipe::TO:
-			add_chain(res, p.children());
-			break;
-		case Pipe::MULTITO:
-			std::cerr << "MULTI-TO not implemented yet\n";
-			assert(false);
-			res->add_stage(make_ff_term(*p.children().front(), false));
-			res->add_stage(make_multito_farm(p));
-			break;
-		case Pipe::ITERATE:
-			std::cerr << "ITERATION not implemented yet\n";
-			assert(false);
-			assert(p.children().size() == 1);
-			res->add_stage(make_ff_term(*p.children()[0], false));
-			//TODO add termination stage
-			res->wrap_around();
-			break;
-		case Pipe::MERGE:
-			std::cerr << "MERGE not implemented yet\n";
-			assert(false);
-			res->add_stage(make_merge_farm(p));
-			break;
-		case Pipe::PAIR:
-			op = p.get_operator_ptr();
-			assert(op);
-			assert(p.children().size() == 2);
-			res->add_stage(make_pair_farm(*p.children()[0], *p.children()[1]));
-			/* add the operator */
-			bop = dynamic_cast<base_BinaryOperator *>(op);
-			bool left_input = p.children()[0]->in_deg();
-			res->add_stage(bop->node_operator(par_deg, left_input));
-			break;
-		}
-		return res;
-	}
-
-	ff::ff_farm<> *make_merge_farm(const Pipe &p) const {
-		/*
-		 auto *res = new ff::ff_farm<>();
-		 auto nw = p.children().size();
-		 res->add_emitter(new BCastEmitter(nw, res->getlb()));
-		 res->add_collector(new MergeCollector());
-		 std::vector<ff::ff_node *> w;
-		 for (auto p_ : p.children())
-		 w.push_back(make_ff_term(*p_, false));
-		 res->add_workers(w);
-		 res->cleanup_all();
-		 return res;
-		 */
-		assert(false);
-		return nullptr;
-	}
-
-	PairFarm *make_pair_farm(const Pipe &p1, const Pipe &p2) const {
-		/* create and configure */
-		auto res = new PairFarm();
-		res->cleanup_all();
-
-		/* add emitter */
-		ff::ff_node *e;
-		if (p1.in_deg())
-			e = new PairEmitterToFirst(*res->getlb());
-		else if (p2.in_deg())
-			e = new PairEmitterToSecond(*res->getlb());
-		else
-			e = new PairEmitterToNone(*res->getlb());
-		res->add_emitter(e);
-
-		/* add argument pipelines as workers */
-		std::vector<ff::ff_node *> w;
-		w.push_back(make_ff_term(p1, false));
-		w.push_back(make_ff_term(p2, false));
-		res->add_workers(w);
-
-		/* add collector */
-		res->add_collector(new PairCollector(*res->getgt()));
-
-		return res;
-	}
-
-	/* apply PE optimization over two adjacent pipes  */
-	bool opt_match(Operator *op1, Operator *op2, PEGOptimization_t opt) const {
-		bool res = true;
-		auto opc1 = op1->operator_class(), opc2 = op2->operator_class();
-		switch (opt) {
-		case MAP_PREDUCE:
-			res = res && (opc1 == OpClass::MAP && opc2 == OpClass::REDUCE);
-			res = res && (!op2->windowing() && op2->partitioning());
-			break;
-		case FMAP_PREDUCE:
-			res = res && (opc1 == OpClass::FMAP && opc2 == OpClass::REDUCE);
-			res = res && (!op2->windowing() && op2->partitioning());
-			break;
-		case PJFMAP_PREDUCE:
-			//TODO check batch
-			res = res && (opc1 == OpClass::BFMAP && opc2 == OpClass::REDUCE);
-			res = res && (!op2->windowing() && op2->partitioning());
-			break;
-		}
-		return res;
-	}
-
-	template<typename ItType>
-	void add_plain(ff::ff_pipeline *p, ItType it) const {
-		if ((*it)->term_node_type() == Pipe::OPERATOR) {
-			/* standalone operator */
-			base_UnaryOperator *op;
-			op = dynamic_cast<base_UnaryOperator *>((*it)->get_operator_ptr());
-			p->add_stage(op->node_operator(global_params.PARALLELISM));
-		} else
-			/* complex sub-term */
-			p->add_stage(make_ff_term(**it, false));
-	}
-
-	template<typename ItType>
-	bool add_optimized(ff::ff_pipeline *p, ItType it1, ItType it2) const {
-		/* get the operator pointers */
-		Operator *op1 = nullptr, *op2 = nullptr;
-		if ((**it1).term_node_type() == Pipe::OPERATOR)
-			op1 = (**it1).get_operator_ptr();
-		if ((**it2).term_node_type() == Pipe::OPERATOR)
-			op2 = (**it2).get_operator_ptr();
-		if (!op1 || !op2)
-			return false;
-
-		/* match with the optimization rules */
-		if (opt_match(op1, op2, MAP_PREDUCE))
-			p->add_stage(
-					op1->opt_node(global_params.PARALLELISM, MAP_PREDUCE,
-							opt_args_t { op2 }));
-		else if (opt_match(op1, op2, FMAP_PREDUCE))
-			p->add_stage(
-					op1->opt_node(global_params.PARALLELISM, FMAP_PREDUCE,
-							opt_args_t { op2 }));
-		else
-			return false;
-		return true;
-	}
-
-	void add_chain(ff::ff_pipeline *p, const std::vector<Pipe *> &s) const {
-		/* apply PEG optimizations */
-		auto it = s.begin();
-		for (; it != s.end() - 1; ++it) {
-			/* try to add an optimized compound */
-			if (add_optimized(p, it, it + 1))
-				++it;
-			else
-				/* add a regular sub-term */
-				add_plain(p, it);
-		}
-		/* add last sub-term if any */
-		if (it != s.end())
-			add_plain(p, it);
-	}
-
-	ff::ff_farm<> *make_multito_farm(const Pipe &p) const {
-		/*
-		 auto *res = new ff::ff_farm<>();
-		 auto nw = p.children().size() - 1;
-		 res->add_emitter(new BCastEmitter(nw, res->getlb()));
-		 res->add_collector(new MergeCollector());
-		 std::vector<ff::ff_node *> w;
-		 for (auto it = p.children().begin() + 1; it != p.children().end(); ++it)
-		 w.push_back(make_ff_term(**it, false));
-		 res->add_workers(w);
-		 res->cleanup_all();
-		 return res;
-		 */
-		assert(false);
-		return nullptr;
-	}
 
 	void delete_ff_term() {
 		if (ff_pipe)
