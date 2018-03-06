@@ -70,6 +70,14 @@ public:
 		return new t(parallelism, kernel, left_input);
 	}
 
+	ff::ff_node *opt_node(int pardeg, bool lin, PEGOptimization_t opt, opt_args_t a) {
+		assert(opt == PJFMAP_PREDUCE);
+//		using t = FMapPReduceBatch<In, Out, Token<In>, Token<Out>>;
+//		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);
+//		return new t(pardeg, flatmapf, nextop->kernel());
+		return nullptr;
+	}
+
 #if 0
 	ff::ff_node *opt_node(int pardeg, PEGOptimization_t opt, opt_args_t a) {
 		assert(opt == PJFMAP_PREDUCE);
