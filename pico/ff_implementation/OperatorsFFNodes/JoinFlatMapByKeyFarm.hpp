@@ -163,15 +163,13 @@ public:
 		}
 	};
 
-protected:
-	void pardeg(unsigned nw) {
-		nworkers = nw;
+	base_JFMBK_Farm(unsigned nw) :
+			nworkers(nw) {
 	}
 
 private:
-	unsigned nworkers = 0;
+	unsigned nworkers;
 };
-/* class JoinFlatMapByKey*/
 
 /*
  * Workers store two types of tagged collections:
@@ -429,9 +427,8 @@ class JoinFlatMapByKeyFarm: public base_JFMBK_Farm<TokenTypeIn1, TokenTypeIn2,
 	};
 
 public:
-	JoinFlatMapByKeyFarm(unsigned nw, kernel_t kernel, bool left_input) {
-		this->pardeg(nw);
-
+	JoinFlatMapByKeyFarm(unsigned nw, kernel_t kernel, bool left_input) :
+			base_farm_t(nw) {
 		auto e = new emitter_t(nw, global_params.MICROBATCH_SIZE, *this);
 		std::vector<ff::ff_node *> w;
 		for (unsigned i = 0; i < nw; ++i)
@@ -446,11 +443,101 @@ public:
 	}
 };
 
-#if 0
 template<typename TT1, typename TT2, typename TTO>
-class JoinFlatMapReduceByKeyFarm: public base_JFMBK_Farm<TT1, TT2, TTO> {
+class JFMRBK_Farm: public base_JFMBK_Farm<TT1, TT2, TTO> {
+	typedef typename TT1::datatype In1;
+	typedef typename TT2::datatype In2;
+	typedef typename TTO::datatype Out;
+	typedef typename Out::keytype OutK;
+	typedef typename Out::valuetype OutV;
+	typedef std::function<void(In1&, In2&, FlatMapCollector<Out> &)> mapf_t;
+	typedef std::function<OutV(OutV&, OutV&)> redf_t;
+
+	typedef base_microbatch::tag_t tag_t;
+	typedef typename TokenCollector<Out>::cnode cnode_t;
+	typedef Microbatch<TTO> mb_out;
+
+	typedef base_JFMBK_Farm<TT1, TT2, TTO> base_farm_t;
+	typedef typename base_farm_t::Emitter emitter_t;
+	typedef base_JFMBK_worker<TT1, TT2, TTO> worker_t;
+
+	class Worker: public worker_t {
+	public:
+		Worker(mapf_t mapf, redf_t redf_, bool left_in) :
+				worker_t(mapf, left_in), redf(redf_) {
+		}
+
+	private:
+		void handle_output(tag_t tag, cnode_t *it) {
+			/* update reduce state */
+			auto &s(tag_state[tag]);
+			while (it) {
+				/* reduce the micro-batch */
+				for (Out &kv : *it->mb) {
+					const OutK &k(kv.Key());
+					if (s.kvmap.find(k) != s.kvmap.end())
+						s.kvmap[k] = redf(kv.Value(), s.kvmap[k]);
+					else
+						s.kvmap[k] = kv.Value();
+				}
+
+				/* clean up and skip to the next micro-batch */
+				auto it_ = it;
+				it = it->next;
+				DELETE(it_->mb);
+				FREE(it_);
+			}
+		}
+
+		void finalize_output_tag(tag_t tag) {
+			/* stream out reduce state */
+			auto &s(tag_state[tag]);
+			auto mb = NEW<mb_out>(tag, global_params.MICROBATCH_SIZE);
+			for (auto it = s.kvmap.begin(); it != s.kvmap.end(); ++it) {
+				new (mb->allocate()) Out(it->first, it->second);
+				mb->commit();
+				if (mb->full()) {
+					this->send_mb(mb);
+					mb = NEW<mb_out>(tag, global_params.MICROBATCH_SIZE);
+				}
+			}
+
+			/* send out the remainder micro-batch or destroy if spurious */
+			if (!mb->empty())
+				this->send_mb(mb);
+			else
+				DELETE(mb);
+
+			/* close the collection */
+			this->send_sync(make_sync(tag, PICO_CSTREAM_END));
+		}
+
+		redf_t redf;
+
+		/* reduce state */
+		struct key_state {
+			std::unordered_map<OutK, OutV> kvmap;
+		};
+		std::unordered_map<base_microbatch::tag_t, key_state> tag_state;
+	};
+
+public:
+	//pardeg, lin, flatmapf, nextop->kernel()
+	JFMRBK_Farm(unsigned nw, bool left_input, mapf_t mapf, redf_t redf) :
+			base_JFMBK_Farm<TT1, TT2, TTO>(nw) {
+		auto e = new emitter_t(nw, global_params.MICROBATCH_SIZE, *this);
+		std::vector<ff::ff_node *> w;
+		for (unsigned i = 0; i < nw; ++i)
+			w.push_back(new Worker(mapf, redf, left_input));
+		auto c = new PReduceCollector<Out, Token<Out>>(nw, redf);
+
+		this->setEmitterF(e);
+		this->setCollectorF(c);
+		this->add_workers(w);
+
+		this->cleanup_all();
+	}
 
 };
-#endif
 
 #endif /* INTERNALS_FFOPERATORS_BINARYMAPFARM_HPP_ */
