@@ -72,20 +72,11 @@ public:
 
 	ff::ff_node *opt_node(int pardeg, bool lin, PEGOptimization_t opt, opt_args_t a) {
 		assert(opt == PJFMAP_PREDUCE);
-//		using t = FMapPReduceBatch<In, Out, Token<In>, Token<Out>>;
-//		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);
-//		return new t(pardeg, flatmapf, nextop->kernel());
+		using t = JFMRBK_Farm<Token<In1>, Token<In2>, Token<Out>>;
+		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);
+		return new t(pardeg, lin, kernel, nextop->kernel());
 		return nullptr;
 	}
-
-#if 0
-	ff::ff_node *opt_node(int pardeg, PEGOptimization_t opt, opt_args_t a) {
-		assert(opt == PJFMAP_PREDUCE);
-		using t = JoinFlatMapReduceByKeyFarm<Token<In1>, Token<In2>, Token<Out>>;
-		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);
-		return new t(pardeg, kernel, nextop->kernel());
-	}
-#endif
 
 protected:
 	JoinFlatMapByKey* clone() {

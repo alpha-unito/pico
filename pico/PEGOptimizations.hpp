@@ -92,11 +92,10 @@ static bool add_optimized(ff::ff_pipeline *p, ItType it1, ItType it2, //
 			auto op2_ = p1.get_operator_ptr();
 			bool lin = p1.in_deg(); //has left-input
 			auto bop = dynamic_cast<base_BinaryOperator *>(op2_);
-			auto n = bop->opt_node(par, lin, PJFMAP_PREDUCE, args);
 			auto &children = p1.children();
 			assert(children.size() == 2);
 			p->add_stage(make_pair_farm(*children[0], *children[1], par));
-			p->add_stage(n);
+			p->add_stage(bop->opt_node(par, lin, PJFMAP_PREDUCE, args));
 		} else
 			return false;
 	} else
