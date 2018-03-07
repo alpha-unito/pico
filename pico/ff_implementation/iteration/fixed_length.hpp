@@ -35,14 +35,17 @@ public:
 
 private:
 	void go_ahead() {
-		unsigned begun = 0, new_begun = 1;
-		while (begun < niters && new_begun > begun) {
-			begun = begun_iterations();
-			new_iteration();
-			new_begun = begun_iterations();
+		if (!closed()) {
+			bool accepting = true;
+			unsigned iters_cnt = n_iterations();
+			while(iters_cnt < niters && accepting) {
+				new_iteration();
+				accepting = n_iterations() - iters_cnt;
+				iters_cnt = n_iterations();
+			};
+			if (iters_cnt == niters)
+				close();
 		}
-		if (begun == niters)
-			close();
 	}
 
 	void cstream_iteration_heartbeat_callback(tag_t) {
@@ -53,7 +56,7 @@ private:
 		go_ahead();
 	}
 
-	unsigned niters;
+	const unsigned niters;
 };
 
 #endif /* PICO_FF_IMPLEMENTATION_ITERATION_FIXED_LENGTH_HPP_ */

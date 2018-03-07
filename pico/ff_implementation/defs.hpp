@@ -17,4 +17,8 @@ static char *PICO_CSTREAM_END = (char*) (ff::FF_EOS - 0xe);
 static char *PICO_CSTREAM_FROM_LEFT = (char*) (ff::FF_EOS - 0xf);
 static char *PICO_CSTREAM_FROM_RIGHT = (char*) (ff::FF_EOS - 0x10);
 
+static inline bool is_sync(char *token) {
+	return token <= PICO_BEGIN && token >= PICO_CSTREAM_FROM_RIGHT;
+}
+
 #endif /* PICO_FF_IMPLEMENTATION_DEFS_HPP_ */

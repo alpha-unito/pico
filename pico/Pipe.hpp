@@ -157,6 +157,8 @@ public:
 
 		if (has_operator())
 			term_value.op = copy.term_value.op->clone();
+		else if (has_termination())
+			term_value.cond = copy.term_value.cond->clone();
 		for (Pipe *p : copy.children_)
 			children_.push_back(new Pipe(*p));
 	}

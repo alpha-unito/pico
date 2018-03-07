@@ -120,10 +120,6 @@ private:
 			end_cstream(tag);
 	}
 
-	bool is_sync(char *token) {
-		return token <= PICO_BEGIN && token >= PICO_CSTREAM_END;
-	}
-
 	void handle_sync(base_microbatch *sync_mb) {
 		char *token = sync_mb->payload();
 		auto tag = sync_mb->tag();
@@ -242,82 +238,17 @@ protected:
 	 */
 	virtual void kernel(base_microbatch *) = 0;
 
-	virtual void begin_callback() {
-	}
+	/* default behaviors cannot be given for routing sync tokens */
+	virtual void handle_begin(base_microbatch::tag_t tag) = 0;
+	virtual void handle_end(base_microbatch::tag_t tag) = 0;
+	virtual void handle_cstream_begin(base_microbatch::tag_t tag) = 0;
+	virtual void handle_cstream_end(base_microbatch::tag_t tag) = 0;
 
-	virtual void end_callback() {
-	}
-
-	virtual void cstream_begin_callback(base_microbatch::tag_t) {
-	}
-
-	virtual void cstream_end_callback(base_microbatch::tag_t) {
-	}
-
-	virtual bool propagate_cstream_sync() {
-		return true;
-	}
-
-	/*
-	 * to be called by user code and runtime
-	 */
-	void begin_cstream(base_microbatch::tag_t tag) {
-		send_sync(make_sync(tag, PICO_CSTREAM_BEGIN));
-	}
-
-	void end_cstream(base_microbatch::tag_t tag) {
-		send_sync(make_sync(tag, PICO_CSTREAM_END));
-	}
-
-	base_microbatch *recv_sync() {
-		base_microbatch *res;
-		while (!this->pop((void **) &res))
-			;
-		return res;
-	}
-
-	virtual void send_sync(base_microbatch *sync_mb) {
-		ff_send_out(sync_mb);
-	}
-
-protected:
 	void send_out_to(base_microbatch *task, unsigned dst) {
 		this->ff_send_out_to(task, dst);
 	}
 
 private:
-	virtual void handle_begin(base_microbatch::tag_t tag) {
-		//fprintf(stderr, "> %p begin tag=%llu\n", this, tag);
-		assert(tag == base_microbatch::nil_tag());
-		send_sync(make_sync(tag, PICO_BEGIN));
-		begin_callback();
-	}
-
-	virtual void handle_end(base_microbatch::tag_t tag) {
-		//fprintf(stderr, "> %p end tag=%llu\n", this, tag);
-		assert(tag == base_microbatch::nil_tag());
-		end_callback();
-		send_sync(make_sync(tag, PICO_END));
-	}
-
-	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
-		//fprintf(stderr, "> %p c-begin tag=%llu\n", this, tag);
-		if (propagate_cstream_sync())
-			begin_cstream(tag);
-		cstream_begin_callback(tag);
-	}
-
-	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
-		//fprintf(stderr, "> %p c-end tag=%llu\n", this, tag);
-		cstream_end_callback(tag);
-		if (propagate_cstream_sync())
-			end_cstream(tag);
-	}
-
-	bool is_sync(char *token) {
-		return token <= PICO_BEGIN && token >= PICO_CSTREAM_END;
-	}
-
 	void handle_sync(base_microbatch *sync_mb) {
 		char *token = sync_mb->payload();
 		auto tag = sync_mb->tag();
@@ -337,6 +268,62 @@ private:
 		else {
 			handle_sync(in);
 			DELETE(in);
+		}
+
+		return GO_ON;
+	}
+};
+
+class base_mplex: public ff::ff_minode_t<base_microbatch, base_microbatch> {
+	typedef ff::ff_minode_t<base_microbatch, base_microbatch> base_t;
+
+public:
+	virtual ~base_mplex() {
+	}
+
+protected:
+	/*
+	 * to be overridden by user code
+	 */
+	virtual void kernel(base_microbatch *) = 0;
+
+	/* default behaviors cannot be given for routing sync tokens */
+	virtual void handle_begin(base_microbatch::tag_t tag) = 0;
+	virtual bool handle_end(base_microbatch::tag_t tag) = 0;
+	virtual void handle_cstream_begin(base_microbatch::tag_t tag) = 0;
+	virtual void handle_cstream_end(base_microbatch::tag_t tag) = 0;
+
+	void send_sync(base_microbatch *task) {
+		this->ff_send_out(task);
+	}
+
+	unsigned from() {
+		return base_t::get_channel_id();
+	}
+
+private:
+	bool handle_sync(base_microbatch *sync_mb) {
+		char *token = sync_mb->payload();
+		auto tag = sync_mb->tag();
+		if (token == PICO_BEGIN)
+			handle_begin(tag);
+		else if (token == PICO_END)
+			return handle_end(tag);
+		else if (token == PICO_CSTREAM_BEGIN)
+			handle_cstream_begin(tag);
+		else if (token == PICO_CSTREAM_END)
+			handle_cstream_end(tag);
+		return false;
+	}
+
+	base_microbatch* svc(base_microbatch* in) {
+		if (!is_sync(in->payload()))
+			kernel(in);
+		else {
+			bool stop = handle_sync(in);
+			DELETE(in);
+			if (stop)
+				return EOS;
 		}
 
 		return GO_ON;
