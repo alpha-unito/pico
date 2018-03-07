@@ -13,6 +13,7 @@
 #include <pico/pico.hpp>
 
 #include "common/io.hpp"
+#include "common/basic_pipes.hpp"
 
 using namespace pico;
 
@@ -70,26 +71,6 @@ std::unordered_map<char, std::unordered_multiset<int>> get_result(std::string ou
 	return observed;
 }
 
-Pipe pipe_pairs_creator(std::string input_file){
-	/* define input operator from file */
-	ReadFromFile reader(input_file);
-
-
-	/* define map operator  */
-	Map<std::string, KV> pairs_creator([](std::string line) { //creates the pairs
-				auto res = KV::from_string(line);
-				return res;
-	});
-
-	/* compose the pipeline */
-
-	auto p = Pipe() //the empty pipeline
-			.add(reader) //
-			.add(pairs_creator);
-
-	return p;
-}
-
 WriteToDisk<KV> get_writer(std::string output_file){
 	return WriteToDisk<KV> (output_file, [&](KV in) {
 		return in.to_string();
@@ -103,7 +84,7 @@ TEST_CASE( "JoinFlatMapByKey general tests", "[JoinFlatMapByKeyTag]" ) {
 
 	auto writer = get_writer(output_file);
 
-	auto p = pipe_pairs_creator(input_file);
+	auto p = pipe_pairs_creator<KV>(input_file);
 
 	/* compute expected output */
 	std::unordered_map<char, std::unordered_multiset<int>> partitions;
@@ -154,7 +135,7 @@ TEST_CASE("pairs pipes with different types", "[JoinFlatMapByKeyTag]"){
 	std::string output_file = "output.txt";
 
 	auto writer = get_writer(output_file);
-	auto p1 = pipe_pairs_creator(input_file);
+	auto p1 = pipe_pairs_creator<KV>(input_file);
 
 	auto kv_to_cc = [](KV kv) {return CC(kv.Key(), std::to_string(kv.Value()));};
 	auto p2 = p1.add(Map<KV,CC>(kv_to_cc)); //converts KV to CC

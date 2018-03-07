@@ -13,10 +13,9 @@
 #include <pico/pico.hpp>
 
 #include "common/io.hpp"
+#include "common/basic_pipes.hpp"
 
 typedef KeyValue<char, int> KV;
-
-Pipe pipe_pairs_creator(std::string input_file); // da fattorizzare (con flatmap_join_by_key e probabilmente altri)
 
 /* static flatmap kernel function
  *
@@ -93,7 +92,7 @@ TEST_CASE("iteration", "[iterationTag]" ) {
 		return in.to_string();
 	});
 
-	auto p = pipe_pairs_creator(input_file);
+	auto p = pipe_pairs_creator<KV>(input_file);
 
 	int num_iter = 3;
 	FixedIterations cond(num_iter);
