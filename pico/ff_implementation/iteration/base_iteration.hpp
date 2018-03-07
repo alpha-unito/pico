@@ -35,6 +35,9 @@
 
 using namespace pico;
 
+/*
+ * An iteration is identified by its output collection-tag.
+ */
 class base_iteration_dispatcher: public base_switch {
 	typedef base_microbatch::tag_t tag_t;
 
@@ -67,22 +70,31 @@ protected:
 	tag_t new_iteration() {
 		tag_t res;
 
-		assert(!closed);
+		assert(!closed_);
 		assert(root_iteration != base_microbatch::nil_tag());
+		assert(last_iteration != base_microbatch::nil_tag());
 
-		/* get a fresh tag and add it to the chain */
+		/* get a fresh tag */
 		res = base_microbatch::fresh_tag();
+		assert(input_of.find(res) == output_of.end());
+
+		/* bind to the last iteration */
 		auto parent = last_iteration;
-		assert(after.find(parent) == after.end());
-		after[parent] = res;
-		before[res] = parent;
+		assert(output_of.find(parent) == output_of.end());
+		output_of[parent] = res;
+		input_of[res] = parent;
 		last_iteration = res;
+		++n_iterations_;
+
+		/* state-consistency checks */
+		assert(out_buf.find(res) == out_buf.end());
+		assert(!is_inflight[res]);
 
 		/* mark as ready and not inflight */
 		ready.push(res);
 		is_inflight[res] = false;
 
-		/* try triggering the fresh iteration */
+		/* try scheduling some iterations */
 		schedule_iterations();
 
 		return res;
@@ -92,16 +104,24 @@ protected:
 	 * do not iterate anymore
 	 */
 	void close() {
-		closed = true;
-		after[last_iteration] = root_iteration;
-		before[root_iteration] = last_iteration;
+		/* state-consistency check */
+		assert(root_iteration != base_microbatch::nil_tag());
+		assert(last_iteration != base_microbatch::nil_tag());
+
+		closed_ = true;
+		output_of[last_iteration] = root_iteration;
+		input_of[root_iteration] = last_iteration;
 
 		/* stream out the final-iteration buffer */
 		flush_out_buffer(last_iteration);
 	}
 
-	unsigned begun_iterations() const {
-		return begun_iterations_;
+	unsigned n_iterations() const {
+		return n_iterations_;
+	}
+
+	bool closed() const {
+		return closed_;
 	}
 
 private:
@@ -109,75 +129,91 @@ private:
 	void kernel(base_microbatch *mb) {
 		auto tag = mb->tag();
 		assert(is_inflight[tag]);
-		if (is_chain_mapped(tag) && is_inflight[after[tag]]) {
+		if (has_output(tag) && is_inflight[output_of[tag]]) {
 			/* next iteration running: translate and send back */
-			mb->tag(after[tag]);
+			mb->tag(output_of[tag]);
 			send_mb(mb, false /* back */);
-		} else if (is_chain_mapped(tag) && after[tag] == root_iteration) {
+		} else if (has_output(tag) && output_of[tag] == root_iteration) {
 			/* final iteration: send out the output c-stream */
-			mb->tag(after[tag]);
+			mb->tag(output_of[tag]);
 			send_mb(mb, true /* out */);
 		} else {
 			/* next iteration either not existing or not running */
-			assert(tag_buffer.find(tag) != tag_buffer.end());
-			tag_buffer[tag].push_back(mb);
+			out_buf[tag].push_back(mb);
 		}
 	}
 
-	void cstream_begin_callback(base_microbatch::tag_t tag) {
-		if (root_iteration == base_microbatch::nil_tag()) {
-			/* first iteration: update state to record it */
-			root_iteration = last_iteration = tag; //tag to be consumed/produced
-			inflight.push(tag);
-			is_inflight[tag] = true;
-			++begun_iterations_;
+	void handle_begin(tag_t nil) {
+		send_mb(make_sync(nil, PICO_BEGIN), true);
+	}
 
-			/* invoke the user callback */
-			cstream_iteration_heartbeat_callback(tag);
-		}
+	void handle_end(tag_t nil) {
+		send_mb(make_sync(nil, PICO_END), true);
+	}
 
-		if (is_chain_mapped(tag) && after.at(tag) == root_iteration) {
-			/* final iteration: begin the output c-stream */
-			assert(closed);
-			send_out_to(make_sync(root_iteration, PICO_CSTREAM_BEGIN), 1);
-			//no user callback
+	void handle_cstream_begin(base_microbatch::tag_t tag) {
+		if (root_iteration == base_microbatch::nil_tag())
+			record_root_iteration(tag);
+
+		/* consistency check */
+		assert(is_inflight.find(tag) != is_inflight.end() && is_inflight[tag]);
+		assert(n_iterations_);
+		assert(root_iteration != base_microbatch::nil_tag());
+		assert(last_iteration != base_microbatch::nil_tag());
+		assert(input_of.find(tag) != input_of.end());
+
+		if (has_output(tag) && output_of[tag] == root_iteration) {
+			/* last iteration */
+			assert(closed_);
+			assert(last_iteration == tag);
+			assert(input_of[root_iteration] == tag);
+
+			/* begin the output c-stream */
+			auto begin_mb = make_sync(root_iteration, PICO_CSTREAM_BEGIN);
+			send_mb(begin_mb, true /* fw */);
 		}
 
 		else {
-			/* next iteration either not existing or not running: buffer */
-			auto out_mb = make_sync(after.at(tag), PICO_CSTREAM_BEGIN);
-			assert(tag_buffer.find(tag) == tag_buffer.end());
-			tag_buffer[tag].push_back(out_mb);
-
-			/* invoke the user callback */
-			cstream_iteration_heartbeat_callback(tag);
+			// nothing to do if non-first/last iteration
+			assert(out_buf.find(tag) == out_buf.end());
 		}
+
+		/* invoke the user callback */
+		cstream_iteration_heartbeat_callback(tag);
 	}
 
-	void cstream_end_callback(base_microbatch::tag_t tag) {
+	void handle_cstream_end(base_microbatch::tag_t tag) {
 		assert(inflight.front() == tag);
 		inflight.pop();
 		is_inflight[tag] = false;
 
-		if (is_chain_mapped(tag) && after.at(tag) == root_iteration) {
+		if (has_output(tag) && output_of.at(tag) == root_iteration) {
 			/* end final iteration: end the output c-stream */
-			assert(closed);
+			assert(closed_);
+			assert(last_iteration == tag);
 			assert(inflight.empty());
 			assert(ready.empty());
-			send_out_to(make_sync(root_iteration, PICO_CSTREAM_END), 1);
+			assert(out_buf[tag].empty());
+
+			/* notify end c-stream downstream */
+			send_mb(make_sync(root_iteration, PICO_CSTREAM_END), true);
+
+			/* generate and send the end token to feedback */
+			send_mb(make_sync(base_microbatch::nil_tag(), PICO_END), false);
 		}
 
 		else {
-			if (is_chain_mapped(tag) && is_inflight[after.at(tag)]) {
+			if (has_output(tag) && is_inflight[output_of.at(tag)]) {
 				/* next iteration running: end the next c-stream */
-				send_out_to(make_sync(after.at(tag), PICO_CSTREAM_END), 0);
+				assert(out_buf[tag].empty());
+				send_mb(make_sync(output_of.at(tag), PICO_CSTREAM_END), false);
 			}
 
 			else {
 				/* next iteration either not existing or not running: buffer */
-				auto out_mb = make_sync(after.at(tag), PICO_CSTREAM_END);
-				assert(tag_buffer.find(tag) != tag_buffer.end());
-				tag_buffer[tag].push_back(out_mb);
+				auto out_mb = make_sync(tag, PICO_CSTREAM_END);
+				assert(out_buf.find(tag) != out_buf.end());
+				out_buf[tag].push_back(out_mb);
 			}
 
 			/* go ahead with ready iterations */
@@ -188,10 +224,6 @@ private:
 		}
 	}
 
-	bool propagate_cstream_sync() {
-		return false;
-	}
-
 	/*
 	 * internal functions
 	 */
@@ -199,22 +231,21 @@ private:
 		while (!ready.empty() && inflight.size() < max_inflight) {
 			/* move from ready to inflight queue */
 			tag_t t = ready.front();
-			this->send_out_to(make_sync(t, PICO_CSTREAM_BEGIN), 0);
 			inflight.push(t);
-			ready.pop();
-			++begun_iterations_;
-
-			/* mark as inflight */
 			is_inflight[t] = true;
+			ready.pop();
 
-			/* flush buffer of before-tag */
-			flush_back_buffer(before[t]);
+			/* send begin token */
+			send_mb(make_sync(t, PICO_CSTREAM_BEGIN), false /* bw */);
+
+			/* flush buffer */
+			flush_back_buffer(input_of[t]);
 		}
 	}
 
 	//TODO replace with caching map
-	inline bool is_chain_mapped(tag_t tag) {
-		return after.find(tag) != after.end();
+	inline bool has_output(tag_t tag) {
+		return output_of.find(tag) != output_of.end();
 	}
 
 	void send_mb(base_microbatch *mb, bool fw) {
@@ -222,26 +253,52 @@ private:
 	}
 
 	void flush_buffer_(tag_t tag, bool fw) {
-		assert(is_chain_mapped(tag));
-		auto &buf(tag_buffer[tag]);
-		for (auto mb : buf) {
-			mb->tag(after[tag]);
-			send_mb(mb, fw);
+		assert(has_output(tag));
+		if (out_buf.find(tag) != out_buf.end()) {
+			auto &buf(out_buf[tag]);
+			for (auto mb : buf) {
+				mb->tag(output_of[tag]); //assign to the next iteration
+				send_mb(mb, fw);
+			}
+			buf.clear();
 		}
-		buf.clear();
 	}
 
 	void flush_out_buffer(tag_t tag) {
-		flush_buffer_(tag, true);
+		flush_buffer_(tag, true /* fw */);
 	}
 
 	void flush_back_buffer(tag_t tag) {
-		flush_buffer_(tag, false);
+		flush_buffer_(tag, false /* bw */);
+	}
+
+	void record_root_iteration(tag_t tag) {
+		/* first iteration */
+		assert(!closed_);
+		assert(last_iteration == base_microbatch::nil_tag());
+
+		root_iteration = last_iteration = tag; //tag to be consumed/produced
+
+		/* preconditions check */
+		assert(!n_iterations_);
+		assert(inflight.empty());
+		assert(ready.empty());
+		assert(is_inflight.find(tag) == is_inflight.end());
+		assert(output_of.find(tag) == output_of.end());
+		assert(input_of.find(tag) == input_of.end());
+
+		/* mark as inflight */
+		inflight.push(tag);
+		is_inflight[tag] = true;
+		++n_iterations_;
+
+		/* assign nil tag as input iteration */
+		input_of[tag] = base_microbatch::nil_tag();
 	}
 
 	constexpr static unsigned max_inflight = 2;
-	unsigned begun_iterations_ = 0;
-	bool closed = false;
+	unsigned n_iterations_ = 0;
+	bool closed_ = false;
 
 	/* root tag is the tag consumed/produced by the iterative pipe */
 	tag_t root_iteration = base_microbatch::nil_tag();
@@ -250,15 +307,44 @@ private:
 	std::queue<tag_t> inflight, ready;
 	std::unordered_map<tag_t, bool> is_inflight;
 
-	/*
-	 * Tag chains represent both directions of tag-relation among iterations:
-	 * after:  a -> b means tag a is the iteration-input of tag b
-	 * before: a -> b means tag a is the iteration-input of tag b
-	 */
-	std::unordered_map<tag_t, tag_t> after;
-	std::unordered_map<tag_t, tag_t> before;
+	/* bidirectional input-output relation among iterations */
+	std::unordered_map<tag_t, tag_t> output_of;
+	std::unordered_map<tag_t, tag_t> input_of;
 
-	std::unordered_map<tag_t, std::vector<base_microbatch *>> tag_buffer;
+	/* output buffer for each iteration */
+	std::unordered_map<tag_t, std::vector<base_microbatch *>> out_buf;
+};
+
+class iteration_multiplexer: //
+public base_mplex {
+	typedef base_microbatch::tag_t tag_t;
+
+	void handle_begin(tag_t nil) {
+		assert(this->from());
+		this->send_sync(make_sync(nil, PICO_BEGIN));
+	}
+
+	bool handle_end(tag_t nil) {
+		if (!--end_cnt) {
+			send_sync(make_sync(nil, PICO_END));
+			return true;
+		}
+		return false;
+	}
+
+	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
+		this->send_sync(make_sync(tag, PICO_CSTREAM_BEGIN));
+	}
+
+	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
+		this->send_sync(make_sync(tag, PICO_CSTREAM_END));
+	}
+
+	virtual void kernel(base_microbatch *in) {
+		this->send_sync(in);
+	}
+
+	unsigned end_cnt = 2;
 };
 
 #endif /* PICO_FF_IMPLEMENTATION_ITERATION_BASE_ITERATION_HPP_ */

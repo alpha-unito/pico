@@ -35,6 +35,7 @@ public:
 	}
 
 	virtual base_switch *iteration_switch() = 0;
+	virtual TerminationCondition *clone() = 0;
 };
 
 class FixedIterations: public TerminationCondition {
@@ -43,8 +44,16 @@ public:
 			iters(iters_) {
 	}
 
+	FixedIterations(const FixedIterations &copy) :
+			iters(copy.iters) {
+	}
+
 	base_switch *iteration_switch() {
 		return new fixed_length_iteration_dispatcher(iters);
+	}
+
+	FixedIterations *clone() {
+		return new FixedIterations(*this);
 	}
 
 private:

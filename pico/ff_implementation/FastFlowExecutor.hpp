@@ -113,9 +113,10 @@ private:
 		case Pipe::ITERATE:
 			cond = p.get_termination_ptr();
 			assert(p.children().size() == 1);
+			res->add_stage(new iteration_multiplexer());
 			res->add_stage(make_ff_term(*p.children().front(), false));
 			res->add_stage(cond->iteration_switch());
-			res->wrap_around();
+			res->wrap_around(true /* multi-input */);
 			break;
 		case Pipe::MERGE:
 			std::cerr << "MERGE not implemented yet\n";
