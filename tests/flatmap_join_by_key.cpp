@@ -14,12 +14,15 @@
 
 #include "common/io.hpp"
 #include "common/basic_pipes.hpp"
+#include "common/common_functions.hpp"
 
 using namespace pico;
 
 typedef KeyValue<char, int> KV;
 
 typedef KeyValue<char, std::string> CC;
+
+typedef std::unordered_map<char, std::unordered_multiset<int>> KvMultiMap;
 
 /* JoinFlatMapByKey kernel function */
 static auto kernel = [](KV& in1, KV& in2, FlatMapCollector<KV>& collector) {
@@ -36,10 +39,9 @@ static auto kernel = [](KV& in1, KV& in2, FlatMapCollector<KV>& collector) {
  * sequential version of kernel (the function passed to JoinFlatMapByKey)
  * (here we use one collection)
  */
-std::unordered_map<char, std::unordered_multiset<int>> seq_flatmap_join(
-		std::unordered_map<char, std::unordered_multiset<int>> partitions) {
+KvMultiMap seq_flatmap_join(KvMultiMap partitions) {
 	std::unordered_multiset<int> values;
-	std::unordered_map<char, std::unordered_multiset<int>> res;
+	KvMultiMap res;
 	char key;
 	int sum, sum_abs;
 	for (auto part : partitions) {
@@ -57,18 +59,6 @@ std::unordered_map<char, std::unordered_multiset<int>> seq_flatmap_join(
 		}
 	}
 	return res;
-}
-
-/* parse test output into char-int pairs */
-
-std::unordered_map<char, std::unordered_multiset<int>> get_result(std::string output_file){
-	std::unordered_map<char, std::unordered_multiset<int>> observed;
-	auto output_pairs_str = read_lines(output_file);
-	for (auto pair : output_pairs_str) {
-		auto kv = KV::from_string(pair);
-		observed[kv.Key()].insert(kv.Value());
-	}
-	return observed;
 }
 
 WriteToDisk<KV> get_writer(std::string output_file){
@@ -102,7 +92,7 @@ TEST_CASE( "JoinFlatMapByKey general tests", "[JoinFlatMapByKeyTag]" ) {
 			.add(writer);
 
 		test_pipe.run();
-		auto observed = get_result(output_file);
+		auto observed = result_fltmapjoin<KV>(output_file);
 
 		REQUIRE(expected == observed);
 	}
@@ -116,7 +106,7 @@ TEST_CASE( "JoinFlatMapByKey general tests", "[JoinFlatMapByKeyTag]" ) {
 			.add(writer);
 
 		test_pipe.run();
-		auto observed = get_result(output_file);
+		auto observed = result_fltmapjoin<KV>(output_file);
 
 		REQUIRE(expected == observed);
 	}
@@ -147,7 +137,7 @@ TEST_CASE("pairs pipes with different types", "[JoinFlatMapByKeyTag]"){
 	test_pipe.run();
 
 	/* compute expected output */
-	std::unordered_map<char, std::unordered_multiset<int>> partitions;
+	KvMultiMap partitions;
 	auto input_pairs_str = read_lines(input_file);
 	for (auto pair : input_pairs_str) {
 		auto kv = KV::from_string(pair);
@@ -158,7 +148,7 @@ TEST_CASE("pairs pipes with different types", "[JoinFlatMapByKeyTag]"){
 
 	auto expected = seq_flatmap_join(partitions);
 
-	auto observed = get_result(output_file);
+	auto observed = result_fltmapjoin<KV>(output_file);
 
 	REQUIRE(expected == observed);
 }
