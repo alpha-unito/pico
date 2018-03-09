@@ -249,7 +249,7 @@ private:
 	}
 
 	void send_mb(base_microbatch *mb, bool fw) {
-		this->send_out_to(mb, fw);
+		this->send_mb_to(mb, fw);
 	}
 
 	void flush_buffer_(tag_t tag, bool fw) {
@@ -265,14 +265,10 @@ private:
 	}
 
 	void flush_out_buffer(tag_t tag) {
-		assert(has_output(tag));
-		auto tag_ = output_of[tag];
 		flush_buffer_(tag, true /* fw */);
 	}
 
 	void flush_back_buffer(tag_t tag) {
-		assert(has_output(tag));
-		auto tag_ = output_of[tag];
 		flush_buffer_(tag, false /* bw */);
 	}
 
@@ -329,27 +325,27 @@ public base_mplex {
 
 	void handle_begin(tag_t nil) {
 		assert(this->from());
-		this->send_sync(make_sync(nil, PICO_BEGIN));
+		this->send_mb(make_sync(nil, PICO_BEGIN));
 	}
 
 	bool handle_end(tag_t nil) {
 		if (!--end_cnt) {
-			send_sync(make_sync(nil, PICO_END));
+			send_mb(make_sync(nil, PICO_END));
 			return true;
 		}
 		return false;
 	}
 
 	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
-		this->send_sync(make_sync(tag, PICO_CSTREAM_BEGIN));
+		this->send_mb(make_sync(tag, PICO_CSTREAM_BEGIN));
 	}
 
 	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
-		this->send_sync(make_sync(tag, PICO_CSTREAM_END));
+		this->send_mb(make_sync(tag, PICO_CSTREAM_END));
 	}
 
 	virtual void kernel(base_microbatch *in) {
-		this->send_sync(in);
+		this->send_mb(in);
 	}
 
 	unsigned end_cnt = 2;

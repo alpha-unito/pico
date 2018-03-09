@@ -46,9 +46,11 @@
 using namespace pico;
 
 static ff::ff_pipeline *make_ff_pipe(const Pipe &, bool, unsigned);
+static void add_chain(ff::ff_pipeline *, const std::vector<Pipe *> &, unsigned);
+#if 0
 static ff::ff_farm<> *make_merge_farm(const Pipe &, unsigned);
 static ff::ff_farm<> *make_multito_farm(const Pipe &, unsigned);
-static void add_chain(ff::ff_pipeline *, const std::vector<Pipe *> &, unsigned);
+#endif
 
 template<typename ItType>
 void add_plain(ff::ff_pipeline *p, ItType it, unsigned par) {
@@ -64,7 +66,7 @@ void add_plain(ff::ff_pipeline *p, ItType it, unsigned par) {
 
 static ff::ff_pipeline *make_ff_pipe(const Pipe &p, bool acc, unsigned par) {
 	/* create the ff pipeline with automatic node cleanup */
-		auto *res = new ff::ff_pipeline(accelerator);
+		auto *res = new ff::ff_pipeline(acc);
 		res->cleanup_nodes();
 		Operator *op;
 		base_UnaryOperator *uop;
@@ -73,50 +75,50 @@ static ff::ff_pipeline *make_ff_pipe(const Pipe &p, bool acc, unsigned par) {
 
 		switch (p.term_node_type()) {
 		case Pipe::EMPTY:
-			std::cerr << "warning: adding forwarding node\n";
 			res->add_stage(new ForwardingNode());
 			break;
 		case Pipe::OPERATOR:
 			op = p.get_operator_ptr();
 			uop = dynamic_cast<base_UnaryOperator *>(op);
-			res->add_stage(uop->node_operator(par_deg));
+			res->add_stage(uop->node_operator(par));
 			break;
 		case Pipe::TO:
-			add_chain(res, p.children());
+			add_chain(res, p.children(), par);
 			break;
 		case Pipe::MULTITO:
 			std::cerr << "MULTI-TO not implemented yet\n";
 			assert(false);
-			res->add_stage(make_ff_term(*p.children().front(), false));
-			res->add_stage(make_multito_farm(p));
+			//res->add_stage(make_ff_pipe(*p.children().front(), false, par));
+			//res->add_stage(make_multito_farm(p, par));
 			break;
 		case Pipe::ITERATE:
 			cond = p.get_termination_ptr();
 			assert(p.children().size() == 1);
 			res->add_stage(new iteration_multiplexer());
-			res->add_stage(make_ff_term(*p.children().front(), false));
+			res->add_stage(make_ff_pipe(*p.children().front(), false, par));
 			res->add_stage(cond->iteration_switch());
 			res->wrap_around(true /* multi-input */);
 			break;
 		case Pipe::MERGE:
 			std::cerr << "MERGE not implemented yet\n";
 			assert(false);
-			res->add_stage(make_merge_farm(p));
+			//res->add_stage(make_merge_farm(p, par));
 			break;
 		case Pipe::PAIR:
 			op = p.get_operator_ptr();
 			assert(op);
 			assert(p.children().size() == 2);
-			res->add_stage(make_pair_farm(*p.children()[0], *p.children()[1]));
+			res->add_stage(make_pair_farm(*p.children()[0], *p.children()[1], par));
 			/* add the operator */
 			bop = dynamic_cast<base_BinaryOperator *>(op);
 			bool left_input = p.children()[0]->in_deg();
-			res->add_stage(bop->node_operator(par_deg, left_input));
+			res->add_stage(bop->node_operator(par, left_input));
 			break;
 		}
 		return res;
 }
 
+#if 0
 static ff::ff_farm<> *make_merge_farm(const Pipe &p, unsigned par) {
 	/*
 	 auto *res = new ff::ff_farm<>();
@@ -134,22 +136,6 @@ static ff::ff_farm<> *make_merge_farm(const Pipe &p, unsigned par) {
 	return nullptr;
 }
 
-void add_chain(ff::ff_pipeline *p, const std::vector<Pipe *> &s, unsigned par) {
-	/* apply PEG optimizations */
-	auto it = s.begin();
-	for (; it != s.end() - 1; ++it) {
-		/* try to add an optimized compound */
-		if (add_optimized(p, it, it + 1, par))
-			++it;
-		else
-			/* add a regular sub-term */
-			add_plain(p, it, par);
-	}
-	/* add last sub-term if any */
-	if (it != s.end())
-		add_plain(p, it, par);
-}
-
 ff::ff_farm<> *make_multito_farm(const Pipe &p, unsigned par) {
 	/*
 	 auto *res = new ff::ff_farm<>();
@@ -165,6 +151,23 @@ ff::ff_farm<> *make_multito_farm(const Pipe &p, unsigned par) {
 	 */
 	assert(false);
 	return nullptr;
+}
+#endif
+
+void add_chain(ff::ff_pipeline *p, const std::vector<Pipe *> &s, unsigned par) {
+	/* apply PEG optimizations */
+	auto it = s.begin();
+	for (; it != s.end() - 1; ++it) {
+		/* try to add an optimized compound */
+		if (add_optimized(p, it, it + 1, par))
+			++it;
+		else
+			/* add a regular sub-term */
+			add_plain(p, it, par);
+	}
+	/* add last sub-term if any */
+	if (it != s.end())
+		add_plain(p, it, par);
 }
 
 class FastFlowExecutor {
