@@ -64,14 +64,14 @@ public:
 			assert(tag_state.find(tag) == tag_state.end());
 			auto &s(tag_state[tag]);
 
-			send_sync(make_sync(tag, PICO_CSTREAM_BEGIN)); //propagate begin
-			auto origin_mb = recv_sync(); //wait for origin
+			send_mb(make_sync(tag, PICO_CSTREAM_BEGIN)); //propagate begin
+			auto origin_mb = recv_mb(); //wait for origin
 			if (origin_mb->payload() == PICO_CSTREAM_FROM_LEFT) {
-				send_sync(make_sync(tag, PICO_CSTREAM_FROM_LEFT));
+				send_mb(make_sync(tag, PICO_CSTREAM_FROM_LEFT));
 				s.from_left = true;
 				s.mb2w_from_left = std::vector<key_state1>(nworkers);
 			} else {
-				send_sync(make_sync(tag, PICO_CSTREAM_FROM_RIGHT));
+				send_mb(make_sync(tag, PICO_CSTREAM_FROM_RIGHT));
 				s.from_left = false;
 				s.mb2w_from_right = std::vector<key_state2>(nworkers);
 			}
@@ -83,7 +83,7 @@ public:
 		/* on c-stream end, notify */
 		virtual void handle_cstream_end(base_microbatch::tag_t tag) {
 			finalize(tag);
-			send_sync(make_sync(tag, PICO_CSTREAM_END));
+			send_mb(make_sync(tag, PICO_CSTREAM_END));
 		}
 
 		/* dispatch data with micro-batch buffering */
@@ -127,7 +127,7 @@ public:
 				new (mb2w[dst][k]->allocate()) In(tt);
 				mb2w[dst][k]->commit();
 				if (mb2w[dst][k]->full()) {
-					send_out_to(mb2w[dst][k], dst);
+					send_mb_to(mb2w[dst][k], dst);
 					mb2w[dst][k] = NEW<mb_t>(tag, mbsize);
 				}
 			}
@@ -139,7 +139,7 @@ public:
 			for (unsigned dst = 0; dst < nworkers; ++dst)
 				for (auto &k_mb : mb2w[dst])
 					if (!k_mb.second->empty())
-						send_out_to(k_mb.second, dst);
+						send_mb_to(k_mb.second, dst);
 					else
 						DELETE(k_mb.second); //spurious microbatch
 		}
@@ -217,7 +217,7 @@ public:
 		auto &s(tag_state[tag]);
 
 		/* wait for origin */
-		auto origin_mb = recv_sync();
+		auto origin_mb = recv_mb();
 
 		/* update internal state */
 		if (origin_mb->payload() == PICO_CSTREAM_FROM_LEFT) {
@@ -231,7 +231,7 @@ public:
 
 		/* propagate begin if not cached */
 		if (!s.cached) {
-			send_sync(make_sync(tag, PICO_CSTREAM_BEGIN));
+			send_mb(make_sync(tag, PICO_CSTREAM_BEGIN));
 			non_cached_tags.push_back(tag);
 		} else {
 			assert(cached_tag == base_microbatch::nil_tag());
@@ -422,7 +422,7 @@ class JoinFlatMapByKeyFarm: public base_JFMBK_Farm<TokenTypeIn1, TokenTypeIn2,
 		}
 
 		void finalize_output_tag(tag_t tag) {
-			this->send_sync(make_sync(tag, PICO_CSTREAM_END)); //propagate end
+			this->send_mb(make_sync(tag, PICO_CSTREAM_END)); //propagate end
 		}
 	};
 
@@ -509,7 +509,7 @@ class JFMRBK_Farm: public base_JFMBK_Farm<TT1, TT2, TTO> {
 				DELETE(mb);
 
 			/* close the collection */
-			this->send_sync(make_sync(tag, PICO_CSTREAM_END));
+			this->send_mb(make_sync(tag, PICO_CSTREAM_END));
 		}
 
 		redf_t redf;
