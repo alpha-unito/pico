@@ -129,7 +129,7 @@ private:
 	void kernel(base_microbatch *mb) {
 		auto tag = mb->tag();
 		assert(is_inflight[tag]);
-		if (has_output(tag) && is_inflight[output_of[tag]]) {
+		if (has_output(tag) && is_inflight[output_of[tag]] && !is_last(tag)) {
 			/* next iteration running: translate and send back */
 			mb->tag(output_of[tag]);
 			send_mb(mb, false /* back */);
@@ -174,7 +174,7 @@ private:
 		}
 
 		else {
-			// nothing to do if non-first/last iteration
+			// nothing to do if returning iteration
 			assert(out_buf.find(tag) == out_buf.end());
 		}
 
@@ -265,10 +265,14 @@ private:
 	}
 
 	void flush_out_buffer(tag_t tag) {
+		assert(has_output(tag));
+		auto tag_ = output_of[tag];
 		flush_buffer_(tag, true /* fw */);
 	}
 
 	void flush_back_buffer(tag_t tag) {
+		assert(has_output(tag));
+		auto tag_ = output_of[tag];
 		flush_buffer_(tag, false /* bw */);
 	}
 
@@ -294,6 +298,10 @@ private:
 
 		/* assign nil tag as input iteration */
 		input_of[tag] = base_microbatch::nil_tag();
+	}
+
+	inline bool is_last(tag_t tag) {
+		return output_of.at(tag) == root_iteration;
 	}
 
 	constexpr static unsigned max_inflight = 2;

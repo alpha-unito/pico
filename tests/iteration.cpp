@@ -36,7 +36,7 @@ static auto fltmp_kernel = [](KV& in, FlatMapCollector<KV>& collector) {
 			collector.add(KV(in.Key(), 0));
 		}
 	} //else filters out
-};
+	};
 
 /*
  * sequential version of fltmp_kernel
@@ -116,18 +116,19 @@ TEST_CASE("iteration", "[iterationTag]" ) {
 
 }
 
-static auto kernel_fltmapjoin = [](KV& in1, KV& in2, FlatMapCollector<KV>& collector) {
-	KV res = in1+in2;
-	int res_value = res.Value();
-	int res_abs = std::abs(res_value);
-	if(res_value % 2 == 0) {
-		for(int i = 0; i < res_abs % 10; ++i)
-			collector.add(res); //add copies of res
-	} //else filters out the pairs
-};
+static auto kernel_fltmapjoin =
+		[](KV& in1, KV& in2, FlatMapCollector<KV>& collector) {
+			KV res = in1+in2;
+			int res_value = res.Value();
+			int res_abs = std::abs(res_value);
+			if(res_value % 2 == 0) {
+				for(int i = 0; i < res_abs % 10; ++i)
+				collector.add(res); //add copies of res
+			} //else filters out the pairs
+		};
 
-void seq_flatmap_join(const KvMultiMap & partitions_1 , const KvMultiMap & partitions_2,
-		KvMultiMap& res) {
+void seq_flatmap_join(const KvMultiMap & partitions_1,
+		const KvMultiMap & partitions_2, KvMultiMap& res) {
 	res.clear();
 	const std::unordered_multiset<int>* ptr_values_1, *ptr_values_2;
 	char key;
@@ -135,7 +136,7 @@ void seq_flatmap_join(const KvMultiMap & partitions_1 , const KvMultiMap & parti
 	for (auto& part : partitions_1) {
 		key = part.first;
 		ptr_values_1 = &(part.second);
-		if(partitions_2.count(key) == 1){
+		if (partitions_2.count(key) == 1) {
 			ptr_values_2 = &(partitions_2.at(key));
 			for (auto in1 : *ptr_values_1) {
 				for (auto in2 : *ptr_values_2) { //join
@@ -151,19 +152,19 @@ void seq_flatmap_join(const KvMultiMap & partitions_1 , const KvMultiMap & parti
 	}
 }
 
-KvMultiMap seq_Iter_flatmap_join(KvMultiMap original_partitions, int num_iter){
+KvMultiMap seq_Iter_flatmap_join(KvMultiMap original_partitions, int num_iter) {
 	KvMultiMap res;
 	KvMultiMap& ptr_res = res;
 	KvMultiMap helper = original_partitions;
 	KvMultiMap& ptr_helper = helper, tmp;
 	int i;
-	for(i = 0; i < num_iter; ++i){
+	for (i = 0; i < num_iter; ++i) {
 		seq_flatmap_join(original_partitions, ptr_helper, ptr_res);
 		tmp = ptr_helper;
 		ptr_helper = ptr_res;
 		ptr_res = tmp;
 	}
-	if(i > 0)
+	if (i > 0)
 		ptr_res = ptr_helper;
 
 	return ptr_res;
@@ -182,12 +183,13 @@ TEST_CASE("iteration with JoinFlatMapByKey", "[iterationTag]" ) {
 	auto p = pipe_pairs_creator<KV>(input_file);
 
 	int num_iter = 3;
-	FixedIterations cond(num_iter);
-	auto iter_pipe = Pipe().pair_with(p, JoinFlatMapByKey<KV, KV, KV>(kernel_fltmapjoin)) //
-	.iterate(cond);
+	auto iter_pipe = Pipe() //
+	.pair_with(p, JoinFlatMapByKey<KV, KV, KV>(kernel_fltmapjoin)) //
+	.iterate(FixedIterations(num_iter));
 
 	auto test_pipe = p //
-	.to(iter_pipe).add(writer);
+	.to(iter_pipe) //
+	.add(writer);
 
 	test_pipe.run();
 
