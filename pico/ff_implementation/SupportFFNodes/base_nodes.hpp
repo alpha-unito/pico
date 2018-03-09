@@ -32,10 +32,6 @@
 
 using namespace pico;
 
-/**
- * TODO try factorizing base_filter and base_switch
- */
-
 using base_node = ff::ff_node_t<base_microbatch, base_microbatch>;
 
 static base_microbatch *make_sync(base_microbatch::tag_t tag, char *token) {
@@ -82,8 +78,8 @@ protected:
 
 	base_microbatch *recv_sync() {
 		base_microbatch *res;
-		while (!this->pop((void **) &res))
-			;
+		while (!this->pop((void **) &res)) {
+		}
 		return res;
 	}
 

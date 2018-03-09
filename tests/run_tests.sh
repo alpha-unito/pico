@@ -14,6 +14,9 @@ fi
 if [ ! -f pairs.txt ]; then
 ./generate_pairs 1k > pairs.txt
 fi
+if [ ! -f pairs_64.txt ]; then
+./generate_pairs 64 > pairs_64.txt
+fi
 cd ..
 
 # run

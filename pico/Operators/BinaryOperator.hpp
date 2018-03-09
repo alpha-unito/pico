@@ -22,15 +22,22 @@
 #define OPERATORS_BINARYOPERATOR_HPP_
 
 #include "Operator.hpp"
+#include "../Internals/PEGOptimization/defs.hpp"
 
 namespace pico {
+
 /**
  * Base class for actor nodes with *two* input streams and *one* output stream, either bound or unbound and grouped or plain.
  * It is provided with methods for input/output type checking.
  */
-class base_BinaryOperator : public Operator {
+class base_BinaryOperator: public Operator {
 public:
 	virtual ff::ff_node* node_operator(int par_deg, bool left_input)=0;
+
+	virtual ff::ff_node* opt_node(int, bool, PEGOptimization_t, opt_args_t) {
+		assert(false);
+		return nullptr;
+	}
 };
 
 template<typename In1, typename In2, typename Out>

@@ -22,6 +22,7 @@
 #define OPERATORS_UNARYOPERATOR_HPP_
 
 #include "Operator.hpp"
+#include "../Internals/PEGOptimization/defs.hpp"
 
 namespace pico {
 
@@ -29,9 +30,14 @@ namespace pico {
  * Base class for actor nodes with *one* input stream and *one* output stream, either bound or unbound and grouped or plain.
  * It is provided with methods for input/output type checking.
  */
-class base_UnaryOperator : public Operator {
+class base_UnaryOperator: public Operator {
 public:
 	virtual ff::ff_node* node_operator(int par_deg)=0;
+
+	virtual ff::ff_node* opt_node(int, PEGOptimization_t, opt_args_t) {
+		assert(false);
+		return nullptr;
+	}
 };
 
 template<typename In, typename Out>

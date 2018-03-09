@@ -39,12 +39,13 @@
 #include <deque>
 #include <cassert>
 
-#include "Operators/BinaryOperator.hpp"
-#include "Operators/InOut/InputOperator.hpp"
-#include "Operators/InOut/OutputOperator.hpp"
-#include "Operators/Map.hpp"
+
+//#include "Operators/BinaryOperator.hpp"
+//#include "Operators/InOut/InputOperator.hpp"
+//#include "Operators/InOut/OutputOperator.hpp"
+//#include "Operators/Map.hpp"
 #include "Operators/Operator.hpp"
-#include "Operators/UnaryOperator.hpp"
+//#include "Operators/UnaryOperator.hpp"
 #include "defines/Global.hpp"
 
 #include "TerminationCondition.hpp"
@@ -572,6 +573,7 @@ public:
 	 */
 	Operator *get_operator_ptr() const {
 		assert(has_operator());
+		assert(term_value.op);
 		return term_value.op;
 	}
 

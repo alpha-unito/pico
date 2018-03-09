@@ -152,3 +152,48 @@ TEST_CASE("pairs pipes with different types", "[JoinFlatMapByKeyTag]"){
 
 	REQUIRE(expected == observed);
 }
+
+std::vector<std::string> seq_reduce_by_key(std::unordered_map<char, std::unordered_multiset<int>> flatmap_join_res){
+	std::vector<std::string> vec_res;
+	int sum;
+	for(auto el : flatmap_join_res ){
+		sum = 0;
+		for(int num : el.second)
+			sum += num;
+		vec_res.push_back(KV(el.first, sum).to_string());
+	}
+	return vec_res;
+}
+
+TEST_CASE("JoinFlatMapByKey plus reduce by key", "[JoinFlatMapByKeyTag]"){
+
+	std::string input_file = "./testdata/pairs.txt";
+	std::string output_file = "output.txt";
+
+	auto writer = get_writer(output_file);
+
+	auto p = pipe_pairs_creator<KV>(input_file);
+
+	/* compute expected output */
+	std::unordered_map<char, std::unordered_multiset<int>> partitions;
+	auto input_pairs_str = read_lines(input_file);
+	for (auto pair : input_pairs_str) {
+		auto kv = KV::from_string(pair);
+		partitions[kv.Key()].insert(kv.Value());
+	}
+	auto flatmap_join_res = seq_flatmap_join(partitions);
+	auto expected = seq_reduce_by_key(flatmap_join_res);
+	std::sort(expected.begin(), expected.end());
+
+	auto test_pipe = p //
+			.pair_with(p, JoinFlatMapByKey<KV, KV, KV>(kernel)) //
+			.add(ReduceByKey<KV>([&](int v1, int v2) {return v1+v2;}))
+			.add(writer);
+
+	test_pipe.run();
+
+	auto observed = read_lines(output_file);
+	std::sort(observed.begin(), observed.end());
+	REQUIRE(expected == observed);
+
+}
