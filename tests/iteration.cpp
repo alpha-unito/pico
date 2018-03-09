@@ -174,7 +174,7 @@ KvMultiMap seq_Iter_flatmap_join(KvMultiMap original_partitions, int num_iter) {
 TEST_CASE("iteration with JoinFlatMapByKey", "[iterationTag]" ) {
 
 	std::string input_file = "./testdata/pairs_64.txt";
-	std::string output_file = "outputIter.txt";
+	std::string output_file = "output.txt";
 
 	WriteToDisk<KV> writer(output_file, [&](KV in) {
 		return in.to_string();
