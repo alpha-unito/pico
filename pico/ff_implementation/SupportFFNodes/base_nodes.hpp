@@ -69,21 +69,21 @@ protected:
 	 * to be called by user code and runtime
 	 */
 	void begin_cstream(base_microbatch::tag_t tag) {
-		send_sync(make_sync(tag, PICO_CSTREAM_BEGIN));
+		send_mb(make_sync(tag, PICO_CSTREAM_BEGIN));
 	}
 
 	void end_cstream(base_microbatch::tag_t tag) {
-		send_sync(make_sync(tag, PICO_CSTREAM_END));
+		send_mb(make_sync(tag, PICO_CSTREAM_END));
 	}
 
-	base_microbatch *recv_sync() {
+	base_microbatch *recv_mb() {
 		base_microbatch *res;
 		while (!this->pop((void **) &res)) {
 		}
 		return res;
 	}
 
-	virtual void send_sync(base_microbatch *sync_mb) {
+	virtual void send_mb(base_microbatch *sync_mb) {
 		ff_send_out(sync_mb);
 	}
 
@@ -91,7 +91,7 @@ private:
 	virtual void handle_begin(base_microbatch::tag_t tag) {
 		//fprintf(stderr, "> %p begin tag=%llu\n", this, tag);
 		assert(tag == base_microbatch::nil_tag());
-		send_sync(make_sync(tag, PICO_BEGIN));
+		send_mb(make_sync(tag, PICO_BEGIN));
 		begin_callback();
 	}
 
@@ -99,7 +99,7 @@ private:
 		//fprintf(stderr, "> %p end tag=%llu\n", this, tag);
 		assert(tag == base_microbatch::nil_tag());
 		end_callback();
-		send_sync(make_sync(tag, PICO_END));
+		send_mb(make_sync(tag, PICO_END));
 	}
 
 	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
@@ -152,13 +152,13 @@ public:
 	}
 
 protected:
-	void send_out_to(base_microbatch *task, unsigned i) {
+	void send_mb_to(base_microbatch *task, unsigned i) {
 		lb->ff::ff_loadbalancer::ff_send_out_to(task, i);
 	}
 
-	void send_sync(base_microbatch *sync_mb) {
+	void send_mb(base_microbatch *sync_mb) {
 		for (unsigned i = 0; i < nw; ++i)
-			send_out_to(make_sync(sync_mb->tag(), sync_mb->payload()), i);
+			send_mb_to(make_sync(sync_mb->tag(), sync_mb->payload()), i);
 	}
 
 private:
@@ -181,7 +181,7 @@ private:
 		assert(tag == base_microbatch::nil_tag());
 		assert(pending_begin < pending_end);
 		if (!--pending_end)
-			send_sync(make_sync(tag, PICO_END));
+			send_mb(make_sync(tag, PICO_END));
 		assert(pending_begin <= pending_end);
 	}
 
@@ -189,7 +189,7 @@ private:
 		assert(tag == base_microbatch::nil_tag());
 		assert(pending_begin <= pending_end);
 		if (pending_begin-- == nw)
-			send_sync(make_sync(tag, PICO_BEGIN));
+			send_mb(make_sync(tag, PICO_BEGIN));
 		assert(pending_begin < pending_end);
 	}
 
@@ -201,14 +201,14 @@ private:
 		if (!--pending_cstream_end[tag]) {
 			cstream_end_callback(tag);
 			if (propagate_cstream_sync())
-				send_sync(make_sync(tag, PICO_CSTREAM_END));
+				send_mb(make_sync(tag, PICO_CSTREAM_END));
 		}
 	}
 
 	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
 		if (pending_cstream_begin.find(tag) == pending_cstream_begin.end()) {
 			if (propagate_cstream_sync())
-				send_sync(make_sync(tag, PICO_CSTREAM_BEGIN));
+				send_mb(make_sync(tag, PICO_CSTREAM_BEGIN));
 			pending_cstream_begin[tag] = nw;
 		}
 		if (pending_cstream_end.find(tag) != pending_cstream_end.end())
@@ -240,7 +240,7 @@ protected:
 	virtual void handle_cstream_begin(base_microbatch::tag_t tag) = 0;
 	virtual void handle_cstream_end(base_microbatch::tag_t tag) = 0;
 
-	void send_out_to(base_microbatch *task, unsigned dst) {
+	void send_mb_to(base_microbatch *task, unsigned dst) {
 		this->ff_send_out_to(task, dst);
 	}
 
@@ -289,7 +289,7 @@ protected:
 	virtual void handle_cstream_begin(base_microbatch::tag_t tag) = 0;
 	virtual void handle_cstream_end(base_microbatch::tag_t tag) = 0;
 
-	void send_sync(base_microbatch *task) {
+	void send_mb(base_microbatch *task) {
 		this->ff_send_out(task);
 	}
 

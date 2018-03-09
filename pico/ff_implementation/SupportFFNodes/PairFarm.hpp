@@ -51,18 +51,18 @@ public:
 	}
 
 	void kernel(base_microbatch *in_mb) {
-		send_out_to(in_mb, To);
+		send_mb_to(in_mb, To);
 	}
 
 	/* do not notify input-less pipe about c-stream begin/end */
 	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
-		send_out_to(make_sync(tag, PICO_CSTREAM_BEGIN), To);
+		send_mb_to(make_sync(tag, PICO_CSTREAM_BEGIN), To);
 		//cstream_begin_callback(tag);
 	}
 
 	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
 		//cstream_end_callback(tag);
-		send_out_to(make_sync(tag, PICO_CSTREAM_END), To);
+		send_mb_to(make_sync(tag, PICO_CSTREAM_END), To);
 	}
 };
 
@@ -103,17 +103,17 @@ public:
 
 	/* on c-stream begin, forward and notify about origin */
 	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
-		send_sync(make_sync(tag, PICO_CSTREAM_BEGIN));
+		send_mb(make_sync(tag, PICO_CSTREAM_BEGIN));
 		if (!gt.from())
-			send_sync(make_sync(tag, PICO_CSTREAM_FROM_LEFT));
+			send_mb(make_sync(tag, PICO_CSTREAM_FROM_LEFT));
 		else
-			send_sync(make_sync(tag, PICO_CSTREAM_FROM_RIGHT));
+			send_mb(make_sync(tag, PICO_CSTREAM_FROM_RIGHT));
 	}
 
 	/* on c-stream end, notify */
 	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
 		//cstream_end_callback(tag);
-		send_sync(make_sync(tag, PICO_CSTREAM_END));
+		send_mb(make_sync(tag, PICO_CSTREAM_END));
 	}
 
 	/* forward data */
