@@ -33,12 +33,4 @@ void parse_opt(OptionData &opt, char &ot, char *name, const std::string &in) {
 			&ot, &opt.divs, &opt.DGrefval);
 }
 
-static ReduceByKey<StockAndPrice> SPReducer([] (StockPrice p1, StockPrice p2) {
-	return std::max(p1,p2);
-});
-
-static WriteToStdOut<StockAndPrice> SPWriter([](StockAndPrice kv) {
-	return kv.to_string();
-});
-
 #endif /* EXAMPLES_STOCK_MARKET_DEFS_H_ */

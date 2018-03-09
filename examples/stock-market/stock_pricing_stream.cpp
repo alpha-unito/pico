@@ -33,6 +33,7 @@
 #include <pico/pico.hpp>
 
 #include "defs.h"
+#include "common.hpp"
 #include "black_scholes.hpp"
 #include "binomial_tree.hpp"
 #include "explicit_finite_difference.hpp"
