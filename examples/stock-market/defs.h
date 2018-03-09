@@ -23,8 +23,22 @@ typedef pico::KeyValue<StockName, StockPrice> StockAndPrice;
 
 // return the payoff of the function you want to evaluate
 // payoff from the European call option
-double payoff(double S,double strikePrice) {
-  return std::max( S - strikePrice , 0. ); // change this line here to solve for different European options
+double payoff(double S, double strikePrice) {
+	return std::max(S - strikePrice, 0.);
 }
+
+void parse_opt(OptionData &opt, char &ot, char *name, const std::string &in) {
+	sscanf(in.c_str(), "%s %lf %lf %lf %lf %lf %lf %c %lf %lf", name, //
+			&opt.s, &opt.strike, &opt.r, &opt.divq, &opt.v, &opt.t, //
+			&ot, &opt.divs, &opt.DGrefval);
+}
+
+static ReduceByKey<StockAndPrice> SPReducer([] (StockPrice p1, StockPrice p2) {
+	return std::max(p1,p2);
+});
+
+static WriteToStdOut<StockAndPrice> SPWriter([](StockAndPrice kv) {
+	return kv.to_string();
+});
 
 #endif /* EXAMPLES_STOCK_MARKET_DEFS_H_ */
