@@ -56,7 +56,7 @@ public:
 			new (s.worker_mb[dst]->allocate()) DataType(tt);
 			s.worker_mb[dst]->commit();
 			if (s.worker_mb[dst]->full()) {
-				send_out_to(s.worker_mb[dst], dst);
+				send_mb_to(s.worker_mb[dst], dst);
 				s.worker_mb[dst] = NEW<mb_t>(tag,
 						global_params.MICROBATCH_SIZE);
 			}
@@ -68,7 +68,7 @@ public:
 		auto &s(tag_state[tag]);
 		for (unsigned i = 0; i < nworkers; ++i) {
 			if (!s.worker_mb[i]->empty())
-				send_out_to(s.worker_mb[i], i);
+				send_mb_to(s.worker_mb[i], i);
 			else
 				DELETE (s.worker_mb[i]); //spurious microbatch
 		}
