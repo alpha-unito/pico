@@ -33,6 +33,7 @@
 #include <pico/pico.hpp>
 
 #include "defs.h"
+#include "common.hpp"
 #include "black_scholes.hpp"
 
 int main(int argc, char** argv) {
