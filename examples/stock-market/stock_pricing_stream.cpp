@@ -36,40 +36,6 @@
 #include "black_scholes.hpp"
 #include "binomial_tree.hpp"
 #include "explicit_finite_difference.hpp"
-#include "monte_carlo.hpp"
-
-/*
- * define a generic operator that computes the price of a bunch of
- * stock options by applying the Black-Scholes formula
- */
-auto blackScholes = Map<std::string, StockAndPrice>([]
-(const std::string& in) {
-
-	OptionData opt;
-	char otype, name[128];
-	sscanf(in.c_str(), "%s %lf %lf %lf %lf %lf %lf %c %lf %lf", name, //
-		&opt.s, &opt.strike, &opt.r, &opt.divq, &opt.v, &opt.t,//
-		&otype, &opt.divs, &opt.DGrefval);
-opt.OptionType = (otype == 'P');
-int iMax=4, jMax=4, steps=10;
-int const size = 3;
-StockPrice res[size];
-res[0] = black_scholes(opt);
-res[1] = binomial_tree(opt, steps);
-res[2] = explicit_finite_difference(opt, iMax, jMax);
-//        res[3] = monte_carlo(opt, 0.75, N);
-StockPrice mean = 0;
-for(int i = 0; i < size; ++i) {
-	mean+=res[i];
-}
-mean /= size;
-StockPrice variance = 0;
-for(int i = 0; i < size; ++i) {
-	variance+=(res[i]-mean)*(res[i]-mean);
-}
-variance/=size;
-return StockAndPrice(std::string(name), variance);
-});
 
 int main(int argc, char** argv) {
 	// parse global parameters
@@ -91,14 +57,35 @@ int main(int argc, char** argv) {
 	 * 3. extracts the maximum price for each stock name
 	 * 4. write prices to file
 	 */
-	auto stockPricing = Pipe(ReadFromSocket(server, port, '\n')) //
+	Map<std::string, StockAndPrice> blackScholes([] (const std::string& in) {
+		OptionData opt;
+		char otype, name[128];
+		parse_opt(opt, otype, name, in);
+		opt.OptionType = (otype == 'P');
+		int iMax=4, jMax=4, steps=10;
+		int const size = 3;
+		StockPrice res[size];
+		res[0] = black_scholes(opt);
+		res[1] = binomial_tree(opt, steps);
+		res[2] = explicit_finite_difference(opt, iMax, jMax);
+		StockPrice mean = 0;
+		for(int i = 0; i < size; ++i) {
+			mean+=res[i];
+		}
+		mean /= size;
+		StockPrice variance = 0;
+		for(int i = 0; i < size; ++i) {
+			variance+=(res[i]-mean)*(res[i]-mean);
+		}
+		variance/=size;
+		return StockAndPrice(std::string(name), variance);
+	});
+
+	auto stockPricing = Pipe() //
+	.add(ReadFromSocket(server, port, '\n')) //
 	.add(blackScholes). //
-	add(ReduceByKey<StockAndPrice>([]
-	(StockPrice p1, StockPrice p2) {
-		return std::max(p1,p2);
-	}).window(8)) //batch-windowing reduce
-	.add(WriteToStdOut<StockAndPrice>([](StockAndPrice kv)
-	{	return kv.to_string();}));
+	add(SPReducer.window(8)) //batch-windowing reduce
+	.add(SPWriter);
 
 	/* print the semantic graph and generate dot file */
 	stockPricing.print_semantics();
