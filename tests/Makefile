@@ -37,6 +37,7 @@ clean:
 	rm -rf *.o *~
 
 cleanall: clean
+	rm -rf $(EXECS)
 	rm -fr $(TARGET_OBJ_BATCH) $(TARGET_OBJ_STREAM) *.d
 	rm -rf *.dSYM *.dot *.png
 

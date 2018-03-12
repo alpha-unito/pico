@@ -66,56 +66,56 @@ void add_plain(ff::ff_pipeline *p, ItType it, unsigned par) {
 
 static ff::ff_pipeline *make_ff_pipe(const Pipe &p, bool acc, unsigned par) {
 	/* create the ff pipeline with automatic node cleanup */
-		auto *res = new ff::ff_pipeline(acc);
-		res->cleanup_nodes();
-		Operator *op;
-		base_UnaryOperator *uop;
-		base_BinaryOperator *bop;
-		TerminationCondition *cond;
+	auto *res = new ff::ff_pipeline(acc);
+	res->cleanup_nodes();
+	Operator *op;
+	base_UnaryOperator *uop;
+	base_BinaryOperator *bop;
+	TerminationCondition *cond;
 
-		switch (p.term_node_type()) {
-		case Pipe::EMPTY:
-			res->add_stage(new ForwardingNode());
-			break;
-		case Pipe::OPERATOR:
-			op = p.get_operator_ptr();
-			uop = dynamic_cast<base_UnaryOperator *>(op);
-			res->add_stage(uop->node_operator(par));
-			break;
-		case Pipe::TO:
-			add_chain(res, p.children(), par);
-			break;
-		case Pipe::MULTITO:
-			std::cerr << "MULTI-TO not implemented yet\n";
-			assert(false);
-			//res->add_stage(make_ff_pipe(*p.children().front(), false, par));
-			//res->add_stage(make_multito_farm(p, par));
-			break;
-		case Pipe::ITERATE:
-			cond = p.get_termination_ptr();
-			assert(p.children().size() == 1);
-			res->add_stage(new iteration_multiplexer());
-			res->add_stage(make_ff_pipe(*p.children().front(), false, par));
-			res->add_stage(cond->iteration_switch());
-			res->wrap_around(true /* multi-input */);
-			break;
-		case Pipe::MERGE:
-			std::cerr << "MERGE not implemented yet\n";
-			assert(false);
-			//res->add_stage(make_merge_farm(p, par));
-			break;
-		case Pipe::PAIR:
-			op = p.get_operator_ptr();
-			assert(op);
-			assert(p.children().size() == 2);
-			res->add_stage(make_pair_farm(*p.children()[0], *p.children()[1], par));
-			/* add the operator */
-			bop = dynamic_cast<base_BinaryOperator *>(op);
-			bool left_input = p.children()[0]->in_deg();
-			res->add_stage(bop->node_operator(par, left_input));
-			break;
-		}
-		return res;
+	switch (p.term_node_type()) {
+	case Pipe::EMPTY:
+		res->add_stage(new ForwardingNode());
+		break;
+	case Pipe::OPERATOR:
+		op = p.get_operator_ptr();
+		uop = dynamic_cast<base_UnaryOperator *>(op);
+		res->add_stage(uop->node_operator(par));
+		break;
+	case Pipe::TO:
+		add_chain(res, p.children(), par);
+		break;
+	case Pipe::MULTITO:
+		std::cerr << "MULTI-TO not implemented yet\n";
+		assert(false);
+		//res->add_stage(make_ff_pipe(*p.children().front(), false, par));
+		//res->add_stage(make_multito_farm(p, par));
+		break;
+	case Pipe::ITERATE:
+		cond = p.get_termination_ptr();
+		assert(p.children().size() == 1);
+		res->add_stage(new iteration_multiplexer());
+		res->add_stage(make_ff_pipe(*p.children().front(), false, par));
+		res->add_stage(cond->iteration_switch());
+		res->wrap_around(true /* multi-input */);
+		break;
+	case Pipe::MERGE:
+		std::cerr << "MERGE not implemented yet\n";
+		assert(false);
+		//res->add_stage(make_merge_farm(p, par));
+		break;
+	case Pipe::PAIR:
+		op = p.get_operator_ptr();
+		assert(op);
+		assert(p.children().size() == 2);
+		res->add_stage(make_pair_farm(*p.children()[0], *p.children()[1], par));
+		/* add the operator */
+		bop = dynamic_cast<base_BinaryOperator *>(op);
+		bool left_input = p.children()[0]->in_deg();
+		res->add_stage(bop->node_operator(par, left_input));
+		break;
+	}
+	return res;
 }
 
 #if 0
@@ -157,7 +157,7 @@ ff::ff_farm<> *make_multito_farm(const Pipe &p, unsigned par) {
 void add_chain(ff::ff_pipeline *p, const std::vector<Pipe *> &s, unsigned par) {
 	/* apply PEG optimizations */
 	auto it = s.begin();
-	for (; it != s.end() - 1; ++it) {
+	for (; it < s.end() - 1; ++it) {
 		/* try to add an optimized compound */
 		if (add_optimized(p, it, it + 1, par))
 			++it;
