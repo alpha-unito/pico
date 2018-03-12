@@ -33,7 +33,7 @@ unsigned long long vertices;
 
 int main(int argc, char** argv) {
 	// parse command line
-	if (argc < 3) {
+	if (argc < 4) {
 		printf("Usage: ./pico_wc <input file> <output file> <# vertices>\n");
 		return -1;
 	}
