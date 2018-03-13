@@ -39,13 +39,15 @@ public:
 	 * Creates a new FoldReduce operator by defining its kernel function.
 	 */
 	FoldReduce(std::function<void(const In&, State&)> foldf_,
-			std::function<void(const State&, State&)> reducef_) {
+			std::function<void(const State&, State&)> reducef_, //
+			unsigned par = def_par()) {
 		foldf = foldf_;
 		reducef = reducef_;
 		this->set_input_degree(1);
 		this->set_output_degree(1);
 		this->stype(StructureType::BAG, true);
 		this->stype(StructureType::STREAM, false);
+		this->pardeg(par);
 	}
 
 	FoldReduce(const FoldReduce &copy) :

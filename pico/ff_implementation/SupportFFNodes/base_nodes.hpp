@@ -212,7 +212,7 @@ private:
 			pending_cstream_begin[tag] = nw;
 		}
 		if (pending_cstream_end.find(tag) != pending_cstream_end.end())
-			assert(pending_cstream_end[tag] <= pending_cstream_begin[tag]);
+			assert(pending_cstream_begin[tag] <= pending_cstream_end[tag]);
 		--pending_cstream_begin[tag];
 	}
 

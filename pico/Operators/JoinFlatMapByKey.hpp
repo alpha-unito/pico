@@ -45,12 +45,14 @@ public:
 	 * Creates a new JoinFlatMapByKey operator by defining its kernel function.
 	 */
 	JoinFlatMapByKey(
-			std::function<void(In1&, In2&, FlatMapCollector<Out> &)> kernel_) {
+			std::function<void(In1&, In2&, FlatMapCollector<Out> &)> kernel_,
+			unsigned par = def_par()) {
 		kernel = kernel_;
 		this->set_input_degree(2);
 		this->set_output_degree(1);
 		this->stype(StructureType::BAG, true);
 		this->stype(StructureType::STREAM, false);
+		this->pardeg(par);
 	}
 
 	JoinFlatMapByKey(const JoinFlatMapByKey &copy) :
@@ -70,7 +72,8 @@ public:
 		return new t(parallelism, kernel, left_input);
 	}
 
-	ff::ff_node *opt_node(int pardeg, bool lin, PEGOptimization_t opt, opt_args_t a) {
+	ff::ff_node *opt_node(int pardeg, bool lin, PEGOptimization_t opt,
+			opt_args_t a) {
 		assert(opt == PJFMAP_PREDUCE);
 		using t = JFMRBK_Farm<Token<In1>, Token<In2>, Token<Out>>;
 		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);

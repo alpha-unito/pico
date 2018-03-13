@@ -53,12 +53,13 @@ public:
 	 *
 	 * Creates a new Map operator by defining its kernel function.
 	 */
-	Map(std::function<Out(In&)> mapf_) {
+	Map(std::function<Out(In&)> mapf_, unsigned par = def_par()) {
 		mapf = mapf_;
 		this->set_input_degree(1);
 		this->set_output_degree(1);
 		this->stype(StructureType::BAG, true);
 		this->stype(StructureType::STREAM, true);
+		this->pardeg(par);
 	}
 
 	/**

@@ -31,6 +31,11 @@
 
 namespace pico {
 
+static unsigned def_par() {
+	auto env = std::getenv("PARDEG");
+	return (unsigned) (env ? atoi(env) : (int) ff_realNumCores());
+}
+
 /**
  * Base class defining a semantic dataflow operator.
  * An operator has an input and output cardinality <I-degree, O-degree>, where
@@ -52,6 +57,7 @@ public:
 		set_output_degree(copy.o_degree());
 		stype(StructureType::BAG, copy.st_map.at(StructureType::BAG));
 		stype(StructureType::STREAM, copy.st_map.at(StructureType::STREAM));
+		pardeg_ = copy.pardeg_;
 	}
 
 	virtual ~Operator() {
@@ -108,9 +114,18 @@ public:
 		st_map[s] = v;
 	}
 
+	unsigned pardeg() const {
+		return pardeg_;
+	}
+
+	void pardeg(unsigned pardeg__) {
+		pardeg_ = pardeg__;
+	}
+
 private:
 	size_t in_deg, out_deg;
 	st_map_t st_map;
+	unsigned pardeg_ = def_par();
 };
 
 } /* namespace pico */
