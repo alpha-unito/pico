@@ -37,16 +37,12 @@
 #include "black_scholes.hpp"
 
 int main(int argc, char** argv) {
-	// parse global parameters
-	auto app_args = parse_PiCo_args(argc, argv);
-
 	// parse command line
-	if (app_args.argc < 2) {
-		std::cerr << "Usage: " << argv[0] << " [conf] ";
-		std::cerr << "<input file> <output file> \n";
+	if (argc < 3) {
+		std::cerr << "Usage: " << argv[0] << " <input file> <output file> \n";
 		return -1;
 	}
-	std::string in_fname(app_args.argv[0]), out_fname(app_args.argv[1]);
+	std::string in_fname(argv[1]), out_fname(argv[2]);
 
 	/*
 	 * define a batch pipeline that:

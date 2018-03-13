@@ -37,16 +37,14 @@ int main(int argc, char* argv[]) {
 		state.insert(in.begin(), in.end());
 	};
 
-	auto app_args = parse_PiCo_args(argc, argv);
-
 	// parse command line
-	if (argc < 2) {
+	if (argc < 3) {
 		std::cerr
-				<< "Usage: ./pico_foldred [-w workers] [-b batch-size] <input file> <output file> \n";
+				<< "Usage: ./pico_foldred <input file> <output file> \n";
 		return -1;
 	}
 
-	std::string in_fname(app_args.argv[0]), out_fname(app_args.argv[1]);
+	std::string in_fname(argv[1]), out_fname(argv[2]);
 
 	/* define the pipeline */
 

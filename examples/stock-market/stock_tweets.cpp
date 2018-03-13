@@ -88,18 +88,15 @@ auto filterTweets = FlatMap<std::string, StockAndCount>( //
 		});
 
 int main(int argc, char** argv) {
-	/* parse global parameters */
-	auto app_args = parse_PiCo_args(argc, argv);
-
 	/* parse command line */
-	if (app_args.argc < 3) {
-		std::cerr << "Usage: " << argv[0] << " [conf] ";
+	if (argc < 4) {
+		std::cerr << "Usage: " << argv[0] << " ";
 		std::cerr << "<stock names file> <tweet server> <port> \n";
 		return -1;
 	}
-	std::string stock_fname(app_args.argv[0]);
-	std::string server(app_args.argv[1]);
-	int port = atoi(app_args.argv[2]);
+	std::string stock_fname(argv[1]);
+	std::string server(argv[2]);
+	int port = atoi(argv[3]);
 
 	/* bring tags to memory */
 	std::ifstream stocks_file(stock_fname);

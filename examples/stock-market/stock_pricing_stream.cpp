@@ -39,17 +39,13 @@
 #include "explicit_finite_difference.hpp"
 
 int main(int argc, char** argv) {
-	// parse global parameters
-	auto app_args = parse_PiCo_args(argc, argv);
-
 	// parse command line
-	if (app_args.argc < 2) {
-		std::cerr << "Usage: " << argv[0] << " [conf] ";
-		std::cerr << "<server> <port> \n";
+	if (argc < 3) {
+		std::cerr << "Usage: " << argv[0] << " <server> <port> \n";
 		return -1;
 	}
-	std::string server(app_args.argv[0]);
-	int port = atoi(app_args.argv[1]);
+	std::string server(argv[1]);
+	int port = atoi(argv[2]);
 
 	/*
 	 * define a batch pipeline that:
