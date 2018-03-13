@@ -115,7 +115,7 @@ public:
 			DELETE(mb);
 
 		/* clean up */
-		delete r;
+		DELETE(r);
 		DELETE(wmb);
 	}
 
@@ -201,7 +201,7 @@ public:
 			DELETE(mb);
 
 		/* clean up */
-		delete r;
+		DELETE(r);
 		DELETE(wmb);
 	}
 
