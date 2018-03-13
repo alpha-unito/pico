@@ -49,12 +49,13 @@ public:
 	 *
 	 * Creates a ReduceByKey operator by defining its kernel function.
 	 */
-	ReduceByKey(std::function<V(V&, V&)> reducef_) :
+	ReduceByKey(std::function<V(V&, V&)> reducef_, unsigned par = def_par()) :
 			reducef(reducef_) {
 		this->set_input_degree(1);
 		this->set_output_degree(1);
 		this->stype(StructureType::BAG, true);
 		this->stype(StructureType::STREAM, false);
+		this->pardeg(par);
 	}
 
 	/**

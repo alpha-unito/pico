@@ -30,10 +30,6 @@
 
 #include <ff/mapper.hpp>
 
-#ifndef PARDEG
-#define PARDEG 1
-#endif
-
 namespace pico {
 
 struct app_args_t {
@@ -42,7 +38,6 @@ struct app_args_t {
 };
 
 struct {
-	unsigned PARALLELISM = PARDEG;
 	int MICROBATCH_SIZE = 8;
 	const char* MAPPING;
 } global_params;
@@ -54,12 +49,8 @@ struct {
 inline app_args_t parse_PiCo_args(int argc, char** argv) {
 	app_args_t res{argc - 1, nullptr};
 	int opt;
-	while ((opt = getopt(argc, argv, "w:b:s:p:m:h")) != -1) {
+	while ((opt = getopt(argc, argv, "b:s:p:m:h")) != -1) {
 		switch (opt) {
-		case 'w':
-			global_params.PARALLELISM = atoi(optarg);
-			res.argc -= 2;
-			break;
 		case 'b':
 			global_params.MICROBATCH_SIZE = atoi(optarg);
 			res.argc -= 2;
@@ -71,7 +62,7 @@ inline app_args_t parse_PiCo_args(int argc, char** argv) {
 			res.argc -= 2;
 			break;
 		default: /* '?' */
-			fprintf(stderr, "Usage: %s [-w workers] [-b batch-size]"
+			fprintf(stderr, "Usage: %s [-b batch-size]"
 					" [-m mapping node list] <app arguments>\n",
 					argv[0]);
 			exit(EXIT_FAILURE);

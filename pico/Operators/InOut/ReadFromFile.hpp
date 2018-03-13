@@ -48,8 +48,9 @@ public:
 	 * Creates a new ReadFromFile operator,
 	 * yielding an unordered bounded collection.
 	 */
-	ReadFromFile(std::string fname_) :
+	ReadFromFile(std::string fname_, unsigned par = def_par()) :
 			InputOperator<std::string>(StructureType::BAG), fname(fname_) {
+		this->pardeg(par);
 	}
 
 	/**

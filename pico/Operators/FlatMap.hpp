@@ -1,16 +1,16 @@
 /*
-    This file is part of PiCo.
-    PiCo is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    PiCo is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-    You should have received a copy of the GNU Lesser General Public License
-    along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ This file is part of PiCo.
+ PiCo is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ PiCo is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+ You should have received a copy of the GNU Lesser General Public License
+ along with PiCo.  If not, see <http://www.gnu.org/licenses/>.
+ */
 /*
  * FlatMap.hpp
  *
@@ -42,8 +42,8 @@ namespace pico {
  *
  * The kernel is applied independently to all the elements of the collection (either bounded or unbounded).
  */
-template <typename In, typename Out>
-class FlatMap : public UnaryOperator<In, Out> {
+template<typename In, typename Out>
+class FlatMap: public UnaryOperator<In, Out> {
 public:
 	/**
 	 * \ingroup op-api
@@ -52,21 +52,24 @@ public:
 	 *
 	 * Creates a new FlatMap operator by defining its kernel function.
 	 */
-	FlatMap(std::function<void(In&, FlatMapCollector<Out> &)> flatmapf_) {
+	FlatMap(std::function<void(In&, FlatMapCollector<Out> &)> flatmapf_,
+			unsigned par = def_par()) {
 		flatmapf = flatmapf_;
 		this->set_input_degree(1);
 		this->set_output_degree(1);
-        this->stype(StructureType::BAG, true);
-        this->stype(StructureType::STREAM, true);
+		this->stype(StructureType::BAG, true);
+		this->stype(StructureType::STREAM, true);
+		this->pardeg(par);
 	}
 
-	FlatMap(const FlatMap &copy) : flatmapf(copy.flatmapf) {
+	FlatMap(const FlatMap &copy) :
+			flatmapf(copy.flatmapf) {
 	}
 
 	/**
 	 * Returns the name of the operator, consisting in the name of the class.
 	 */
-	std::string name_short(){
+	std::string name_short() {
 		return "FlatMap";
 	}
 
@@ -75,7 +78,7 @@ protected:
 		return new FlatMap(*this);
 	}
 
-	const OpClass operator_class(){
+	const OpClass operator_class() {
 		return OpClass::FMAP;
 	}
 
