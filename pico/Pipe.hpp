@@ -71,7 +71,7 @@ static void destroy_executor(FastFlowExecutor *);
 static void run_pipe(FastFlowExecutor &);
 static double run_time(FastFlowExecutor &);
 static void print_executor_info(FastFlowExecutor &, std::ostream &os);
-void print_executor_trace(FastFlowExecutor &, std::ostream &os);
+static void print_executor_stats_(FastFlowExecutor &, std::ostream &os);
 
 namespace pico {
 
@@ -528,6 +528,11 @@ public:
 			executor = make_executor(*this);
 		std::cout << "=== Executor Info\n";
 		print_executor_info(*executor, std::cout);
+	}
+
+	void print_executor_stats() {
+		std::cout << "=== Executor Stats\n";
+		print_executor_stats_(*executor, std::cout);
 	}
 
 	/**

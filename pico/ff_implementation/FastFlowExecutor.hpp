@@ -202,6 +202,11 @@ public:
 		return ff_pipe->ffTime();
 	}
 
+	void print_stats(std::ostream &os) const {
+		if(ff_pipe)
+			ff_pipe->ffStats(os);
+	}
+
 private:
 	const Pipe &pipe;
 	ff::ff_pipeline *ff_pipe = nullptr;
@@ -231,6 +236,10 @@ double run_time(FastFlowExecutor &e) {
 
 void print_executor_info(FastFlowExecutor &e, std::ostream &os) {
 	ff::print_fftrees(os);
+}
+
+void print_executor_stats_(FastFlowExecutor &e, std::ostream &os) {
+	e.print_stats(os);
 }
 
 #endif /* PICO_FASTFLOWEXECUTOR_HPP_ */
