@@ -29,16 +29,24 @@ typedef KeyValue<Node, std::vector<Node>> NLinks;
 
 constexpr float DAMPENING = 0.85;
 constexpr unsigned niters = 10;
-unsigned long long vertices;
+unsigned long long vertices = 0;
 
 int main(int argc, char** argv) {
 	// parse command line
 	if (argc < 4) {
-		printf("Usage: ./pico_wc <input file> <output file> <# vertices>\n");
+		printf("Usage: %s <pages file> <links file> <output file>\n", argv[0]);
 		return -1;
 	}
-	std::string in_fname(argv[1]), out_fname(argv[2]);
-	vertices = atoi(argv[3]);
+	std::string in_pages_fname(argv[1]), in_links_fname(argv[2]);
+	std::string out_fname(argv[3]);
+
+	/* count vertices */
+	std::ifstream in_pages(in_pages_fname);
+	std::string in_buffer;
+	while(!in_pages.eof()) {
+		getline(in_pages, in_buffer);
+		++vertices;
+	}
 
 	// Map operator parsing lines into node-links pairs
 	Map<std::string, NLinks> parseEdges { //
@@ -58,9 +66,11 @@ int main(int argc, char** argv) {
 	} };
 
 	// Map operator generating initial ranks for node-links
-	Map<NLinks, NRank> generateInitialRanks { //
-	[] (const NLinks &nl) {
-		return NRank {nl.Key(), 1.0};
+	Map<std::string, NRank> parseAndInitRanks { //
+	[] (const std::string &nl) {
+		Node n;
+		sscanf(nl.c_str(), "%u", &n);
+		return NRank {n, 1.0};
 	} };
 
 	// By-key join + FlatMap operator, computing ranking updates
@@ -89,10 +99,15 @@ int main(int argc, char** argv) {
 				return in.to_string();
 			} };
 
+	Pipe generateInitialRanks = //
+			Pipe { } //
+	.add(ReadFromFile(in_pages_fname))
+			.add(parseAndInitRanks);
+
 	// The pipe for building the graph to be processed.
 	Pipe generateLinks = //
 			Pipe { } //
-			.add(ReadFromFile(in_fname)) //
+			.add(ReadFromFile(in_links_fname)) //
 			.add(parseEdges) //
 			.add(edgesToAdj);
 
@@ -105,8 +120,7 @@ int main(int argc, char** argv) {
 
 	// The whole pageRank pipe.
 	Pipe pageRank = Pipe { } //
-			.to(generateLinks) //
-			.add(generateInitialRanks) //
+			.to(generateInitialRanks) //
 			.to(improveRanks.iterate(FixedIterations { niters })) //
 			.add(writeRanks);
 
