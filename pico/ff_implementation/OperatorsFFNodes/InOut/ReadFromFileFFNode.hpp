@@ -299,14 +299,6 @@ private:
 	};
 
 	std::string fname;
-
-#ifdef TRACE_FASTFLOW
-	virtual void print_pico_stats(std::ostream & out)
-	{
-		out << "*** PiCo stats ***\n";
-		out << "user svc (ms) : " << this->ffTime() << std::endl;
-	}
-#endif
 };
 
 #endif /* INTERNALS_FFOPERATORS_INOUT_READFROMFILEFFNODE_HPP_ */

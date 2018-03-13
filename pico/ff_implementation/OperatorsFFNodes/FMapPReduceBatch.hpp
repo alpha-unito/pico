@@ -62,9 +62,6 @@ private:
 		Worker(std::function<void(In&, FlatMapCollector<Out> &)>& kernel_, //
 				std::function<OutV(OutV&, OutV&)>& reducef_kernel_) :
 				map_kernel(kernel_), reduce_kernel(reducef_kernel_)
-#ifdef TRACE_FASTFLOW
-		, user_svc(0)
-#endif
 		{
 		}
 
@@ -137,15 +134,6 @@ private:
 			std::unordered_map<OutK, OutV> kvmap;
 		};
 		std::unordered_map<base_microbatch::tag_t, key_state> tag_state;
-
-#ifdef TRACE_FASTFLOW
-		duration_t user_svc;
-		virtual void print_pico_stats(std::ostream & out)
-		{
-			out << "*** PiCo stats ***\n";
-			out << "user svc (ms) : " << time_count(user_svc) * 1000 << std::endl;
-		}
-#endif
 	};
 };
 
