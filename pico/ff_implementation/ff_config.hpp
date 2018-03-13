@@ -28,7 +28,7 @@ static inline int POSIX_MEMALIGN(void **dst, size_t align, size_t size) {
 template<typename _Tp, typename ... _Args>
 static inline _Tp *NEW(_Args&&... __args) {
 	auto ptr = (_Tp *)MALLOC(sizeof(_Tp));
-	return (ptr) _Tp(std::forward<_Args>(__args)...);
+	return new (ptr) _Tp(std::forward<_Args>(__args)...);
 }
 template<typename _Tp>
 static inline void DELETE(_Tp *p) {
