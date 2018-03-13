@@ -32,46 +32,9 @@
 
 namespace pico {
 
-struct app_args_t {
-	int argc;
-	char **argv;
-};
-
 struct {
 	int MICROBATCH_SIZE = 8;
-	const char* MAPPING;
 } global_params;
-
-/**
- * Parses default arguments.
- * @return 0 if parsing succeeds
- */
-inline app_args_t parse_PiCo_args(int argc, char** argv) {
-	app_args_t res{argc - 1, nullptr};
-	int opt;
-	while ((opt = getopt(argc, argv, "b:s:p:m:h")) != -1) {
-		switch (opt) {
-		case 'b':
-			global_params.MICROBATCH_SIZE = atoi(optarg);
-			res.argc -= 2;
-			break;
-		case 'm':
-			global_params.MAPPING = optarg;
-			ff::threadMapper::instance()->setMappingList(global_params.MAPPING);
-			//todo check commas
-			res.argc -= 2;
-			break;
-		default: /* '?' */
-			fprintf(stderr, "Usage: %s [-b batch-size]"
-					" [-m mapping node list] <app arguments>\n",
-					argv[0]);
-			exit(EXIT_FAILURE);
-		}
-	}
-
-	res.argv = argv + (argc - res.argc);
-	return res;
-}
 
 } /* namespace pico */
 

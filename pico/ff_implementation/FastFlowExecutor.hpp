@@ -219,6 +219,10 @@ private:
 };
 
 FastFlowExecutor *make_executor(const Pipe &p) {
+	auto mb_env = std::getenv("MBSIZE");
+	if(mb_env)
+		global_params.MICROBATCH_SIZE = atoi(mb_env);
+
 	return new FastFlowExecutor(p);
 }
 
