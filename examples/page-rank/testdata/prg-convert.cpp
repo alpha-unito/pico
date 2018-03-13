@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	/* open input file */
-	std::ifstream infile(argv[2]);
+	std::ifstream infile(argv[1]);
 	if (!infile.is_open()) {
 		std::cerr << "could not open input file\n";
 		return 1;
@@ -97,5 +97,6 @@ int main(int argc, char *argv[]) {
 	to_adj(infile, adj, in_degree);
 
 	/* write output */
-	write_edges(argv[3], adj, in_degree);
+	write_nodes(argv[2], adj, in_degree);
+	write_edges(argv[2], adj, in_degree);
 }
