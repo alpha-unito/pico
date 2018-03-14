@@ -214,13 +214,13 @@ private:
 /**
  * The ReadFromFile non-ordering farm.
  */
-class ReadFromFileFFNode: public NonOrderingFarm {
+class ReadFromFileFFNode_par: public NonOrderingFarm {
 	/* select implementation for line-based file reading */
 	using Worker = getline_textfile;
 	//using Worker = read_textfile;
 
 public:
-	ReadFromFileFFNode(int parallelism, std::string fname_) :
+	ReadFromFileFFNode_par(int parallelism, std::string fname_) :
 			fname(fname_) {
 		std::vector<ff_node *> workers;
 		for (int i = 0; i < parallelism; ++i)
@@ -300,5 +300,70 @@ private:
 
 	std::string fname;
 };
+
+/**
+ * Sequential ReadFromFile node.
+ */
+class ReadFromFileFFNode_seq: public base_filter {
+	typedef Microbatch<Token<std::string>> mb_t;
+
+public:
+	ReadFromFileFFNode_seq(std::string fname_) :
+			infile(fname_) {
+		if (!infile.is_open()) {
+			fprintf(stderr, "Unable to open input file %s\n", fname_.c_str());
+			exit(1);
+		}
+	}
+
+	void begin_callback() {
+		/* get a fresh tag */
+		tag = base_microbatch::fresh_tag();
+		begin_cstream(tag);
+
+		std::string line;
+		mb_t *mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+		while (true) {
+			/* initialize a new string within the micro-batch */
+			std::string *line = new (mb->allocate()) std::string();
+
+			/* get a line */
+			if (getline(infile, *line)) {
+				mb->commit();
+				/* send out micro-batch if complete */
+				if (mb->full()) {
+					send_mb(mb);
+					mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+				}
+			} else
+				break;
+		}
+		infile.close();
+
+		/* send out the remainder micro-batch or destroy if spurious */
+		if (!mb->empty())
+			send_mb(mb);
+		else
+			DELETE(mb);
+
+		end_cstream(tag);
+	}
+
+	void kernel(base_microbatch *) {
+		assert(false);
+	}
+
+private:
+	base_microbatch::tag_t tag = 0; //a tag for the generated collection
+	std::string fname;
+	std::ifstream infile;
+};
+
+static ff::ff_node* ReadFromFileFFNode(int par, std::string fname) {
+	if (par > 1)
+		return new ReadFromFileFFNode_par(par, fname);
+	assert(par == 1);
+	return new ReadFromFileFFNode_seq(fname);
+}
 
 #endif /* INTERNALS_FFOPERATORS_INOUT_READFROMFILEFFNODE_HPP_ */
