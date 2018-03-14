@@ -83,7 +83,7 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism) {
-		return new ReadFromFileFFNode(parallelism, fname);
+		return ReadFromFileFFNode(parallelism, fname);
 	}
 
 private:
