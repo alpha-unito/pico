@@ -52,8 +52,8 @@ public:
 		return false;
 	}
 
-	void kernel(base_microbatch *in) {
-		auto mb = reinterpret_cast<Microbatch<Token<In>>*>(in);
+	void kernel(base_microbatch *in_mb) {
+		auto mb = reinterpret_cast<Microbatch<Token<In>>*>(in_mb);
 		for (In& in : *mb)
 			outfile << wkernel(in) << std::endl;
 		DELETE(mb);
@@ -61,6 +61,33 @@ public:
 
 private:
 	std::function<std::string(In)> wkernel;
+	std::ofstream outfile;
+};
+
+template<typename In>
+class WriteToDiskFFNode_ostream: public base_filter {
+public:
+	WriteToDiskFFNode_ostream(std::string fname) :
+			outfile(fname) {
+		if (!outfile.is_open()) {
+			std::cerr << "Unable to open output file\n";
+			assert(false);
+		}
+	}
+
+	/* sink node */
+	bool propagate_cstream_sync() {
+		return false;
+	}
+
+	void kernel(base_microbatch *in_mb) {
+		auto mb = reinterpret_cast<Microbatch<Token<In>>*>(in_mb);
+		for (In& in : *mb)
+			outfile << in << std::endl;
+		DELETE(mb);
+	}
+
+private:
 	std::ofstream outfile;
 };
 

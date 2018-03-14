@@ -113,7 +113,7 @@ public:
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const KeyValue& kv) {
-		os << kv.to_string();
+		os << "<" << kv.key << ", " << kv.val << ">";
 		return os;
 	}
 
@@ -140,7 +140,7 @@ public:
 
 	std::string to_string() const {
 		std::stringstream res;
-		res << "<" << key << ", " << val << ">";
+		res << *this;
 		return res.str();
 	}
 
