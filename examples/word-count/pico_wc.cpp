@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
 
 	/* define i/o operators from/to file */
 	ReadFromFile reader(in_fname);
-	WriteToDisk<KV> writer(out_fname, [](KV in) {return in.to_string();});
+	WriteToDisk<KV> writer(out_fname);
 
 	/* compose the pipeline */
 	auto wc = Pipe() //the empty pipeline

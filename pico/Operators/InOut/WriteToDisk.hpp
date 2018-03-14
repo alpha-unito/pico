@@ -52,7 +52,19 @@ public:
 	 * Creates a new WriteToDisk operator by defining its kernel function.
 	 */
 	WriteToDisk(std::string fname_, std::function<std::string(In)> func_) :
-			OutputOperator<In>(StructureType::BAG), fname(fname_), func(func_) {
+			OutputOperator<In>(StructureType::BAG), fname(fname_), //
+			usr_func(true), func(func_) {
+	}
+
+	/**
+	 * \ingroup op-api
+	 *
+	 * WritetoDisk Constructor
+	 *
+	 * Creates a new WriteToDisk writing by ostream.
+	 */
+	WriteToDisk(std::string fname_) :
+			OutputOperator<In>(StructureType::BAG), fname(fname_) {
 	}
 
 	/**
@@ -89,11 +101,15 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism) {
-		return new WriteToDiskFFNode<In>(fname, func);
+		if (usr_func)
+			return new WriteToDiskFFNode<In>(fname, func);
+		else
+			return new WriteToDiskFFNode_ostream<In>(fname);
 	}
 
 private:
 	std::string fname;
+	bool usr_func = false;
 	std::function<std::string(In)> func;
 };
 
