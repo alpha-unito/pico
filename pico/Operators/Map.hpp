@@ -62,6 +62,10 @@ public:
 		this->pardeg(par);
 	}
 
+	Map(const Map &copy) :
+			UnaryOperator<In, Out>(copy), mapf(copy.mapf) {
+	}
+
 	/**
 	 * Returns the name of the operator, consisting in the name of the class.
 	 */

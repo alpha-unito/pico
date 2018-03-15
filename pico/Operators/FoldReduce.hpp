@@ -51,7 +51,7 @@ public:
 	}
 
 	FoldReduce(const FoldReduce &copy) :
-			foldf(copy.foldf), reducef(copy.reducef) {
+		UnaryOperator<In, Out>(copy), foldf(copy.foldf), reducef(copy.reducef) {
 	}
 
 	/**

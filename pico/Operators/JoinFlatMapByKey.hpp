@@ -56,7 +56,7 @@ public:
 	}
 
 	JoinFlatMapByKey(const JoinFlatMapByKey &copy) :
-			kernel(copy.kernel) {
+			BinaryOperator<In1, In2, Out>(copy), kernel(copy.kernel) {
 	}
 
 	std::string name_short() {

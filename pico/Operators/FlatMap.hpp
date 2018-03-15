@@ -63,7 +63,7 @@ public:
 	}
 
 	FlatMap(const FlatMap &copy) :
-			flatmapf(copy.flatmapf) {
+			UnaryOperator<In, Out>(copy), flatmapf(copy.flatmapf) {
 	}
 
 	/**
