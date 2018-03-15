@@ -95,11 +95,10 @@ protected:
 		return new impl_t(parallelism, flatmapf);
 	}
 
-	ff::ff_node *opt_node(int pardeg, PEGOptimization_t opt, opt_args_t a) {
+	ff::ff_node *opt_node(int par, PEGOptimization_t opt, opt_args_t a) {
 		assert(opt == FMAP_PREDUCE);
-		using t = FMapPReduceBatch<In, Out, Token<In>, Token<Out>>;
 		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);
-		return new t(pardeg, flatmapf, nextop->kernel());
+		return FMapPReduceBatch<Token<In>, Token<Out>>(par, flatmapf, nextop);
 	}
 
 private:
