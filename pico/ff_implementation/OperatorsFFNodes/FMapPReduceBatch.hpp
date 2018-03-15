@@ -352,15 +352,18 @@ private:
 template<typename TokenType>
 using tkn_dt = typename TokenType::datatype;
 
+template<typename TokenType>
+using tkn_vt = typename tkn_dt<TokenType>::valuetype;
+
 template<typename TI, typename TO>
 ff::ff_node *FMapPReduceBatch(
 		int fmap_par, //
-		std::function<void(tkn_dt<TI> &, FlatMapCollector<tkn_dt<TO>> &)>& f,
-		ReduceByKey<tkn_dt<TO>>* red_op) {
-	auto redf = red_op->kernel();
-	if (red_op->pardeg() == 1)
+		std::function<void(tkn_dt<TI> &, FlatMapCollector<tkn_dt<TO>> &)> f,
+		int red_par, //
+		std::function<tkn_vt<TO>(tkn_vt<TO> &, tkn_vt<TO> &)> redf) {
+	if (red_par == 1)
 		return new FMRBK_seq_red<TI, TO>(fmap_par, f, redf);
-	return new FMRBK_par_red<TI, TO>(fmap_par, f, red_op->pardeg(), redf);
+	return new FMRBK_par_red<TI, TO>(fmap_par, f, red_par, redf);
 }
 
 #endif /* INTERNALS_FFOPERATORS_FMAPPREDUCEBATCH_HPP_ */

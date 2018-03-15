@@ -98,7 +98,7 @@ protected:
 	ff::ff_node *opt_node(int par, PEGOptimization_t opt, opt_args_t a) {
 		assert(opt == FMAP_PREDUCE);
 		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);
-		return FMapPReduceBatch<Token<In>, Token<Out>>(par, flatmapf, nextop);
+		return FMapPReduceBatch<Token<In>, Token<Out>>(par, flatmapf, nextop->pardeg(), nextop->kernel());
 	}
 
 private:

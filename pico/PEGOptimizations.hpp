@@ -75,13 +75,12 @@ static bool add_optimized(ff::ff_pipeline *p, ItType it1, ItType it2) {
 		/* unary-unary chain */
 		auto op1 = dynamic_cast<base_UnaryOperator *>(p1.get_operator_ptr());
 		auto op2 = dynamic_cast<base_UnaryOperator *>(p2.get_operator_ptr());
-		auto par = std::max(op1->pardeg(), op2->pardeg());
 		auto args = opt_args_t { op2 };
 
 		if (opt_match(op1, op2, MAP_PREDUCE))
-			p->add_stage(op1->opt_node(par, MAP_PREDUCE, args));
+			p->add_stage(op1->opt_node(op1->pardeg(), MAP_PREDUCE, args));
 		else if (opt_match(op1, op2, FMAP_PREDUCE))
-			p->add_stage(op1->opt_node(par, FMAP_PREDUCE, args));
+			p->add_stage(op1->opt_node(op1->pardeg(), FMAP_PREDUCE, args));
 		else
 			return false;
 	} else if (p1t == Pipe::PAIR && p2t == Pipe::OPERATOR) {
@@ -90,13 +89,12 @@ static bool add_optimized(ff::ff_pipeline *p, ItType it1, ItType it2) {
 		bool lin = p1.in_deg(); //has left-input
 		auto bop = dynamic_cast<base_BinaryOperator *>(p1.get_operator_ptr());
 		auto &children = p1.children();
-		auto par = std::max(bop->pardeg(), op2->pardeg());
 		assert(children.size() == 2);
 		auto args = opt_args_t { op2 };
 
 		if (opt_match_binary(p1, *op2, PJFMAP_PREDUCE)) {
 			p->add_stage(make_pair_farm(*children[0], *children[1]));
-			p->add_stage(bop->opt_node(par, lin, PJFMAP_PREDUCE, args));
+			p->add_stage(bop->opt_node(bop->pardeg(), lin, PJFMAP_PREDUCE, args));
 		} else
 			return false;
 	} else
