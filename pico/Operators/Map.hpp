@@ -79,7 +79,7 @@ protected:
 	 * @return new Map pointer
 	 */
 	Map<In, Out>* clone() {
-		return new Map<In, Out>(mapf);
+		return new Map(*this);
 	}
 
 	const OpClass operator_class() {
