@@ -27,6 +27,7 @@
 #include "../../Internals/TimedToken.hpp"
 #include "../../Internals/Microbatch.hpp"
 #include "../SupportFFNodes/ByKeyEmitter.hpp"
+#include "PReduceBatch.hpp"
 #include "../../FlatMapCollector.hpp"
 #include "../ff_config.hpp"
 
@@ -139,6 +140,11 @@ private:
 	};
 };
 
+/*
+ * todo
+ * this approach has poor performance, should be replaced by shuffling
+ */
+#if 0
 template<typename TokenTypeIn, typename TokenTypeOut>
 class FMRBK_par_red: public ff::ff_pipeline {
 	typedef typename TokenTypeIn::datatype In;
@@ -155,7 +161,7 @@ public:
 		auto fmap_farm = new FM_farm(fmap_par, fmap_f, red_f);
 
 		/* create the reduce-by-key farm farm */
-		auto rbk_farm = new RBK_farm(red_par, red_f);
+		auto rbk_farm = new RBK_farm<TokenTypeOut>(red_par, red_f);
 
 		/* compose the pipeline */
 		this->add_stage(fmap_farm);
@@ -180,7 +186,7 @@ private:
 			this->setCollectorF(c);
 			std::vector<ff_node *> w;
 			for (int i = 0; i < fmap_par; ++i)
-				w.push_back(new Worker(flatmapf, reducef));
+			w.push_back(new Worker(flatmapf, reducef));
 			this->add_workers(w);
 			this->cleanup_all();
 		}
@@ -191,7 +197,7 @@ private:
 		public:
 			Worker(std::function<void(In&, FlatMapCollector<Out> &)>& kernel_, //
 					std::function<OutV(OutV&, OutV&)>& reducef_kernel_) :
-					map_kernel(kernel_), rbk_f(reducef_kernel_) {
+			map_kernel(kernel_), rbk_f(reducef_kernel_) {
 			}
 
 			void kernel(base_microbatch *in_mb) {
@@ -205,7 +211,7 @@ private:
 
 				// iterate over microbatch
 				for (In &in : *in_microbatch)
-					map_kernel(in, collector);
+				map_kernel(in, collector);
 
 				// partial reduce on all output micro-batches
 				red_map_t red_map;
@@ -215,9 +221,9 @@ private:
 					for (Out &kv : *it->mb) {
 						const OutK &k(kv.Key());
 						if (red_map.find(k) != red_map.end())
-							red_map[k] = rbk_f(kv.Value(), red_map[k]);
+						red_map[k] = rbk_f(kv.Value(), red_map[k]);
 						else
-							red_map[k] = kv.Value();
+						red_map[k] = kv.Value();
 					}
 
 					/* clean up and skip to the next micro-batch */
@@ -238,7 +244,7 @@ private:
 			/* check consistency upon c-stream end */
 			void cstream_end_callback(base_microbatch::tag_t tag) {
 				if (obuf.find(tag) != obuf.end() && obuf[tag])
-					send_mb(obuf[tag]);
+				send_mb(obuf[tag]);
 			}
 
 		private:
@@ -254,11 +260,11 @@ private:
 			void stream_out(base_microbatch::tag_t tag, const red_map_t &rm) {
 				if (!rm.empty()) {
 					if (obuf.find(tag) == obuf.end())
-						obuf[tag] = nullptr;
+					obuf[tag] = nullptr;
 					for (auto &kv : rm) {
 						if (!obuf[tag])
-							obuf[tag] = NEW<mb_out>(tag,
-									global_params.MICROBATCH_SIZE);
+						obuf[tag] = NEW<mb_out>(tag,
+								global_params.MICROBATCH_SIZE);
 						new (obuf[tag]->allocate()) Out(kv.first, kv.second);
 						obuf[tag]->commit();
 						if (obuf[tag]->full()) {
@@ -270,84 +276,8 @@ private:
 			}
 		};
 	};
-
-	/*
-	 * the (stateful) reduce-by-key farm updates the internal key-value state
-	 * and, upon c-stream end, streams out the state
-	 */
-	class RBK_farm: public NonOrderingFarm {
-	public:
-		RBK_farm(int red_par, std::function<OutV(OutV&, OutV&)> reducef) {
-			auto e = new ByKeyEmitter<TokenTypeOut>(red_par, getlb());
-			this->setEmitterF(e);
-			auto c = new ForwardingCollector(red_par);
-			this->setCollectorF(c);
-			std::vector<ff_node *> w;
-			for (int i = 0; i < red_par; ++i)
-				w.push_back(new Worker(reducef));
-			this->add_workers(w);
-			this->cleanup_all();
-		}
-
-	private:
-		class Worker: public base_filter {
-		public:
-			Worker(std::function<OutV(OutV&, OutV&)>& reducef_kernel_) :
-					reduce_kernel(reducef_kernel_) {
-			}
-
-			void kernel(base_microbatch *in_mb) {
-				/*
-				 * got a microbatch to process and delete
-				 */
-				auto in_microbatch = reinterpret_cast<kv_mb*>(in_mb);
-				auto tag = in_mb->tag();
-				auto &s(tag_state[tag]);
-
-				/* reduce the micro-batch updateing internal state */
-				for (Out &kv : *in_microbatch) {
-					const OutK &k(kv.Key());
-					if (s.kvmap.find(k) != s.kvmap.end())
-						s.kvmap[k] = reduce_kernel(kv.Value(), s.kvmap[k]);
-					else
-						s.kvmap[k] = kv.Value();
-				}
-
-				//clean up
-				DELETE(in_mb);
-			}
-
-			void cstream_end_callback(base_microbatch::tag_t tag) {
-				auto &s(tag_state[tag]);
-				auto mb = NEW<kv_mb>(tag, global_params.MICROBATCH_SIZE);
-				for (auto it = s.kvmap.begin(); it != s.kvmap.end(); ++it) {
-					new (mb->allocate()) Out(it->first, it->second);
-					mb->commit();
-					if (mb->full()) {
-						ff_send_out(reinterpret_cast<void*>(mb));
-						mb = NEW<kv_mb>(tag, global_params.MICROBATCH_SIZE);
-					}
-				}
-
-				/* send out the remainder micro-batch or destroy if spurious */
-				if (!mb->empty()) {
-					ff_send_out(reinterpret_cast<void*>(mb));
-				} else {
-					DELETE(mb);
-				}
-			}
-
-		private:
-			typedef Microbatch<TokenTypeOut> kv_mb;
-
-			std::function<OutV(OutV&, OutV&)> reduce_kernel;
-			struct key_state {
-				std::unordered_map<OutK, OutV> kvmap;
-			};
-			std::unordered_map<base_microbatch::tag_t, key_state> tag_state;
-		};
-	};
 };
+#endif
 
 template<typename TokenType>
 using tkn_dt = typename TokenType::datatype;
@@ -361,9 +291,13 @@ ff::ff_node *FMapPReduceBatch(
 		std::function<void(tkn_dt<TI> &, FlatMapCollector<tkn_dt<TO>> &)> f,
 		int red_par, //
 		std::function<tkn_vt<TO>(tkn_vt<TO> &, tkn_vt<TO> &)> redf) {
-	if (red_par == 1)
-		return new FMRBK_seq_red<TI, TO>(fmap_par, f, redf);
-	return new FMRBK_par_red<TI, TO>(fmap_par, f, red_par, redf);
+	if (red_par > 1) {
+		//TODO
+		std::cerr << "parallel reduction not implemented yet\n";
+		assert(false);
+		//return new FMRBK_par_red<TI, TO>(fmap_par, f, red_par, redf);
+	}
+	return new FMRBK_seq_red<TI, TO>(fmap_par, f, redf);
 }
 
 #endif /* INTERNALS_FFOPERATORS_FMAPPREDUCEBATCH_HPP_ */
