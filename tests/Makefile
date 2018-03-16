@@ -2,7 +2,7 @@ CXX                  = g++
 LINK_OPT             = 
 VERSION              = 
 OPTIMIZE_FLAGS       = -O3 -g0 -std=c++11
-CCFLAGS             = -Wall -DTRACE_FASTFLOW 
+CCFLAGS             = -Wall #-DTRACE_FASTFLOW 
 CFLAGS               =
 LDFLAGS              = 
 LIBS                 = -lpthread
@@ -11,7 +11,7 @@ PICO_ROOT                 = ..
 
 INCLUDES             = -I$(PICO_ROOT) -I./include
 EXECS                = batch_tests stream_tests
-TARGET_OBJ_BATCH	 = input_output_file.o reduce_by_key.o wordcount.o flatmap_join_by_key.o iteration.o
+TARGET_OBJ_BATCH	 = input_output_file.o reduce_by_key.o wordcount.o flatmap_join_by_key.o #iteration.o
 TARGET_OBJ_STREAM 	 = streaming_reduce_by_key.o
 DRIVER_OBJ           = test_driver.o
 
