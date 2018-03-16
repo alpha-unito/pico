@@ -26,10 +26,16 @@
 #include "../../Internals/Microbatch.hpp"
 #include "../../FlatMapCollector.hpp"
 
+#include "PReduceBatch.hpp"
 #include "../SupportFFNodes/PairFarm.hpp"
 
 using namespace pico;
 
+/*
+ * base_JFMBK_Farm serves as base for the following cases:
+ * - standalone JoinFlatMapByKey operator
+ * - JoinFlatMapByKey followed by non-parallel ReduceByKey
+ */
 template<typename TokenTypeIn1, typename TokenTypeIn2, typename TokenTypeOut>
 class base_JFMBK_Farm: public NonOrderingFarm {
 	typedef typename TokenTypeIn1::datatype In1;
@@ -396,6 +402,9 @@ private:
 	std::vector<tag_t> uncleared_tags;
 };
 
+/*
+ * standalone JoinFlatMapByKey operator
+ */
 template<typename TokenTypeIn1, typename TokenTypeIn2, typename TokenTypeOut>
 class JoinFlatMapByKeyFarm: public base_JFMBK_Farm<TokenTypeIn1, TokenTypeIn2,
 		TokenTypeOut> {
@@ -443,8 +452,11 @@ public:
 	}
 };
 
+/*
+ * JoinFlatMapByKey followed by non-parallel ReduceByKey
+ */
 template<typename TT1, typename TT2, typename TTO>
-class JFMRBK_Farm: public base_JFMBK_Farm<TT1, TT2, TTO> {
+class JFMRBK_seq_red: public base_JFMBK_Farm<TT1, TT2, TTO> {
 	typedef typename TT1::datatype In1;
 	typedef typename TT2::datatype In2;
 	typedef typename TTO::datatype Out;
@@ -522,8 +534,7 @@ class JFMRBK_Farm: public base_JFMBK_Farm<TT1, TT2, TTO> {
 	};
 
 public:
-	//pardeg, lin, flatmapf, nextop->kernel()
-	JFMRBK_Farm(unsigned nw, bool left_input, mapf_t mapf, redf_t redf) :
+	JFMRBK_seq_red(unsigned nw, bool left_input, mapf_t mapf, redf_t redf) :
 			base_JFMBK_Farm<TT1, TT2, TTO>(nw) {
 		auto e = new emitter_t(nw, global_params.MICROBATCH_SIZE, *this);
 		std::vector<ff::ff_node *> w;
@@ -537,7 +548,131 @@ public:
 
 		this->cleanup_all();
 	}
+};
+
+
+/*
+ * todo
+ * this approach has poor performance, should be replaced by shuffling
+ *
+ * JoinFlatMapByKey followed by parallel ReduceByKey
+ */
+#if 0
+template<typename TT1, typename TT2, typename TTO>
+class JFMRBK_par_red: public ff::ff_pipeline {
+	typedef typename TT1::datatype In1;
+	typedef typename TT2::datatype In2;
+	typedef typename TTO::datatype Out;
+	typedef typename Out::keytype OutK;
+	typedef typename Out::valuetype OutV;
+	typedef std::function<void(In1&, In2&, FlatMapCollector<Out> &)> mapf_t;
+	typedef std::function<OutV(OutV&, OutV&)> redf_t;
+	typedef Microbatch<TTO> mb_out;
+	typedef std::unordered_map<OutK, OutV> red_map_t;
+
+private:
+	class FM_farm: public base_JFMBK_Farm<TT1, TT2, TTO> {
+		typedef base_JFMBK_Farm<TT1, TT2, TTO> base_farm_t;
+		typedef typename base_farm_t::Emitter emitter_t;
+		typedef base_JFMBK_worker<TT1, TT2, TTO> worker_t;
+
+		class Worker: public worker_t {
+			typedef base_microbatch::tag_t tag_t;
+			typedef typename TokenCollector<Out>::cnode cnode_t;
+
+		public:
+			Worker(mapf_t mapf, redf_t redf_, bool left_in) :
+					worker_t(mapf, left_in), redf(redf_) {
+			}
+
+		private:
+			void handle_output(tag_t tag, cnode_t *it) {
+				// partial reduce on all output micro-batches
+				red_map_t red_map;
+				while (it) {
+					/* reduce the micro-batch */
+					for (Out &kv : *it->mb) {
+						const OutK &k(kv.Key());
+						if (red_map.find(k) != red_map.end())
+							red_map[k] = redf(kv.Value(), red_map[k]);
+						else
+							red_map[k] = kv.Value();
+					}
+
+					/* clean up and skip to the next micro-batch */
+					auto it_ = it;
+					it = it->next;
+					DELETE(it_->mb);
+					FREE(it_);
+				}
+
+				//send out (through buffering) partial reduce
+				stream_out(tag, red_map);
+			}
+
+			void finalize_output_tag(tag_t tag) {
+				if (obuf.find(tag) != obuf.end() && obuf[tag])
+					this->send_mb(obuf[tag]);
+
+				/* close the collection */
+				this->send_mb(make_sync(tag, PICO_CSTREAM_END));
+			}
+
+			void stream_out(base_microbatch::tag_t tag, const red_map_t &rm) {
+				if (!rm.empty()) {
+					if (obuf.find(tag) == obuf.end())
+						obuf[tag] = nullptr;
+					for (auto &kv : rm) {
+						if (!obuf[tag])
+							obuf[tag] = NEW<mb_out>(tag,
+									global_params.MICROBATCH_SIZE);
+						new (obuf[tag]->allocate()) Out(kv.first, kv.second);
+						obuf[tag]->commit();
+						if (obuf[tag]->full()) {
+							this->send_mb(obuf[tag]);
+							obuf[tag] = nullptr;
+						}
+					}
+				}
+			}
+
+			redf_t redf;
+			std::unordered_map<base_microbatch::tag_t, mb_out *> obuf;
+		};
+
+	public:
+		FM_farm(unsigned nw, bool left_input, mapf_t mapf, redf_t redf) :
+				base_JFMBK_Farm<TT1, TT2, TTO>(nw) {
+			auto e = new emitter_t(nw, global_params.MICROBATCH_SIZE, *this);
+			std::vector<ff::ff_node *> w;
+			for (unsigned i = 0; i < nw; ++i)
+				w.push_back(new Worker(mapf, redf, left_input));
+			auto c = new PReduceCollector<Out, Token<Out>>(nw, redf);
+
+			this->setEmitterF(e);
+			this->setCollectorF(c);
+			this->add_workers(w);
+
+			this->cleanup_all();
+		}
+	};
+
+public:
+	JFMRBK_par_red(unsigned fm_par, bool lin, mapf_t fm_f, //
+			unsigned rbk_par, redf_t rbk_f) {
+		/* create the JFMBK farm */
+		auto fm_farm = new FM_farm(fm_par, lin, fm_f, rbk_f);
+
+		/* create the reduce-by-key farm */
+		auto rbk_farm = new RBK_farm<TTO>(rbk_par, rbk_f);
+
+		/* compose the pipeline */
+		this->add_stage(fm_farm);
+		this->add_stage(rbk_farm);
+		this->cleanup_nodes();
+	}
 
 };
+#endif
 
 #endif /* INTERNALS_FFOPERATORS_BINARYMAPFARM_HPP_ */

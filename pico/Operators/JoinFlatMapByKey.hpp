@@ -75,9 +75,15 @@ public:
 	ff::ff_node *opt_node(int pardeg, bool lin, PEGOptimization_t opt,
 			opt_args_t a) {
 		assert(opt == PJFMAP_PREDUCE);
-		using t = JFMRBK_Farm<Token<In1>, Token<In2>, Token<Out>>;
 		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);
-		return new t(pardeg, lin, kernel, nextop->kernel());
+		if (nextop->pardeg() == 1) {
+			using t = JFMRBK_seq_red<Token<In1>, Token<In2>, Token<Out>>;
+			return new t(pardeg, lin, kernel, nextop->kernel());
+		}
+		//todo
+		assert(false);
+		//using t = JFMRBK_par_red<Token<In1>, Token<In2>, Token<Out>>;
+		//return new t(pardeg, lin, kernel, nextop->pardeg(), nextop->kernel());
 		return nullptr;
 	}
 
