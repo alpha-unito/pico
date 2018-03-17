@@ -65,8 +65,7 @@ public:
 private:
 	class PReduceWinWorker: public base_filter {
 	public:
-		PReduceWinWorker(std::function<V(V&, V&)>& reducef_, size_t win_size_ =
-				global_params.MICROBATCH_SIZE) :
+		PReduceWinWorker(std::function<V(V&, V&)>& reducef_, size_t win_size_) :
 				rkernel(reducef_), win_size(win_size_) {
 		}
 
