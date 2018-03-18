@@ -26,14 +26,10 @@ using namespace pico;
 
 #include "defs.h"
 
-static ReduceByKey<StockAndPrice> SPReducer([] (StockPrice p1, StockPrice p2) {
-	return std::max(p1,p2);
-});
-
-static WriteToStdOut<StockAndPrice> SPWriter([](StockAndPrice kv) {
-	return kv.to_string();
-});
-
-
+static ReduceByKey<StockAndPrice> SPReducer() {
+	return ReduceByKey<StockAndPrice>([] (StockPrice p1, StockPrice p2) {
+		return std::max(p1,p2);
+	});
+}
 
 #endif /* EXAMPLES_STOCK_MARKET_COMMON_HPP_ */
