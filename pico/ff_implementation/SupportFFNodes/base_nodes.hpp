@@ -21,6 +21,10 @@
 #ifndef PICO_FF_IMPLEMENTATION_BASE_NODES_HPP_
 #define PICO_FF_IMPLEMENTATION_BASE_NODES_HPP_
 
+#ifdef TRACE_PICO
+#include <chrono>
+#endif
+
 #include <ff/node.hpp>
 
 #include "../../Internals/Microbatch.hpp"
@@ -40,6 +44,10 @@ static base_microbatch *make_sync(base_microbatch::tag_t tag, char *token) {
 
 class base_filter: public base_node {
 public:
+	base_filter() :
+			svcd(0) {
+	}
+
 	virtual ~base_filter() {
 	}
 
@@ -130,15 +138,30 @@ private:
 	}
 
 	base_microbatch* svc(base_microbatch* in) {
+#ifdef TRACE_PICO
+		auto t0 = std::chrono::high_resolution_clock::now();
+#endif
 		if (!is_sync(in->payload()))
 			kernel(in);
 		else {
 			handle_sync(in);
 			DELETE(in);
 		}
-
+#ifdef TRACE_PICO
+		auto t1 = std::chrono::high_resolution_clock::now();
+		svcd += (t1 - t0);
+#endif
 		return GO_ON;
 	}
+
+#ifdef TRACE_PICO
+	std::chrono::duration<double> svcd;
+
+	void ffStats(std::ostream & os) {
+		base_node::ffStats(os);
+		os << "  PICO-svc ms   : " << svcd.count() * 1024 << "\n";
+	}
+#endif
 };
 
 template<typename lb_t>
@@ -164,6 +187,15 @@ protected:
 private:
 	lb_t *lb;
 	unsigned nw;
+
+#ifdef TRACE_PICO
+	std::chrono::duration<double> svcd;
+
+	void ffStats(std::ostream & os) {
+		base_node::ffStats(os);
+		os << "  PICO-svc ms   : " << svcd.count() * 1024 << "\n";
+	}
+#endif
 };
 
 class base_collector: public base_filter {
