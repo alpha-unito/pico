@@ -58,4 +58,20 @@ private:
 	std::function<std::string(In&)> wkernel;
 };
 
+template<typename In, typename TokenType>
+class WriteToStdOutFFNode_ostream: public base_filter {
+public:
+	/* sink node */
+	bool propagate_cstream_sync() {
+		return false;
+	}
+
+	void kernel(base_microbatch *in_mb) {
+		auto in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(in_mb);
+		for (In& tt : *in_microbatch)
+			std::cout << tt << std::endl;
+		DELETE(in_microbatch);
+	}
+};
+
 #endif /* INTERNALS_FFOPERATORS_INOUT_WRITETOSTDOUTFFNODE_HPP_ */

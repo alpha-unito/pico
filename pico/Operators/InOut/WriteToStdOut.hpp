@@ -51,7 +51,18 @@ public:
 	 */
 	WriteToStdOut(std::function<std::string(In)> func_) :
 			OutputOperator<In>(StructureType::STREAM) {
+		usr_func = true;
 		func = func_;
+	}
+
+	/**
+	 * \ingroup op-api
+	 * WriteToStdOut Constructor
+	 *
+	 * Creates a new WriteToStdOut operator writing by operator<<.
+	 */
+	WriteToStdOut() :
+			OutputOperator<In>(StructureType::STREAM) {
 	}
 
 	/**
@@ -93,10 +104,13 @@ protected:
 	}
 
 	ff::ff_node* node_operator(int parallelism) {
-		return new WriteToStdOutFFNode<In, Token<In>>(func);
+		if(usr_func)
+			return new WriteToStdOutFFNode<In, Token<In>>(func);
+		return new WriteToStdOutFFNode_ostream<In, Token<In>>();
 	}
 
 private:
+	bool usr_func = false;
 	std::function<std::string(In)> func;
 };
 
