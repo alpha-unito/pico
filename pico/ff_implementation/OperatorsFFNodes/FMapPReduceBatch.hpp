@@ -291,12 +291,11 @@ ff::ff_node *FMapPReduceBatch(
 		std::function<void(tkn_dt<TI> &, FlatMapCollector<tkn_dt<TO>> &)> f,
 		int red_par, //
 		std::function<tkn_vt<TO>(tkn_vt<TO> &, tkn_vt<TO> &)> redf) {
-	if (red_par > 1) {
-		//TODO
-		std::cerr << "parallel reduction not implemented yet\n";
-		assert(false);
-		//return new FMRBK_par_red<TI, TO>(fmap_par, f, red_par, redf);
-	}
+	//TODO parallel reduce
+#if 0
+	if (red_par > 1)
+		return new FMRBK_par_red<TI, TO>(fmap_par, f, red_par, redf);
+#endif
 	return new FMRBK_seq_red<TI, TO>(fmap_par, f, redf);
 }
 
