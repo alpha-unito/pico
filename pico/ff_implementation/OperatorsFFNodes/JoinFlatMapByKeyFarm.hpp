@@ -550,14 +550,12 @@ public:
 	}
 };
 
-
 /*
  * todo
  * this approach has poor performance, should be replaced by shuffling
  *
  * JoinFlatMapByKey followed by parallel ReduceByKey
  */
-#if 0
 template<typename TT1, typename TT2, typename TTO>
 class JFMRBK_par_red: public ff::ff_pipeline {
 	typedef typename TT1::datatype In1;
@@ -588,16 +586,9 @@ private:
 		private:
 			void handle_output(tag_t tag, cnode_t *it) {
 				// partial reduce on all output micro-batches
-				red_map_t red_map;
 				while (it) {
-					/* reduce the micro-batch */
-					for (Out &kv : *it->mb) {
-						const OutK &k(kv.Key());
-						if (red_map.find(k) != red_map.end())
-							red_map[k] = redf(kv.Value(), red_map[k]);
-						else
-							red_map[k] = kv.Value();
-					}
+					/* stream out the micro-batch */
+					stream_out(tag, it->mb);
 
 					/* clean up and skip to the next micro-batch */
 					auto it_ = it;
@@ -605,39 +596,41 @@ private:
 					DELETE(it_->mb);
 					FREE(it_);
 				}
-
-				//send out (through buffering) partial reduce
-				stream_out(tag, red_map);
 			}
 
 			void finalize_output_tag(tag_t tag) {
-				if (obuf.find(tag) != obuf.end() && obuf[tag])
-					this->send_mb(obuf[tag]);
+				auto &s(tag_state[tag]);
+				for (auto kmb : s.keybuf)
+					if(kmb.second)
+						this->send_mb(kmb.second);
 
 				/* close the collection */
 				this->send_mb(make_sync(tag, PICO_CSTREAM_END));
 			}
 
-			void stream_out(base_microbatch::tag_t tag, const red_map_t &rm) {
-				if (!rm.empty()) {
-					if (obuf.find(tag) == obuf.end())
-						obuf[tag] = nullptr;
-					for (auto &kv : rm) {
-						if (!obuf[tag])
-							obuf[tag] = NEW<mb_out>(tag,
-									global_params.MICROBATCH_SIZE);
-						new (obuf[tag]->allocate()) Out(kv.first, kv.second);
-						obuf[tag]->commit();
-						if (obuf[tag]->full()) {
-							this->send_mb(obuf[tag]);
-							obuf[tag] = nullptr;
-						}
+			void stream_out(base_microbatch::tag_t tag, mb_out *mb) {
+				auto &s(tag_state[tag]);
+				for (auto &kv : *mb) {
+					auto &k(kv.Key());
+					if (s.keybuf.find(k) == s.keybuf.end())
+						s.keybuf[k] = nullptr;
+					if (!s.keybuf[k])
+						s.keybuf[k] = NEW<mb_out>(tag, mb_size);
+					new (s.keybuf[k]->allocate()) Out(kv);
+					s.keybuf[k]->commit();
+					if (s.keybuf[k]->full()) {
+						this->send_mb(s.keybuf[k]);
+						s.keybuf[k] = nullptr;
 					}
 				}
 			}
 
+			const int mb_size = global_params.MICROBATCH_SIZE;
 			redf_t redf;
-			std::unordered_map<base_microbatch::tag_t, mb_out *> obuf;
+			struct key_state {
+				std::unordered_map<OutK, mb_out *> keybuf;
+			};
+			std::unordered_map<base_microbatch::tag_t, key_state> tag_state;
 		};
 
 	public:
@@ -647,7 +640,7 @@ private:
 			std::vector<ff::ff_node *> w;
 			for (unsigned i = 0; i < nw; ++i)
 				w.push_back(new Worker(mapf, redf, left_input));
-			auto c = new PReduceCollector<Out, Token<Out>>(nw, redf);
+			auto c = new ForwardingCollector(nw);
 
 			this->setEmitterF(e);
 			this->setCollectorF(c);
@@ -673,6 +666,5 @@ public:
 	}
 
 };
-#endif
 
 #endif /* INTERNALS_FFOPERATORS_BINARYMAPFARM_HPP_ */

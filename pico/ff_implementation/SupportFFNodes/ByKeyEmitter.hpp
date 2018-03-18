@@ -70,7 +70,7 @@ public:
 			if (!s.worker_mb[i]->empty())
 				send_mb_to(s.worker_mb[i], i);
 			else
-				DELETE (s.worker_mb[i]); //spurious microbatch
+				DELETE(s.worker_mb[i]); //spurious microbatch
 		}
 	}
 
@@ -84,6 +84,29 @@ private:
 		std::unordered_map<size_t, mb_t *> worker_mb;
 	};
 	std::unordered_map<base_microbatch::tag_t, w_state> tag_state;
+
+	inline size_t key_to_worker(const keytype& k) {
+		return std::hash<keytype> { }(k) % nworkers;
+	}
+};
+
+template<typename TokenType>
+class ByKeySwitchEmitter: public bk_emitter_t {
+public:
+	ByKeySwitchEmitter(unsigned nworkers_, typename NonOrderingFarm::lb_t * lb_) :
+			bk_emitter_t(lb_, nworkers_), nworkers(nworkers_) {
+	}
+
+	void kernel(base_microbatch *in_mb) {
+		auto in_microbatch = reinterpret_cast<mb_t *>(in_mb);
+		send_mb_to(in_mb, key_to_worker((*in_microbatch->begin()).Key()));
+	}
+
+private:
+	typedef typename TokenType::datatype DataType;
+	typedef typename DataType::keytype keytype;
+	typedef Microbatch<TokenType> mb_t;
+	unsigned nworkers;
 
 	inline size_t key_to_worker(const keytype& k) {
 		return std::hash<keytype> { }(k) % nworkers;
