@@ -78,10 +78,14 @@ int main(int argc, char** argv) {
 		return StockAndPrice(std::string(name), variance);
 	});
 
+	WriteToStdOut<StockAndPrice> SPWriter([](StockAndPrice kv) {
+		return kv.to_string();
+	});
+
 	auto stockPricing = Pipe() //
 	.add(ReadFromSocket(server, port, '\n')) //
 	.add(blackScholes). //
-	add(SPReducer.window(8)) //batch-windowing reduce
+	add(SPReducer().window(8)) //batch-windowing reduce
 	.add(SPWriter);
 
 	/* print the semantic graph and generate dot file */

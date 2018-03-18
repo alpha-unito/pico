@@ -59,15 +59,11 @@ int main(int argc, char** argv) {
 		return StockAndPrice(std::string(name), black_scholes(opt));
 	});
 
-	WriteToDisk<StockAndPrice> writer(out_fname, [] (StockAndPrice kv) {
-		return kv.to_string();
-	});
-
 	auto stockPricing = Pipe() //
 	.add(ReadFromFile(in_fname)) //
 	.add(blackScholes) //
-	.add(SPReducer) //
-	.add(writer);
+	.add(SPReducer()) //
+	.add(WriteToDisk<StockAndPrice>(out_fname));
 
 	/* print the semantic graph and generate dot file */
 	stockPricing.print_semantics();
