@@ -41,7 +41,6 @@ using namespace pico;
  * the (stateful) reduce-by-key farm updates the internal key-value state
  * and, upon c-stream end, streams out the state
  */
-#if 0
 template<typename TokenType>
 class RBK_farm: public NonOrderingFarm {
 	typedef typename TokenType::datatype Out;
@@ -50,7 +49,7 @@ class RBK_farm: public NonOrderingFarm {
 
 public:
 	RBK_farm(int red_par, std::function<OutV(OutV&, OutV&)> reducef) {
-		auto e = new ByKeyEmitter<TokenType>(red_par, getlb());
+		auto e = new ByKeySwitchEmitter<TokenType>(red_par, getlb());
 		this->setEmitterF(e);
 		auto c = new ForwardingCollector(red_par);
 		this->setCollectorF(c);
@@ -77,8 +76,8 @@ private:
 			auto &s(tag_state[tag]);
 
 			/* reduce the micro-batch updateing internal state */
+			auto &k((*in_microbatch->begin()).Key());
 			for (Out &kv : *in_microbatch) {
-				const OutK &k(kv.Key());
 				if (s.kvmap.find(k) != s.kvmap.end())
 					s.kvmap[k] = reduce_kernel(kv.Value(), s.kvmap[k]);
 				else
@@ -119,6 +118,5 @@ private:
 		std::unordered_map<base_microbatch::tag_t, key_state> tag_state;
 	};
 };
-#endif
 
 #endif /* INTERNALS_FFOPERATORS_MAPPREDUCEBATCH_HPP_ */
