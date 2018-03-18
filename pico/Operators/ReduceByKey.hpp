@@ -55,8 +55,7 @@ public:
 		this->set_output_degree(1);
 		this->stype(StructureType::BAG, true);
 		this->stype(StructureType::STREAM, false);
-		//this->pardeg(par); TODO
-		this->pardeg(1);
+		this->pardeg(par);
 	}
 
 	/**

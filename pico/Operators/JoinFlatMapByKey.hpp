@@ -76,15 +76,18 @@ public:
 			opt_args_t a) {
 		assert(opt == PJFMAP_PREDUCE);
 		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);
+		using t = JFMRBK_seq_red<Token<In1>, Token<In2>, Token<Out>>;
+		return new t(pardeg, lin, kernel, nextop->kernel());
+
+		//todo parallel reduce
+#if 0
 		if (nextop->pardeg() == 1) {
 			using t = JFMRBK_seq_red<Token<In1>, Token<In2>, Token<Out>>;
 			return new t(pardeg, lin, kernel, nextop->kernel());
 		}
-		//todo
-		assert(false);
-		//using t = JFMRBK_par_red<Token<In1>, Token<In2>, Token<Out>>;
-		//return new t(pardeg, lin, kernel, nextop->pardeg(), nextop->kernel());
-		return nullptr;
+		using t = JFMRBK_par_red<Token<In1>, Token<In2>, Token<Out>>;
+		return new t(pardeg, lin, kernel, nextop->pardeg(), nextop->kernel());
+#endif
 	}
 
 protected:
