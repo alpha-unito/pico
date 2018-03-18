@@ -513,26 +513,26 @@ public:
 	 * - Adjacency list
 	 * - BFS visit
 	 */
-	void print_semantics() {
+	void print_semantics(std::ostream &os = std::cout) {
 #ifdef DEBUG
 		std::cerr << "[PIPE] Printing semantic graph\n";
 #endif
 		std::cout << "=== Semantic Graph\n";
 		if (!semantic_graph)
 			semantic_graph = make_semantic_graph(*this);
-		print_semantic_graph(*semantic_graph, std::cout);
+		print_semantic_graph(*semantic_graph, os);
 	}
 
-	void print_executor() {
+	void print_executor(std::ostream &os = std::cout) {
 		if (!executor)
 			executor = make_executor(*this);
 		std::cout << "=== Executor Info\n";
-		print_executor_info(*executor, std::cout);
+		print_executor_info(*executor, os);
 	}
 
-	void print_executor_stats() {
+	void print_executor_stats(std::ostream &os = std::cout) {
 		std::cout << "=== Executor Stats\n";
-		print_executor_stats_(*executor, std::cout);
+		print_executor_stats_(*executor, os);
 	}
 
 	/**
