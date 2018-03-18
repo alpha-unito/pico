@@ -44,10 +44,6 @@ static base_microbatch *make_sync(base_microbatch::tag_t tag, char *token) {
 
 class base_filter: public base_node {
 public:
-	base_filter() :
-			svcd(0) {
-	}
-
 	virtual ~base_filter() {
 	}
 
@@ -155,7 +151,7 @@ private:
 	}
 
 #ifdef TRACE_PICO
-	std::chrono::duration<double> svcd;
+	std::chrono::duration<double> svcd { 0 };
 
 	void ffStats(std::ostream & os) {
 		base_node::ffStats(os);
