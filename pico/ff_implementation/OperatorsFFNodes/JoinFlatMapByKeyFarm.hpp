@@ -586,9 +586,17 @@ private:
 		private:
 			void handle_output(tag_t tag, cnode_t *it) {
 				// partial reduce on all output micro-batches
+				red_map_t red_map;
+
 				while (it) {
-					/* stream out the micro-batch */
-					stream_out(tag, it->mb);
+					/* reduce the micro-batch */
+					for (Out &kv : *it->mb) {
+						const OutK &k(kv.Key());
+						if (red_map.find(k) != red_map.end())
+							red_map[k] = redf(kv.Value(), red_map[k]);
+						else
+							red_map[k] = kv.Value();
+					}
 
 					/* clean up and skip to the next micro-batch */
 					auto it_ = it;
@@ -596,31 +604,36 @@ private:
 					DELETE(it_->mb);
 					FREE(it_);
 				}
+
+				//send out (through buffering) partial reduce
+				stream_out(tag, red_map);
 			}
 
 			void finalize_output_tag(tag_t tag) {
 				auto &s(tag_state[tag]);
 				for (auto kmb : s.keybuf)
-					if(kmb.second)
+					if (kmb.second)
 						this->send_mb(kmb.second);
 
 				/* close the collection */
 				this->send_mb(make_sync(tag, PICO_CSTREAM_END));
 			}
 
-			void stream_out(base_microbatch::tag_t tag, mb_out *mb) {
-				auto &s(tag_state[tag]);
-				for (auto &kv : *mb) {
-					auto &k(kv.Key());
-					if (s.keybuf.find(k) == s.keybuf.end())
-						s.keybuf[k] = nullptr;
-					if (!s.keybuf[k])
-						s.keybuf[k] = NEW<mb_out>(tag, mb_size);
-					new (s.keybuf[k]->allocate()) Out(kv);
-					s.keybuf[k]->commit();
-					if (s.keybuf[k]->full()) {
-						this->send_mb(s.keybuf[k]);
-						s.keybuf[k] = nullptr;
+			void stream_out(base_microbatch::tag_t tag, const red_map_t &rm) {
+				if (!rm.empty()) {
+					auto &s(tag_state[tag]);
+					for (auto &kv : rm) {
+						auto &k(kv.first);
+						if (s.keybuf.find(k) == s.keybuf.end())
+							s.keybuf[k] = nullptr;
+						if (!s.keybuf[k])
+							s.keybuf[k] = NEW<mb_out>(tag, mb_size);
+						new (s.keybuf[k]->allocate()) Out(k, kv.second);
+						s.keybuf[k]->commit();
+						if (s.keybuf[k]->full()) {
+							this->send_mb(s.keybuf[k]);
+							s.keybuf[k] = nullptr;
+						}
 					}
 				}
 			}
