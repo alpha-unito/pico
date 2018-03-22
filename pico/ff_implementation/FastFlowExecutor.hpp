@@ -185,19 +185,9 @@ public:
 		auto tag = base_microbatch::nil_tag();
 
 		ff_pipe->run();
-
-		ff_pipe->offload(BLK);
-
 		ff_pipe->offload(make_sync(tag, PICO_BEGIN));
 		ff_pipe->offload(make_sync(tag, PICO_END));
 		ff_pipe->offload(EOS);
-
-		void *blk;
-		assert(ff_pipe->load_result(&blk));
-		if(blk != BLK) {
-			std::cerr << "wring BLK token=" << blk << std::endl;
-			assert(false);
-		}
 
 		base_microbatch *res;
 		assert(ff_pipe->load_result((void ** ) &res));
@@ -213,7 +203,7 @@ public:
 	}
 
 	void print_stats(std::ostream &os) const {
-		if (ff_pipe)
+		if(ff_pipe)
 			ff_pipe->ffStats(os);
 	}
 
@@ -230,7 +220,7 @@ private:
 
 FastFlowExecutor *make_executor(const Pipe &p) {
 	auto mb_env = std::getenv("MBSIZE");
-	if (mb_env)
+	if(mb_env)
 		global_params.MICROBATCH_SIZE = atoi(mb_env);
 
 	return new FastFlowExecutor(p);
