@@ -49,7 +49,7 @@ class RBK_farm: public NonOrderingFarm {
 
 public:
 	RBK_farm(int red_par, std::function<OutV(OutV&, OutV&)> reducef) {
-		auto e = new ByKeySwitchEmitter<TokenType>(red_par, getlb());
+		auto e = new Emitter(red_par, getlb());
 		this->setEmitterF(e);
 		auto c = new ForwardingCollector(red_par);
 		this->setCollectorF(c);
@@ -76,8 +76,8 @@ private:
 			auto &s(tag_state[tag]);
 
 			/* reduce the micro-batch updateing internal state */
-			auto &k((*in_microbatch->begin()).Key());
 			for (Out &kv : *in_microbatch) {
+				auto &k(kv.Key());
 				if (s.kvmap.find(k) != s.kvmap.end())
 					s.kvmap[k] = reduce_kernel(kv.Value(), s.kvmap[k]);
 				else
@@ -117,6 +117,28 @@ private:
 		};
 		std::unordered_map<base_microbatch::tag_t, key_state> tag_state;
 	};
+
+	class Emitter: public bk_emitter_t {
+	public:
+		Emitter(unsigned nworkers_, typename NonOrderingFarm::lb_t * lb_) :
+				bk_emitter_t(lb_, nworkers_), nworkers(nworkers_) {
+		}
+
+		void kernel(base_microbatch *in_mb) {
+			auto in_microbatch = reinterpret_cast<mb_t *>(in_mb);
+			send_mb_to(in_mb, key_to_worker((*in_microbatch->begin()).Key()));
+		}
+
+	private:
+		typedef typename TokenType::datatype DataType;
+		typedef typename DataType::keytype keytype;
+		typedef Microbatch<TokenType> mb_t;
+		unsigned nworkers;
+
+		inline size_t key_to_worker(const keytype& k) {
+			return std::hash<keytype> { }(k) % nworkers;
+		}
+	};
 };
 
-#endif /* INTERNALS_FFOPERATORS_MAPPREDUCEBATCH_HPP_ */
+#endif /* INTERNALS_FFOPERATORS_PREDUCEBATCH_HPP_ */

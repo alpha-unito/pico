@@ -90,27 +90,4 @@ private:
 	}
 };
 
-template<typename TokenType>
-class ByKeySwitchEmitter: public bk_emitter_t {
-public:
-	ByKeySwitchEmitter(unsigned nworkers_, typename NonOrderingFarm::lb_t * lb_) :
-			bk_emitter_t(lb_, nworkers_), nworkers(nworkers_) {
-	}
-
-	void kernel(base_microbatch *in_mb) {
-		auto in_microbatch = reinterpret_cast<mb_t *>(in_mb);
-		send_mb_to(in_mb, key_to_worker((*in_microbatch->begin()).Key()));
-	}
-
-private:
-	typedef typename TokenType::datatype DataType;
-	typedef typename DataType::keytype keytype;
-	typedef Microbatch<TokenType> mb_t;
-	unsigned nworkers;
-
-	inline size_t key_to_worker(const keytype& k) {
-		return std::hash<keytype> { }(k) % nworkers;
-	}
-};
-
 #endif /* INTERNALS_FFOPERATORS_WINDOWFFNODES_BYKEYEMITTER_HPP_ */
