@@ -185,11 +185,16 @@ public:
 		auto tag = base_microbatch::nil_tag();
 
 		ff_pipe->run();
+
+		ff_pipe->offload(BLK);
+
 		ff_pipe->offload(make_sync(tag, PICO_BEGIN));
 		ff_pipe->offload(make_sync(tag, PICO_END));
 		ff_pipe->offload(EOS);
 
 		base_microbatch *res;
+		assert(ff_pipe->load_result((void ** ) &res));
+		assert((void *)res == BLK);
 		assert(ff_pipe->load_result((void ** ) &res));
 		assert(res->payload() == PICO_BEGIN && res->tag() == tag);
 		assert(ff_pipe->load_result((void ** ) &res));
