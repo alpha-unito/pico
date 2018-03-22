@@ -26,8 +26,8 @@
 #include "../../Internals/Microbatch.hpp"
 #include "../../FlatMapCollector.hpp"
 
-#include "PReduceBatch.hpp"
 #include "../SupportFFNodes/PairFarm.hpp"
+#include "../SupportFFNodes/RBKOptFarm.hpp"
 
 using namespace pico;
 
@@ -579,23 +579,21 @@ private:
 			typedef typename TokenCollector<Out>::cnode cnode_t;
 
 		public:
-			Worker(mapf_t mapf, redf_t redf_, bool left_in) :
-					worker_t(mapf, left_in), redf(redf_) {
+			Worker(mapf_t mapf, unsigned rbk_par_, redf_t redf_, bool left_in) :
+					worker_t(mapf, left_in), rbk_par(rbk_par_), redf(redf_) {
 			}
 
 		private:
 			void handle_output(tag_t tag, cnode_t *it) {
-				// partial reduce on all output micro-batches
-				red_map_t red_map;
-
+				auto &s(tag_state[tag]);
 				while (it) {
 					/* reduce the micro-batch */
 					for (Out &kv : *it->mb) {
 						const OutK &k(kv.Key());
-						if (red_map.find(k) != red_map.end())
-							red_map[k] = redf(kv.Value(), red_map[k]);
+						if (s.red_map.find(k) != s.red_map.end())
+							s.red_map[k] = redf(kv.Value(), s.red_map[k]);
 						else
-							red_map[k] = kv.Value();
+							s.red_map[k] = kv.Value();
 					}
 
 					/* clean up and skip to the next micro-batch */
@@ -604,55 +602,54 @@ private:
 					DELETE(it_->mb);
 					FREE(it_);
 				}
-
-				//send out (through buffering) partial reduce
-				stream_out(tag, red_map);
 			}
 
 			void finalize_output_tag(tag_t tag) {
-				auto &s(tag_state[tag]);
-				for (auto kmb : s.keybuf)
-					if (kmb.second)
-						this->send_mb(kmb.second);
+				std::vector<mb_out *> worker_mb;
+				for (unsigned wid = 0; wid < rbk_par; ++wid)
+					worker_mb.push_back(nullptr);
+				for (auto &kv : tag_state[tag].red_map) {
+					auto dst = key_to_worker(kv.first);
+					if (!worker_mb[dst])
+						worker_mb[dst] = NEW<mb_out>(tag, mb_size);
+					new (worker_mb[dst]->allocate()) Out(kv.first, kv.second);
+					worker_mb[dst]->commit();
+					if (worker_mb[dst]->full()) {
+						this->send_mb(worker_mb[dst]);
+						worker_mb[dst] = nullptr;
+					}
+				}
+
+				/* remainder */
+				for (auto mb : worker_mb)
+					if (mb)
+						this->send_mb(mb);
 
 				/* close the collection */
 				this->send_mb(make_sync(tag, PICO_CSTREAM_END));
 			}
 
-			void stream_out(base_microbatch::tag_t tag, const red_map_t &rm) {
-				if (!rm.empty()) {
-					auto &s(tag_state[tag]);
-					for (auto &kv : rm) {
-						auto &k(kv.first);
-						if (s.keybuf.find(k) == s.keybuf.end())
-							s.keybuf[k] = nullptr;
-						if (!s.keybuf[k])
-							s.keybuf[k] = NEW<mb_out>(tag, mb_size);
-						new (s.keybuf[k]->allocate()) Out(k, kv.second);
-						s.keybuf[k]->commit();
-						if (s.keybuf[k]->full()) {
-							this->send_mb(s.keybuf[k]);
-							s.keybuf[k] = nullptr;
-						}
-					}
-				}
-			}
-
 			const int mb_size = global_params.MICROBATCH_SIZE;
+			unsigned rbk_par;
 			redf_t redf;
 			struct key_state {
-				std::unordered_map<OutK, mb_out *> keybuf;
+				red_map_t red_map;
 			};
 			std::unordered_map<base_microbatch::tag_t, key_state> tag_state;
+
+			inline size_t key_to_worker(const OutK& k) {
+				return std::hash<OutK> { }(k) % rbk_par;
+			}
 		};
 
 	public:
-		FM_farm(unsigned nw, bool left_input, mapf_t mapf, redf_t redf) :
+		FM_farm(unsigned nw, bool left_input, mapf_t mapf, unsigned rbk_par,
+				redf_t redf) :
 				base_JFMBK_Farm<TT1, TT2, TTO>(nw) {
 			auto e = new emitter_t(nw, global_params.MICROBATCH_SIZE, *this);
 			std::vector<ff::ff_node *> w;
 			for (unsigned i = 0; i < nw; ++i)
-				w.push_back(new Worker(mapf, redf, left_input));
+				w.push_back(new Worker(mapf, rbk_par, redf, left_input));
 			auto c = new ForwardingCollector(nw);
 
 			this->setEmitterF(e);
@@ -667,7 +664,7 @@ public:
 	JFMRBK_par_red(unsigned fm_par, bool lin, mapf_t fm_f, //
 			unsigned rbk_par, redf_t rbk_f) {
 		/* create the JFMBK farm */
-		auto fm_farm = new FM_farm(fm_par, lin, fm_f, rbk_f);
+		auto fm_farm = new FM_farm(fm_par, lin, fm_f, rbk_par, rbk_f);
 
 		/* create the reduce-by-key farm */
 		auto rbk_farm = new RBK_farm<TTO>(rbk_par, rbk_f);
