@@ -175,6 +175,8 @@ public:
 	FastFlowExecutor(const Pipe &pipe_) :
 			pipe(pipe_) {
 		ff_pipe = make_ff_pipe(pipe, true);
+		ff::threadcount_t tc;
+		blocking = (ff_pipe->getfftree()->threadcount(&tc) > ff_realNumCores());
 	}
 
 	~FastFlowExecutor() {
@@ -183,18 +185,22 @@ public:
 
 	void run() const {
 		auto tag = base_microbatch::nil_tag();
+		base_microbatch *res;
 
 		ff_pipe->run();
 
-		ff_pipe->offload(BLK);
+		if(blocking)
+			ff_pipe->offload(BLK);
 
 		ff_pipe->offload(make_sync(tag, PICO_BEGIN));
 		ff_pipe->offload(make_sync(tag, PICO_END));
 		ff_pipe->offload(EOS);
 
-		base_microbatch *res;
-		assert(ff_pipe->load_result((void ** ) &res));
-		assert((void *)res == BLK);
+		if (blocking) {
+			assert(ff_pipe->load_result((void ** ) &res));
+			assert((void * )res == BLK);
+		}
+
 		assert(ff_pipe->load_result((void ** ) &res));
 		assert(res->payload() == PICO_BEGIN && res->tag() == tag);
 		assert(ff_pipe->load_result((void ** ) &res));
@@ -215,6 +221,7 @@ public:
 private:
 	const Pipe &pipe;
 	ff::ff_pipeline *ff_pipe = nullptr;
+	bool blocking;
 
 	void delete_ff_term() {
 		if (ff_pipe)
