@@ -176,17 +176,17 @@ class FastFlowExecutor {
 public:
 	FastFlowExecutor(const Pipe &p) {
 		ff_pipe = make_ff_pipe(p, p.structure_type(), true);
-		ff::threadcount_t tc;
-		blocking = (ff_pipe->getfftree()->threadcount(&tc) > ff_realNumCores());
 	}
 
 	~FastFlowExecutor() {
 		delete_ff_term();
 	}
 
-	void run() const {
+	void run(run_mode m) const {
 		auto tag = base_microbatch::nil_tag();
 		base_microbatch *res;
+
+		bool blocking = (m != run_mode::FORCE_NONBLOCKING);
 
 		ff_pipe->run();
 
@@ -222,7 +222,6 @@ public:
 private:
 	//const Pipe &pipe;
 	ff::ff_pipeline *ff_pipe = nullptr;
-	bool blocking;
 
 	void delete_ff_term() {
 		if (ff_pipe)
@@ -243,8 +242,8 @@ void destroy_executor(FastFlowExecutor *e) {
 	delete e;
 }
 
-void run_pipe(FastFlowExecutor &e) {
-	e.run();
+void run_pipe(FastFlowExecutor &e, run_mode m) {
+	e.run(m);
 }
 
 double run_time(FastFlowExecutor &e) {
