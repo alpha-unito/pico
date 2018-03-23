@@ -8,6 +8,10 @@
 #ifndef PICO_FF_IMPLEMENTATION_DEFS_HPP_
 #define PICO_FF_IMPLEMENTATION_DEFS_HPP_
 
+enum run_mode {
+	DEFAULT, FORCE_NONBLOCKING
+};
+
 /* FF tokens for pico protocol */
 static char *PICO_BEGIN = (char*) (ff::FF_EOS - 0xb);
 static char *PICO_END = (char*) (ff::FF_EOS - 0xc);
