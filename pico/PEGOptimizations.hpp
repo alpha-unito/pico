@@ -67,7 +67,8 @@ static bool opt_match_binary(const Pipe &p, base_UnaryOperator &op2,
 }
 
 template<typename ItType>
-static bool add_optimized(ff::ff_pipeline *p, ItType it1, ItType it2) {
+static bool add_optimized(ff::ff_pipeline *p, ItType it1, ItType it2, //
+		StructureType st) {
 	auto &p1 = **it1, &p2 = **it2;
 	auto p1t = p1.term_node_type(), p2t = p2.term_node_type();
 
@@ -78,9 +79,9 @@ static bool add_optimized(ff::ff_pipeline *p, ItType it1, ItType it2) {
 		auto args = opt_args_t { op2 };
 
 		if (opt_match(op1, op2, MAP_PREDUCE))
-			p->add_stage(op1->opt_node(op1->pardeg(), MAP_PREDUCE, args));
+			p->add_stage(op1->opt_node(op1->pardeg(), MAP_PREDUCE, st, args));
 		else if (opt_match(op1, op2, FMAP_PREDUCE))
-			p->add_stage(op1->opt_node(op1->pardeg(), FMAP_PREDUCE, args));
+			p->add_stage(op1->opt_node(op1->pardeg(), FMAP_PREDUCE, st, args));
 		else
 			return false;
 	} else if (p1t == Pipe::PAIR && p2t == Pipe::OPERATOR) {
@@ -93,8 +94,9 @@ static bool add_optimized(ff::ff_pipeline *p, ItType it1, ItType it2) {
 		auto args = opt_args_t { op2 };
 
 		if (opt_match_binary(p1, *op2, PJFMAP_PREDUCE)) {
-			p->add_stage(make_pair_farm(*children[0], *children[1]));
-			p->add_stage(bop->opt_node(bop->pardeg(), lin, PJFMAP_PREDUCE, args));
+			p->add_stage(make_pair_farm(*children[0], *children[1], st));
+			auto bpar = bop->pardeg();
+			p->add_stage(bop->opt_node(bpar, lin, PJFMAP_PREDUCE, st, args));
 		} else
 			return false;
 	} else
