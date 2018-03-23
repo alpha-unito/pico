@@ -599,6 +599,20 @@ public:
 		return out_deg_;
 	}
 
+	StructureType structure_type() const {
+		StructureType res;
+		bool found = false;
+		for(auto &st : st_map) {
+			if(st.second) {
+				assert(!found);
+				found = true;
+				res = st.first;
+			}
+		}
+		assert(found);
+		return res;
+	}
+
 	const std::vector<Pipe *> &children() const {
 		return children_;
 	}

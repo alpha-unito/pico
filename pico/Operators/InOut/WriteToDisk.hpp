@@ -100,7 +100,8 @@ protected:
 		return new WriteToDisk(*this);
 	}
 
-	ff::ff_node* node_operator(int parallelism) {
+	ff::ff_node* node_operator(int parallelism, StructureType st) {
+		assert(st == StructureType::BAG);
 		if (usr_func)
 			return new WriteToDiskFFNode<In>(fname, func);
 		else
