@@ -112,9 +112,9 @@ protected:
 		return true;
 	}
 
-	ff::ff_node* node_operator(int pardeg) {
+	ff::ff_node* node_operator(int pardeg, StructureType st) {
 		//todo assert unique stype
-		if (this->stype().at(StructureType::STREAM)) {
+		if (st == StructureType::STREAM) {
 			assert(win);
 			return new PReduceWin<In, Token<In>>(pardeg, reducef, win);
 		}
