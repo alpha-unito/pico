@@ -71,7 +71,8 @@ protected:
 		return OpClass::FOLDREDUCE;
 	}
 
-	ff::ff_node* node_operator(int parallelism) {
+	ff::ff_node* node_operator(int parallelism, StructureType st) {
+		assert(st == StructureType::BAG);
 		return new FoldReduceBatch<In, State, NonOrderingFarm, Token<In>,
 				Token<State>>(parallelism, foldf, reducef);
 	}

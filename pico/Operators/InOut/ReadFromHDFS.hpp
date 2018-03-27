@@ -78,7 +78,8 @@ protected:
 		return new ReadFromHDFS(*this);
 	}
 
-	ff::ff_node* node_operator(int parallelism) {
+	ff::ff_node* node_operator(int parallelism, StructureType st) {
+		assert(st == StructureType::BAG);
 		//return new ReadFromHDFSFFNode<std::string>();
 		assert(false);
 		return nullptr;

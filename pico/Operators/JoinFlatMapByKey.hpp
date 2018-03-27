@@ -67,14 +67,17 @@ public:
 		return OpClass::BFMAP;
 	}
 
-	ff::ff_node* node_operator(int parallelism, bool left_input) {
+	ff::ff_node* node_operator(int parallelism, bool left_input, //
+			StructureType st) {
+		assert(st == StructureType::BAG);
 		using t = JoinFlatMapByKeyFarm<Token<In1>, Token<In2>, Token<Out>>;
 		return new t(parallelism, kernel, left_input);
 	}
 
 	ff::ff_node *opt_node(int pardeg, bool lin, PEGOptimization_t opt,
-			opt_args_t a) {
+			StructureType st, opt_args_t a) {
 		assert(opt == PJFMAP_PREDUCE);
+		assert(st == StructureType::BAG);
 		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);
 		if (nextop->pardeg() == 1) {
 			using t = JFMRBK_seq_red<Token<In1>, Token<In2>, Token<Out>>;

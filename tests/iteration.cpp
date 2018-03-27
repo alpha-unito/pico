@@ -102,7 +102,7 @@ TEST_CASE("iteration", "[iterationTag]" ) {
 	.to(iter_pipe)
         .add(writer);
 
-    test_pipe.run();
+    test_pipe.run(run_mode::FORCE_NONBLOCKING);
 
     auto observed = read_lines(output_file);
     std::sort(observed.begin(), observed.end());
@@ -184,7 +184,7 @@ TEST_CASE("iteration with JoinFlatMapByKey", "[iterationTag]" ) {
 	.to(iter_pipe)
 	.add(writer);
     
-    test_pipe.run();
+    test_pipe.run(run_mode::FORCE_NONBLOCKING);
 
     std::unordered_map<char, std::unordered_multiset<int>> partitions;
     auto input_pairs_str = read_lines(input_file);

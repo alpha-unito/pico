@@ -127,9 +127,10 @@ private:
 
 typedef ff::ff_farm<typename NonOrderingFarm::lb_t, PairGatherer> PairFarm;
 
-static ff::ff_pipeline *make_ff_pipe(const Pipe &p1, bool); //forward
+static ff::ff_pipeline *make_ff_pipe(const Pipe &p1, StructureType st, bool); //forward
 
-static PairFarm *make_pair_farm(const Pipe &p1, const Pipe &p2) {
+static PairFarm *make_pair_farm(const Pipe &p1, const Pipe &p2, //
+		StructureType st) {
 	/* create and configure */
 	auto res = new PairFarm();
 	res->cleanup_all();
@@ -146,8 +147,8 @@ static PairFarm *make_pair_farm(const Pipe &p1, const Pipe &p2) {
 
 	/* add argument pipelines as workers */
 	std::vector<ff::ff_node *> w;
-	w.push_back(make_ff_pipe(p1, false));
-	w.push_back(make_ff_pipe(p2, false));
+	w.push_back(make_ff_pipe(p1, st, false));
+	w.push_back(make_ff_pipe(p2, st, false));
 	res->add_workers(w);
 
 	/* add collector */

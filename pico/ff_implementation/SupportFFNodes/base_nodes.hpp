@@ -216,7 +216,7 @@ private:
 	void handle_begin(base_microbatch::tag_t tag) {
 		assert(tag == base_microbatch::nil_tag());
 		assert(pending_begin <= pending_end);
-		if (pending_begin-- == nw)
+		if (!--pending_begin)
 			send_mb(make_sync(tag, PICO_BEGIN));
 		assert(pending_begin < pending_end);
 	}

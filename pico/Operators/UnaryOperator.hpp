@@ -32,9 +32,10 @@ namespace pico {
  */
 class base_UnaryOperator: public Operator {
 public:
-	virtual ff::ff_node* node_operator(int par_deg)=0;
+	virtual ff::ff_node* node_operator(int, StructureType)=0;
 
-	virtual ff::ff_node* opt_node(int, PEGOptimization_t, opt_args_t) {
+	virtual ff::ff_node* opt_node(int, PEGOptimization_t, StructureType, //
+			opt_args_t) {
 		assert(false);
 		return nullptr;
 	}
