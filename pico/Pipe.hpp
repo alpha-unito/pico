@@ -602,7 +602,7 @@ public:
 	}
 
 	StructureType structure_type() const {
-		StructureType res;
+		StructureType res{};
 		bool found = false;
 		for(auto &st : st_map) {
 			if(st.second) {
