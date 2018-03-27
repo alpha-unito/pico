@@ -103,7 +103,8 @@ protected:
 		return OpClass::OUTPUT;
 	}
 
-	ff::ff_node* node_operator(int parallelism) {
+	ff::ff_node* node_operator(int parallelism, StructureType st) {
+		assert(st == StructureType::STREAM);
 		if(usr_func)
 			return new WriteToStdOutFFNode<In, Token<In>>(func);
 		return new WriteToStdOutFFNode_ostream<In, Token<In>>();

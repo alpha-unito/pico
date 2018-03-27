@@ -50,6 +50,8 @@
 
 #include "TerminationCondition.hpp"
 
+#include "ff_implementation/defs.hpp"
+
 namespace pico {
 /*
  * forward declarations for semantic graph
@@ -68,7 +70,7 @@ static void print_dot_semantic_graph(SemanticGraph &, std::string);
 class FastFlowExecutor;
 static FastFlowExecutor *make_executor(const pico::Pipe &);
 static void destroy_executor(FastFlowExecutor *);
-static void run_pipe(FastFlowExecutor &);
+static void run_pipe(FastFlowExecutor &, run_mode);
 static double run_time(FastFlowExecutor &);
 static void print_executor_info(FastFlowExecutor &, std::ostream &os);
 static void print_executor_stats_(FastFlowExecutor &, std::ostream &os);
@@ -554,7 +556,7 @@ public:
 	 * \ingroup pipe-api
 	 * Executes the Pipe
 	 */
-	void run() {
+	void run(run_mode m = run_mode::DEFAULT) {
 #ifdef DEBUG
 		std::cerr << "[PIPE] Running Pipe...\n";
 #endif
@@ -562,7 +564,7 @@ public:
 
 		if (!executor)
 			executor = make_executor(*this);
-		run_pipe(*executor);
+		run_pipe(*executor, m);
 	}
 
 	/**
@@ -597,6 +599,20 @@ public:
 
 	unsigned out_deg() const {
 		return out_deg_;
+	}
+
+	StructureType structure_type() const {
+		StructureType res;
+		bool found = false;
+		for(auto &st : st_map) {
+			if(st.second) {
+				assert(!found);
+				found = true;
+				res = st.first;
+			}
+		}
+		assert(found);
+		return res;
 	}
 
 	const std::vector<Pipe *> &children() const {

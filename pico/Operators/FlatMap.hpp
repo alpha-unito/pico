@@ -82,21 +82,21 @@ protected:
 		return OpClass::FMAP;
 	}
 
-	ff::ff_node* node_operator(int parallelism) {
+	ff::ff_node* node_operator(int parallelism, StructureType st) {
 		//todo assert unique stype
-		if (this->stype().at(StructureType::STREAM)) {
+		if (st == StructureType::STREAM) {
 			using impl_t = FMapBatchStream<In, Out, Token<In>, Token<Out>>;
 			return new impl_t(parallelism, flatmapf);
 		}
-
-		//todo
-		//assert(this->data_stype() == (StructureType::BAG));
+		assert(st == StructureType::BAG);
 		using impl_t = FMapBatchBag<In, Out, Token<In>, Token<Out>>;
 		return new impl_t(parallelism, flatmapf);
 	}
 
-	ff::ff_node *opt_node(int par, PEGOptimization_t opt, opt_args_t a) {
+	ff::ff_node *opt_node(int par, PEGOptimization_t opt, StructureType st, //
+			opt_args_t a) {
 		assert(opt == FMAP_PREDUCE);
+		assert(st == StructureType::BAG);
 		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);
 		return FMapPReduceBatch<Token<In>, Token<Out>>(par, flatmapf, nextop->pardeg(), nextop->kernel());
 	}
