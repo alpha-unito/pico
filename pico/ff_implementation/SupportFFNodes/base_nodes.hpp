@@ -89,6 +89,9 @@ protected:
 
 	virtual void send_mb(base_microbatch *sync_mb) {
 		ff_send_out(sync_mb);
+#ifdef TRACE_PICO
+		++sent_mb_;
+#endif
 	}
 
 private:
@@ -152,10 +155,16 @@ private:
 
 #ifdef TRACE_PICO
 	std::chrono::duration<double> svcd { 0 };
+	unsigned long long sent_mb_ = 0;
 
 	void ffStats(std::ostream & os) {
 		base_node::ffStats(os);
 		os << "  PICO-svc ms   : " << svcd.count() * 1024 << "\n";
+	}
+
+protected:
+	unsigned long long sent_mb() {
+		return sent_mb_;
 	}
 #endif
 };
