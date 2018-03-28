@@ -84,13 +84,22 @@ protected:
 		base_microbatch *res;
 		while (!this->pop((void **) &res)) {
 		}
+#ifdef TRACE_PICO
+		if (!is_sync(res->payload()))
+			tag_cnt[res->tag()].rcvd_data++;
+		else
+			tag_cnt[res->tag()].rcvd_sync++;
+#endif
 		return res;
 	}
 
 	virtual void send_mb(base_microbatch *sync_mb) {
 		ff_send_out(sync_mb);
 #ifdef TRACE_PICO
-		++sent_mb_;
+		if (!is_sync(sync_mb->payload()))
+			tag_cnt[sync_mb->tag()].sent_data++;
+		else
+			tag_cnt[sync_mb->tag()].sent_sync++;
 #endif
 	}
 
@@ -140,9 +149,16 @@ private:
 #ifdef TRACE_PICO
 		auto t0 = std::chrono::high_resolution_clock::now();
 #endif
-		if (!is_sync(in->payload()))
+		if (!is_sync(in->payload())) {
+#ifdef TRACE_PICO
+			tag_cnt[in->tag()].rcvd_data++;
+#endif
 			kernel(in);
+		}
 		else {
+#ifdef TRACE_PICO
+			tag_cnt[in->tag()].rcvd_sync++;
+#endif
 			handle_sync(in);
 			DELETE(in);
 		}
@@ -154,17 +170,38 @@ private:
 	}
 
 #ifdef TRACE_PICO
-	std::chrono::duration<double> svcd { 0 };
-	unsigned long long sent_mb_ = 0;
+	std::chrono::duration<double> svcd {0};
+	struct mb_cnt {
+		unsigned long long sent_data = 0, sent_sync = 0;
+		unsigned long long rcvd_data = 0, rcvd_sync = 0;
+	};
+	std::unordered_map<base_microbatch::tag_t, mb_cnt> tag_cnt;
 
+protected:
+	void print_mb_cnt(std::ostream & os) {
+		unsigned long long total = 0;
+		os << "  PICO-mb sent:\n";
+		for(auto &mbc : tag_cnt) {
+			os << "  [tag=" << mbc.first << "] sync=" << mbc.second.sent_sync;
+			os << " data=" << mbc.second.sent_data << "\n";
+			total += mbc.second.sent_data + mbc.second.sent_sync;
+		}
+		os << "  > sent-total=" << total << "\n";
+		total = 0;
+		os << "  PICO-mb received:\n";
+		for(auto &mbc : tag_cnt) {
+			os << "  [tag=" << mbc.first << "] sync=" << mbc.second.rcvd_sync;
+			os << " data=" << mbc.second.rcvd_data << "\n";
+			total += mbc.second.rcvd_data + mbc.second.rcvd_sync;
+		}
+		os << "  > rcvd-total=" << total << "\n";
+	}
+
+private:
 	void ffStats(std::ostream & os) {
 		base_node::ffStats(os);
 		os << "  PICO-svc ms   : " << svcd.count() * 1024 << "\n";
-	}
-
-protected:
-	unsigned long long sent_mb() {
-		return sent_mb_;
+		print_mb_cnt(os);
 	}
 #endif
 };
