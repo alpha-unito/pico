@@ -118,7 +118,7 @@ public:
 
 	/* forward data */
 	void kernel(base_microbatch *in_mb) {
-		ff_send_out(in_mb);
+		send_mb(in_mb);
 	}
 
 private:
