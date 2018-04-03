@@ -36,7 +36,7 @@ An input text can be generated as follows:
 
 `$ ./generate_text <dictionary file> <n. of lines> >> <output.file>`
 
-the parallel degree can be set manually with the environment variable PARGDEG.
+the parallel degree can be set manually with the environment variable PARDEG.
 
 ### Graph Visualization
 Each example produces a `.dot` file for a graphical representation of the application pipeline coded in Graphviz.
