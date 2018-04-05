@@ -262,23 +262,29 @@ private:
 			off_t pstep = (off_t) std::ceil((float) fsize / partitions);
 			off_t rbegin = 0, rend;
 			char buf;
-			for (unsigned p = 0; p < partitions - 1; ++p) {
-				/* search for first \n after partition boundary */
+			for (unsigned p = 0; p < partitions - 1 && rbegin < fsize; ++p) {
+				/* search for first \n after partition boundary (or EOF) */
 				rend = (p + 1) * pstep;
-				fseek(fd, rend - 1, SEEK_SET);
-				while (true) {
-					assert(buf = getc(fd)); //todo - better reporting
-					if (buf == '\n')
-						break;
-					++rend;
-				}
-				assert(rend > rbegin); //todo - better partitioning?
-				wrap_and_send(NEW<prange>(rbegin, rend));
-				rbegin = rend;
+
+				if (rend < fsize) {
+					/* rend within file boundary */
+					fseek(fd, rend - 1, SEEK_SET);
+					while ((buf = getc(fd))) {
+						if (buf == '\n')
+							break;
+						++rend;
+					}
+					if (rend > rbegin) {
+						wrap_and_send(NEW<prange>(rbegin, rend));
+						rbegin = rend;
+					}
+				} else
+					/* rend beyond file boundary */
+					break;
 
 			}
-			assert(fsize > rbegin); //todo - better partitioning?
-			wrap_and_send(NEW<prange>(rbegin, fsize));
+			if (fsize > rbegin)
+				wrap_and_send(NEW<prange>(rbegin, fsize));
 
 			end_cstream(tag);
 		}
