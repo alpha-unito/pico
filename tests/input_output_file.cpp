@@ -24,9 +24,7 @@ TEST_CASE( "read and write", "read and write tag" ){
 
 	/* define i/o operators from/to file */
 	ReadFromFile reader(input_file);
-	WriteToDisk<std::string> writer(output_file, [&]( std::string s) {
-			return s;
-	});
+	WriteToDisk<std::string> writer(output_file);
 
 	/* compose the pipeline */
 	auto io_file_pipe = Pipe() //the empty pipeline
