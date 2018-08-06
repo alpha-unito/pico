@@ -37,22 +37,49 @@
 using namespace pico;
 
 using base_node = ff::ff_node_t<base_microbatch, base_microbatch>;
+using base_monode = ff::ff_monode_t<base_microbatch, base_microbatch>;
 
 static base_microbatch *make_sync(base_microbatch::tag_t tag, char *token) {
 	return NEW<base_microbatch>(tag, token);
 }
 
-class base_filter: public base_node {
+class sync_handler{
 public:
-	virtual ~base_filter() {
-	}
+	virtual ~sync_handler(){
 
+	}
 protected:
 	/*
 	 * to be overridden by user code
 	 */
 	virtual void kernel(base_microbatch *) = 0;
 
+	/* default behaviors cannot be given for routing sync tokens */
+	virtual void handle_begin(base_microbatch::tag_t tag) = 0;
+	virtual void handle_end(base_microbatch::tag_t tag) = 0;
+	virtual void handle_cstream_begin(base_microbatch::tag_t tag) = 0;
+	virtual void handle_cstream_end(base_microbatch::tag_t tag) = 0;
+
+	virtual void handle_sync(base_microbatch *sync_mb) {
+		char *token = sync_mb->payload();
+		auto tag = sync_mb->tag();
+		if (token == PICO_BEGIN)
+			handle_begin(tag);
+		else if (token == PICO_END)
+			handle_end(tag);
+		else if (token == PICO_CSTREAM_BEGIN)
+			handle_cstream_begin(tag);
+		else if (token == PICO_CSTREAM_END)
+			handle_cstream_end(tag);
+	}
+};
+
+
+class sync_handler_filter :public sync_handler{
+public:
+	virtual ~sync_handler_filter() {
+	}
+protected:
 	virtual void begin_callback() {
 	}
 
@@ -80,26 +107,32 @@ protected:
 		send_mb(make_sync(tag, PICO_CSTREAM_END));
 	}
 
-	base_microbatch *recv_mb() {
-		base_microbatch *res;
-		while (!this->pop((void **) &res)) {
+	/*
+	 * to be overridden by user code
+	 */
+
+	virtual void send_mb(base_microbatch *sync_mb) = 0;
+
+	void work_flow(base_microbatch* in) {
+#ifdef TRACE_PICO
+		auto t0 = std::chrono::high_resolution_clock::now();
+#endif
+		if (!is_sync(in->payload())) {
+#ifdef TRACE_PICO
+			tag_cnt[in->tag()].rcvd_data++;
+#endif
+			kernel(in);
+		}
+		else {
+#ifdef TRACE_PICO
+			tag_cnt[in->tag()].rcvd_sync++;
+#endif
+			handle_sync(in);
+			DELETE(in);
 		}
 #ifdef TRACE_PICO
-		if (!is_sync(res->payload()))
-			tag_cnt[res->tag()].rcvd_data++;
-		else
-			tag_cnt[res->tag()].rcvd_sync++;
-#endif
-		return res;
-	}
-
-	virtual void send_mb(base_microbatch *sync_mb) {
-		ff_send_out(sync_mb);
-#ifdef TRACE_PICO
-		if (!is_sync(sync_mb->payload()))
-			tag_cnt[sync_mb->tag()].sent_data++;
-		else
-			tag_cnt[sync_mb->tag()].sent_sync++;
+		auto t1 = std::chrono::high_resolution_clock::now();
+		svcd += (t1 - t0);
 #endif
 	}
 
@@ -130,43 +163,6 @@ private:
 		cstream_end_callback(tag);
 		if (propagate_cstream_sync())
 			end_cstream(tag);
-	}
-
-	void handle_sync(base_microbatch *sync_mb) {
-		char *token = sync_mb->payload();
-		auto tag = sync_mb->tag();
-		if (token == PICO_BEGIN)
-			handle_begin(tag);
-		else if (token == PICO_END)
-			handle_end(tag);
-		else if (token == PICO_CSTREAM_BEGIN)
-			handle_cstream_begin(tag);
-		else if (token == PICO_CSTREAM_END)
-			handle_cstream_end(tag);
-	}
-
-	base_microbatch* svc(base_microbatch* in) {
-#ifdef TRACE_PICO
-		auto t0 = std::chrono::high_resolution_clock::now();
-#endif
-		if (!is_sync(in->payload())) {
-#ifdef TRACE_PICO
-			tag_cnt[in->tag()].rcvd_data++;
-#endif
-			kernel(in);
-		}
-		else {
-#ifdef TRACE_PICO
-			tag_cnt[in->tag()].rcvd_sync++;
-#endif
-			handle_sync(in);
-			DELETE(in);
-		}
-#ifdef TRACE_PICO
-		auto t1 = std::chrono::high_resolution_clock::now();
-		svcd += (t1 - t0);
-#endif
-		return GO_ON;
 	}
 
 #ifdef TRACE_PICO
@@ -204,7 +200,50 @@ private:
 		print_mb_cnt(os);
 	}
 #endif
+
 };
+
+class base_filter: public base_node, public sync_handler_filter{
+public:
+	virtual ~base_filter() {
+	}
+
+protected:
+
+	base_microbatch *recv_mb() {
+		base_microbatch *res;
+		while (!this->pop((void **) &res)) {
+		}
+#ifdef TRACE_PICO
+		if (!is_sync(res->payload()))
+			tag_cnt[res->tag()].rcvd_data++;
+		else
+			tag_cnt[res->tag()].rcvd_sync++;
+#endif
+		return res;
+}
+
+	virtual void send_mb(base_microbatch *sync_mb) {
+		ff_send_out(sync_mb);
+#ifdef TRACE_PICO
+		if (!is_sync(sync_mb->payload()))
+			tag_cnt[sync_mb->tag()].sent_data++;
+		else
+			tag_cnt[sync_mb->tag()].sent_sync++;
+#endif
+	}
+
+private:
+
+	base_microbatch* svc(base_microbatch* in) {
+		work_flow(in);
+		return GO_ON;
+	}
+
+};
+
+
+
 
 template<typename lb_t>
 class base_emitter: public base_filter {
@@ -229,7 +268,6 @@ protected:
 private:
 	lb_t *lb;
 	unsigned nw;
-
 #ifdef TRACE_PICO
 	std::chrono::duration<double> svcd;
 
@@ -297,40 +335,17 @@ private:
 	unsigned pending_end, pending_begin;
 };
 
-class base_switch: public ff::ff_monode_t<base_microbatch, base_microbatch> {
+class base_switch: public base_monode , public sync_handler {
 public:
 	virtual ~base_switch() {
 	}
 
 protected:
-	/*
-	 * to be overridden by user code
-	 */
-	virtual void kernel(base_microbatch *) = 0;
-
-	/* default behaviors cannot be given for routing sync tokens */
-	virtual void handle_begin(base_microbatch::tag_t tag) = 0;
-	virtual void handle_end(base_microbatch::tag_t tag) = 0;
-	virtual void handle_cstream_begin(base_microbatch::tag_t tag) = 0;
-	virtual void handle_cstream_end(base_microbatch::tag_t tag) = 0;
-
 	void send_mb_to(base_microbatch *task, unsigned dst) {
 		this->ff_send_out_to(task, dst);
 	}
 
 private:
-	void handle_sync(base_microbatch *sync_mb) {
-		char *token = sync_mb->payload();
-		auto tag = sync_mb->tag();
-		if (token == PICO_BEGIN)
-			handle_begin(tag);
-		else if (token == PICO_END)
-			handle_end(tag);
-		else if (token == PICO_CSTREAM_BEGIN)
-			handle_cstream_begin(tag);
-		else if (token == PICO_CSTREAM_END)
-			handle_cstream_end(tag);
-	}
 
 	base_microbatch* svc(base_microbatch* in) {
 		if (!is_sync(in->payload()))
