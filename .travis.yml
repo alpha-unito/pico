@@ -2,7 +2,9 @@ language: cpp
 compiler: gcc
 install:
         - git clone https://github.com/fastflow/fastflow.git
-        - ln -s ../fastflow/ff ff
+        - ls
+        - pwd
+        - ln -s fastflow/ff ff
 script:
         - cd tests
         - make
