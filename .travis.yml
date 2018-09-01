@@ -1,6 +1,7 @@
 language: cpp
 compiler: gcc
 install:
+        - sudo apt-get install libpthread-stubs0-dev
         - git clone https://github.com/fastflow/fastflow.git
         - ls
         - pwd
