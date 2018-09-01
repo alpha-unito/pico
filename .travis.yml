@@ -4,7 +4,7 @@ os:
         - osx
 compiler: gcc
 install:
-        if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install libpthread-stubs0-dev ; fi
+        - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install libpthread-stubs0-dev ; fi
         - git clone https://github.com/fastflow/fastflow.git
         - ln -s fastflow/ff ff
 script:
