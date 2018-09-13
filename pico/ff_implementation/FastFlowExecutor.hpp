@@ -31,6 +31,7 @@
 #include <ff/node.hpp>
 #include <ff/pipeline.hpp>
 #include <ff/farm.hpp>
+#include <ff/optimize.hpp>
 //#include <ff/fftree.hpp>
 
 #include "../Pipe.hpp"
@@ -187,8 +188,24 @@ public:
 		base_microbatch *res;
 
 		bool blocking = (m != run_mode::FORCE_NONBLOCKING);
-		if(blocking)
+
+		OptLevel opt;
+		opt.remove_collector=true;
+		opt.verbose_level=2;
+		if(blocking) {
 			ff_pipe->blocking_mode();
+			ff_pipe->no_mapping();
+		}
+		else {
+			opt.max_nb_threads=ff_realNumCores();
+			opt.max_mapped_threads=opt.max_nb_threads;
+			opt.no_default_mapping=true;
+			opt.blocking_mode=true;
+
+		}
+		optimize_static(*ff_pipe, opt);
+
+
 
 		ff_pipe->run();
 
