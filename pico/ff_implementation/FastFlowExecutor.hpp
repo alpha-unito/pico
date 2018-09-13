@@ -31,7 +31,7 @@
 #include <ff/node.hpp>
 #include <ff/pipeline.hpp>
 #include <ff/farm.hpp>
-#include <ff/fftree.hpp>
+//#include <ff/fftree.hpp>
 
 #include "../Pipe.hpp"
 #include "../Operators/UnaryOperator.hpp"
@@ -98,7 +98,7 @@ static ff::ff_pipeline *make_ff_pipe(const Pipe &p, StructureType st, //
 		res->add_stage(new iteration_multiplexer());
 		res->add_stage(make_ff_pipe(*p.children().front(), st, false));
 		res->add_stage(cond->iteration_switch());
-		res->wrap_around(true /* multi-input */);
+		res->wrap_around();
 		break;
 	case Pipe::MERGE:
 		std::cerr << "MERGE not implemented yet\n";
@@ -187,20 +187,21 @@ public:
 		base_microbatch *res;
 
 		bool blocking = (m != run_mode::FORCE_NONBLOCKING);
+		if(blocking)
+			ff_pipe->blocking_mode();
 
 		ff_pipe->run();
 
-		if(blocking)
-			ff_pipe->offload(BLK);
+
 
 		ff_pipe->offload(make_sync(tag, PICO_BEGIN));
 		ff_pipe->offload(make_sync(tag, PICO_END));
-		ff_pipe->offload(EOS);
+		ff_pipe->offload(FF_EOS);
 
-		if (blocking) {
+		/*if (blocking) {
 			assert(ff_pipe->load_result((void ** ) &res));
 			assert((void * )res == BLK);
-		}
+		}*/
 
 		assert(ff_pipe->load_result((void ** ) &res));
 		assert(res->payload() == PICO_BEGIN && res->tag() == tag);
@@ -249,11 +250,11 @@ void run_pipe(FastFlowExecutor &e, run_mode m) {
 double run_time(FastFlowExecutor &e) {
 	return e.run_time();
 }
-
+/*
 void print_executor_info(FastFlowExecutor &e, std::ostream &os) {
 	ff::print_fftrees(os);
 }
-
+*/
 void print_executor_stats_(FastFlowExecutor &e, std::ostream &os) {
 	e.print_stats(os);
 }

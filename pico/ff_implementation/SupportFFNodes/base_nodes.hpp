@@ -210,18 +210,6 @@ public:
 
 protected:
 
-	base_microbatch *recv_mb() {
-		base_microbatch *res;
-		while (!this->pop((void **) &res)) {
-		}
-#ifdef TRACE_PICO
-		if (!is_sync(res->payload()))
-			tag_cnt[res->tag()].rcvd_data++;
-		else
-			tag_cnt[res->tag()].rcvd_sync++;
-#endif
-		return res;
-}
 
 	virtual void send_mb(base_microbatch *sync_mb) {
 		ff_send_out(sync_mb);
@@ -240,16 +228,13 @@ private:
 		return GO_ON;
 	}
 
+
 };
 
 
-
-
-template<typename lb_t>
-class base_emitter: public base_filter {
+class base_emitter: public base_monode, public sync_handler_filter {
 public:
-	base_emitter(lb_t *lb_, unsigned nw_) :
-			lb(lb_), nw(nw_) {
+	base_emitter(unsigned nw_) : nw(nw_) {
 	}
 
 	virtual ~base_emitter() {
@@ -257,7 +242,7 @@ public:
 
 protected:
 	void send_mb_to(base_microbatch *task, unsigned i) {
-		lb->ff::ff_loadbalancer::ff_send_out_to(task, i);
+		ff_send_out_to(task, i);
 	}
 
 	void send_mb(base_microbatch *sync_mb) {
@@ -266,8 +251,13 @@ protected:
 	}
 
 private:
-	lb_t *lb;
 	unsigned nw;
+
+	base_microbatch* svc(base_microbatch* in) {
+		work_flow(in);
+		return GO_ON;
+	}
+
 #ifdef TRACE_PICO
 	std::chrono::duration<double> svcd;
 
@@ -278,14 +268,45 @@ private:
 #endif
 };
 
-class base_collector: public base_filter {
+
+class base_ord_emitter: public base_filter {
 public:
-	base_collector(unsigned nw_) :
+	base_ord_emitter(unsigned nw_) : nw(nw_) {
+	}
+
+	virtual ~base_ord_emitter() {
+	}
+
+	/*
+	 * works only with strict round-robin load balancer (e.g. ordered farm)
+	 */
+
+	void send_mb(base_microbatch *sync_mb) {
+		for (unsigned i = 0; i < nw; ++i)
+			ff_send_out(make_sync(sync_mb->tag(), sync_mb->payload()));
+	}
+
+private:
+	unsigned nw;
+
+#ifdef TRACE_PICO
+	std::chrono::duration<double> svcd;
+
+	void ffStats(std::ostream & os) {
+		base_node::ffStats(os);
+		os << "  PICO-svc ms   : " << svcd.count() * 1024 << "\n";
+	}
+#endif
+};
+
+class base_sync_duplicate: public base_filter {
+public:
+	base_sync_duplicate(unsigned nw_) :
 			nw(nw_) {
 		pending_begin = pending_end = nw;
 	}
 
-	virtual ~base_collector() {
+	virtual ~base_sync_duplicate() {
 	}
 
 private:
@@ -311,7 +332,7 @@ private:
 			pending_cstream_end[tag] = nw;
 		assert(pending_cstream_begin[tag] < pending_cstream_end[tag]);
 		if (!--pending_cstream_end[tag]) {
-			cstream_end_callback(tag);
+			this->cstream_end_callback(tag);
 			if (propagate_cstream_sync())
 				send_mb(make_sync(tag, PICO_CSTREAM_END));
 		}
@@ -335,12 +356,14 @@ private:
 	unsigned pending_end, pending_begin;
 };
 
-class base_switch: public base_monode , public sync_handler {
+class base_switch: public base_monode, public sync_handler {
 public:
 	virtual ~base_switch() {
 	}
 
 protected:
+
+
 	void send_mb_to(base_microbatch *task, unsigned dst) {
 		this->ff_send_out_to(task, dst);
 	}

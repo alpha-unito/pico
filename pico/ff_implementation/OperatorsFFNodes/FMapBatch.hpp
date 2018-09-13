@@ -37,7 +37,11 @@ public:
 
 	FMapBatch(int par,
 			std::function<void(In&, FlatMapCollector<Out> &)> flatmapf) {
-		auto e = new ForwardingEmitter<typename Farm::lb_t>(this->getlb(), par);
+		ff_node* e;
+		if (this->isOFarm())
+			e = new OrdForwardingEmitter(par);
+		else
+			e = new ForwardingEmitter(par);
 		auto c = new UnpackingCollector<TokenCollector<Out>>(par);
 		this->setEmitterF(e);
 		this->setCollectorF(c);

@@ -72,7 +72,7 @@ static FastFlowExecutor *make_executor(const pico::Pipe &);
 static void destroy_executor(FastFlowExecutor *);
 static void run_pipe(FastFlowExecutor &, run_mode);
 static double run_time(FastFlowExecutor &);
-static void print_executor_info(FastFlowExecutor &, std::ostream &os);
+//static void print_executor_info(FastFlowExecutor &, std::ostream &os);
 static void print_executor_stats_(FastFlowExecutor &, std::ostream &os);
 
 namespace pico {
@@ -524,14 +524,14 @@ public:
 			semantic_graph = make_semantic_graph(*this);
 		print_semantic_graph(*semantic_graph, os);
 	}
-
+/*
 	void print_executor(std::ostream &os = std::cout) {
 		if (!executor)
 			executor = make_executor(*this);
 		std::cout << "=== Executor Info\n";
 		print_executor_info(*executor, os);
 	}
-
+*/
 	void print_executor_stats(std::ostream &os = std::cout) {
 		std::cout << "=== Executor Stats\n";
 		print_executor_stats_(*executor, os);

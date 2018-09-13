@@ -13,16 +13,17 @@ enum run_mode {
 };
 
 /* FF tokens for pico protocol */
-static char *PICO_BEGIN = (char*) (ff::FF_EOS - 0xb);
-static char *PICO_END = (char*) (ff::FF_EOS - 0xc);
+static size_t EOS_CAST = (size_t) ff::FF_EOS;
+static char *PICO_BEGIN = (char*) (EOS_CAST - 0xb);
+static char *PICO_END = (char*) (EOS_CAST - 0xc);
 
-static char *PICO_CSTREAM_BEGIN = (char*) (ff::FF_EOS - 0xd);
-static char *PICO_CSTREAM_END = (char*) (ff::FF_EOS - 0xe);
-static char *PICO_CSTREAM_FROM_LEFT = (char*) (ff::FF_EOS - 0xf);
-static char *PICO_CSTREAM_FROM_RIGHT = (char*) (ff::FF_EOS - 0x10);
+static char *PICO_CSTREAM_BEGIN = (char*) (EOS_CAST - 0xd);
+static char *PICO_CSTREAM_END = (char*) (EOS_CAST - 0xe);
+static char *PICO_CSTREAM_FROM_LEFT = (char*) (EOS_CAST - 0xf);
+static char *PICO_CSTREAM_FROM_RIGHT = (char*) (EOS_CAST - 0x10);
 
 static inline bool is_sync(char *token) {
-	return token <= PICO_BEGIN && token >= PICO_CSTREAM_FROM_RIGHT;
+	return token <= PICO_BEGIN && token >= PICO_CSTREAM_END;
 }
 
 #endif /* PICO_FF_IMPLEMENTATION_DEFS_HPP_ */

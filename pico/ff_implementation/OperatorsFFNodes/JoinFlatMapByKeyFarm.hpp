@@ -53,14 +53,14 @@ public:
 	 * The emitter dispatches microbatch items based on key and
 	 * keep tracking the origin.
 	 */
-	typedef base_emitter<typename NonOrderingFarm::lb_t> emitter_t;
+	typedef base_emitter emitter_t;
 	class Emitter: public emitter_t {
 		typedef base_microbatch::tag_t tag_t;
 
 	public:
 		Emitter(unsigned nworkers_, unsigned mbsize_, NonOrderingFarm &farm_) :
-				emitter_t(farm_.getlb(), nworkers_), //
-				nworkers(nworkers_), mbsize(mbsize_) {
+				emitter_t(nworkers_), //
+				nworkers(nworkers_), mbsize(mbsize_), cstream_begin_rcv(false) {
 		}
 
 	private:
@@ -68,22 +68,28 @@ public:
 		virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
 			/* initialize tag state */
 			assert(tag_state.find(tag) == tag_state.end());
-			auto &s(tag_state[tag]);
-
+			cstream_begin_tag = tag;
+			cstream_begin_rcv = true;
 			send_mb(make_sync(tag, PICO_CSTREAM_BEGIN)); //propagate begin
-			auto origin_mb = recv_mb(); //wait for origin
+
+		}
+
+		virtual void handle_cstream_after_begin(base_microbatch *origin_mb){
+			auto &s(tag_state[cstream_begin_tag]);
 			if (origin_mb->payload() == PICO_CSTREAM_FROM_LEFT) {
-				send_mb(make_sync(tag, PICO_CSTREAM_FROM_LEFT));
+				send_mb(make_sync(cstream_begin_tag, PICO_CSTREAM_FROM_LEFT));
 				s.from_left = true;
 				s.mb2w_from_left = std::vector<key_state1>(nworkers);
 			} else {
-				send_mb(make_sync(tag, PICO_CSTREAM_FROM_RIGHT));
+				assert(origin_mb->payload() == PICO_CSTREAM_FROM_RIGHT);
+				send_mb(make_sync(cstream_begin_tag, PICO_CSTREAM_FROM_RIGHT));
 				s.from_left = false;
 				s.mb2w_from_right = std::vector<key_state2>(nworkers);
 			}
 
 			/* cleanup */
 			DELETE(origin_mb); //TODO abstract
+			cstream_begin_rcv = false;
 		}
 
 		/* on c-stream end, notify */
@@ -94,6 +100,10 @@ public:
 
 		/* dispatch data with micro-batch buffering */
 		void kernel(base_microbatch *in_mb_) {
+			if (cstream_begin_rcv) {
+				handle_cstream_after_begin(in_mb_);
+				return;
+			}
 			auto tag = in_mb_->tag();
 			auto &s(tag_state[tag]);
 			if (s.from_left) {
@@ -163,6 +173,9 @@ public:
 		};
 		std::unordered_map<base_microbatch::tag_t, origin_state> tag_state;
 
+		bool cstream_begin_rcv;
+		base_microbatch::tag_t cstream_begin_tag;
+
 		template<typename K>
 		inline size_t key_to_worker(const K& k) {
 			return std::hash<K> { }(k) % nworkers;
@@ -213,18 +226,20 @@ class base_JFMBK_worker: public base_filter {
 	typedef std::unordered_map<tag_t, origin_state> tag_state_t;
 public:
 	base_JFMBK_worker(kernel_t kernel_, bool left_input_) :
-			fkernel(kernel_), cache_from_left(!left_input_) {
+			fkernel(kernel_), cache_from_left(!left_input_), cstream_begin_rcv(false) {
 	}
 
 	/* on c-stream begin, forward only if non-cached tag */
 	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
 		/* initialize tag state */
 		assert(tag_state.find(tag) == tag_state.end());
-		auto &s(tag_state[tag]);
+		cstream_begin_rcv = true;
+		cstream_begin_tag = tag;
 
-		/* wait for origin */
-		auto origin_mb = recv_mb();
+	}
 
+	virtual void handle_after_cstream_begin(base_microbatch *origin_mb) {
+		auto &s(tag_state[cstream_begin_tag]);
 		/* update internal state */
 		if (origin_mb->payload() == PICO_CSTREAM_FROM_LEFT) {
 			s.cached = cache_from_left;
@@ -237,15 +252,16 @@ public:
 
 		/* propagate begin if not cached */
 		if (!s.cached) {
-			send_mb(make_sync(tag, PICO_CSTREAM_BEGIN));
-			non_cached_tags.push_back(tag);
+			send_mb(make_sync(cstream_begin_tag, PICO_CSTREAM_BEGIN));
+			non_cached_tags.push_back(cstream_begin_tag);
 		} else {
 			assert(cached_tag == base_microbatch::nil_tag());
-			cached_tag = tag;
+			cached_tag = cstream_begin_tag;
 		}
 
 		/* cleanup */
 		DELETE(origin_mb); //TODO abstract
+		cstream_begin_rcv = false;
 	}
 
 	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
@@ -282,6 +298,11 @@ public:
 	}
 
 	void kernel(base_microbatch *in_mb) {
+		if (cstream_begin_rcv) {
+			handle_after_cstream_begin(in_mb);
+			return;
+		}
+
 		/* unpack and process based on origin */
 		auto tag = in_mb->tag();
 		auto &s(tag_state[tag]);
@@ -296,6 +317,7 @@ public:
 	}
 
 private:
+
 	virtual void finalize_output_tag(tag_t) = 0;
 	virtual void handle_output(tag_t, cnode_t *) = 0;
 
@@ -400,6 +422,9 @@ private:
 
 	bool cache_complete = false;
 	std::vector<tag_t> uncleared_tags;
+
+	bool cstream_begin_rcv;
+	base_microbatch::tag_t cstream_begin_tag;
 };
 
 /*
@@ -567,6 +592,7 @@ class JFMRBK_par_red: public ff::ff_pipeline {
 	typedef std::function<OutV(OutV&, OutV&)> redf_t;
 	typedef Microbatch<TTO> mb_out;
 	typedef std::unordered_map<OutK, OutV> red_map_t;
+	typedef typename RBK_farm<TTO>::Emitter emitter_t;
 
 private:
 	class FM_farm: public base_JFMBK_Farm<TT1, TT2, TTO> {
@@ -667,11 +693,16 @@ public:
 		auto fm_farm = new FM_farm(fm_par, lin, fm_f, rbk_par, rbk_f);
 
 		/* create the reduce-by-key farm */
-		auto rbk_farm = new RBK_farm<TTO>(rbk_par, rbk_f);
+		auto rbk_farm = new RBK_farm<TTO>(fm_par, rbk_par, rbk_f);
+
+		auto emitter = reinterpret_cast<emitter_t*>(rbk_farm->getEmitter());
+
+		/* combine the farms with shuffle */
+		auto combined_farm =
+				combine_farms<emitter_t, emitter_t>(*fm_farm, emitter, *rbk_farm, nullptr, false);
 
 		/* compose the pipeline */
-		this->add_stage(fm_farm);
-		this->add_stage(rbk_farm);
+		this->add_stage(combined_farm);
 		this->cleanup_nodes();
 	}
 

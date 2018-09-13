@@ -24,6 +24,7 @@
 #include <unordered_map>
 
 #include <ff/farm.hpp>
+#include <ff/combine.hpp>
 
 #include "../../Internals/utils.hpp"
 #include "../ff_config.hpp"
@@ -42,13 +43,13 @@ class MRBK_seq_red: public NonOrderingFarm {
 	typedef typename TokenTypeOut::datatype Out;
 	typedef typename Out::keytype OutK;
 	typedef typename Out::valuetype OutV;
-	typedef ForwardingEmitter<typename NonOrderingFarm::lb_t> emitter_t;
+	typedef ForwardingEmitter emitter_t;
 
 public:
 	MRBK_seq_red(int par, //
 			std::function<Out(In&)>& mapf, //
 			std::function<OutV(OutV&, OutV&)> reducef) {
-		auto e = new emitter_t(this->getlb(), par);
+		auto e = new emitter_t(par);
 		this->setEmitterF(e);
 		auto c = new PReduceCollector<Out, TokenTypeOut>(par, reducef);
 		this->setCollectorF(c);
@@ -122,19 +123,24 @@ class MRBK_par_red: public ff::ff_pipeline {
 	typedef typename TokenTypeOut::datatype Out;
 	typedef typename Out::keytype OutK;
 	typedef typename Out::valuetype OutV;
-
+	typedef typename RBK_farm<TokenTypeOut>::Emitter emitter_t;
 public:
 	MRBK_par_red(int map_par, std::function<Out(In &)>& map_f, int red_par, //
 			std::function<OutV(OutV&, OutV&)> red_f) {
 		/* create the flatmap farm */
-		auto map_farm = new M_farm(map_par, map_f, red_par, red_f);
+		auto fmap_farm = new M_farm(map_par, map_f, red_par, red_f);
 
 		/* create the reduce-by-key farm farm */
-		auto rbk_farm = new RBK_farm<TokenTypeOut>(red_par, red_f);
+		auto rbk_farm = new RBK_farm<TokenTypeOut>(map_par, red_par, red_f);
+
+		auto emitter = reinterpret_cast<emitter_t*>(rbk_farm->getEmitter());
+
+		/* combine the farms with shuffle */
+		auto combined_farm =
+				combine_farms<emitter_t, emitter_t>(*fmap_farm, emitter, *rbk_farm, nullptr, false);
 
 		/* compose the pipeline */
-		this->add_stage(map_farm);
-		this->add_stage(rbk_farm);
+		this->add_stage(combined_farm);
 		this->cleanup_nodes();
 	}
 
@@ -147,8 +153,8 @@ private:
 	public:
 		M_farm(int map_par, std::function<Out(In &)>& mapf, int rbk_par, //
 				std::function<OutV(OutV&, OutV&)> reducef) {
-			using emitter_t = ForwardingEmitter<typename NonOrderingFarm::lb_t>;
-			auto e = new emitter_t(this->getlb(), map_par);
+			using emitter_t = ForwardingEmitter;
+			auto e = new emitter_t(map_par);
 			this->setEmitterF(e);
 			auto c = new ForwardingCollector(map_par);
 			this->setCollectorF(c);

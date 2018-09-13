@@ -26,10 +26,8 @@
 /*
  * A non-ordering farm.
  */
-class NonOrderingFarm: public ff::ff_farm<ff::ff_loadbalancer, ff::ff_gatherer> {
+class NonOrderingFarm: public ff::ff_farm {
 public:
-	typedef ff::ff_loadbalancer lb_t;
-
 	void setEmitterF(ff_node* f) {
 		this->add_emitter(f);
 	}
@@ -43,9 +41,19 @@ public:
  * An ordering farm.
  */
 
-class OrderingFarm: public ff::ff_ofarm {
+class OrderingFarm: public ff::ff_farm {
 public:
-	typedef ff::ofarm_lb lb_t;
+	OrderingFarm() {
+		set_ordered();
+	}
+	void setEmitterF(ff_node* f) {
+		this->add_emitter(f);
+	}
+
+	void setCollectorF(ff_node* f) {
+		this->add_collector(f);
+	}
+
 };
 
 #endif /* INTERNALS_FFOPERATORS_SUPPORTFFNODES_FARMWRAPPER_HPP_ */

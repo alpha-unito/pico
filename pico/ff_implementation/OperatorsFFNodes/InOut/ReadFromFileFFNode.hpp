@@ -237,11 +237,11 @@ private:
 	/*
 	 * A Partitioner partitions an input file and creates read-ranges
 	 */
-	class Partitioner: public base_emitter<NonOrderingFarm::lb_t> {
+	class Partitioner: public base_emitter {
 	public:
 		Partitioner(const NonOrderingFarm &f_, std::string fname,
 				unsigned partitions_) :
-				base_emitter<NonOrderingFarm::lb_t>(f_.getlb(), partitions_), //
+				base_emitter(partitions_), //
 				partitions(partitions_) {
 			fd = fopen(fname.c_str(), "rb");
 			assert(fd); //todo - better reporting

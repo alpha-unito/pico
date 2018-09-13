@@ -38,7 +38,11 @@ class MapBatch: public Farm {
 public:
 
 	MapBatch(int par, std::function<Out(In&)>& mapf) {
-		auto e = new ForwardingEmitter<typename Farm::lb_t>(this->getlb(), par);
+		ff_node* e;
+		if (this->isOFarm())
+			e = new OrdForwardingEmitter(par);
+		else
+			e = new ForwardingEmitter(par);
 		this->setEmitterF(e);
 		this->setCollectorF(new ForwardingCollector(par));
 		std::vector<ff_node *> w;
