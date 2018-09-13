@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
 			.to(improveRanks.iterate(FixedIterations { niters })) //
 			.add(writeRanks);
 
-	pageRank.run(run_mode::FORCE_NONBLOCKING);
+	pageRank.run();
 
 	return 0;
 }
