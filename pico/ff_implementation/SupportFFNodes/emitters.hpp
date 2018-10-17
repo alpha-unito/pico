@@ -30,11 +30,11 @@ using namespace ff;
 /*
  * Forwards non-sync tokens and broadcasts sync tokens.
  */
-template<typename lb_t>
-class ForwardingEmitter: public base_emitter<lb_t> {
+
+class ForwardingEmitter: public base_emitter {
 public:
-	ForwardingEmitter(lb_t *lb_, unsigned nw) :
-			base_emitter<lb_t>(lb_, nw) {
+	ForwardingEmitter(unsigned nw) :
+			base_emitter(nw) {
 	}
 
 	void kernel(base_microbatch *mb) {
@@ -42,18 +42,20 @@ public:
 	}
 };
 
+
 /*
- * Broadcasts each token.
+ * Forwards non-sync tokens and broadcasts sync tokens.
+ * (for ordered farm)
  */
-template<typename lb_t>
-class BCastEmitter: public base_emitter<lb_t> {
+
+class OrdForwardingEmitter: public base_ord_emitter {
 public:
-	BCastEmitter(lb_t *lb_, unsigned nw) :
-			base_emitter<lb_t>(lb_, nw) {
+	OrdForwardingEmitter(unsigned nw) :
+		base_ord_emitter(nw) {
 	}
 
 	void kernel(base_microbatch *mb) {
-		this->broadcast_task(mb);
+		this->ff_send_out(mb);
 	}
 };
 

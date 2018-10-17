@@ -22,11 +22,11 @@
  *
  *******************************************************************************
  */
-typedef base_emitter<typename NonOrderingFarm::lb_t> PairEmitter_base_t;
+typedef base_emitter PairEmitter_base_t;
 class PairEmitterToNone: public PairEmitter_base_t {
 public:
-	PairEmitterToNone(typename NonOrderingFarm::lb_t &lb_) :
-			PairEmitter_base_t(&lb_, 2) {
+	PairEmitterToNone() :
+			PairEmitter_base_t(2) {
 	}
 
 	/* ensure no c-streams are sent to input-less pipes */
@@ -46,8 +46,8 @@ public:
 template<int To>
 class PairEmitterTo: public PairEmitter_base_t {
 public:
-	PairEmitterTo(typename NonOrderingFarm::lb_t &lb_) :
-			PairEmitter_base_t(&lb_, 2) {
+	PairEmitterTo() :
+			PairEmitter_base_t(2) {
 	}
 
 	void kernel(base_microbatch *in_mb) {
@@ -95,10 +95,10 @@ private:
 	ssize_t from_;
 };
 
-class PairCollector: public base_collector {
+class PairCollector: public base_sync_duplicate {
 public:
 	PairCollector(PairGatherer &gt_) :
-			base_collector(2), gt(gt_) {
+			base_sync_duplicate(2), gt(gt_) {
 	}
 
 	/* on c-stream begin, forward and notify about origin */
@@ -125,7 +125,15 @@ private:
 	PairGatherer &gt;
 };
 
-typedef ff::ff_farm<typename NonOrderingFarm::lb_t, PairGatherer> PairFarm;
+
+class PairFarm: public ff_farm{
+public:
+	PairFarm(){
+		setlb(new NonOrderingFarm::lb_t(max_nworkers)); //memory leak?
+		setgt(new PairGatherer(max_nworkers));
+	}
+
+};
 
 static ff::ff_pipeline *make_ff_pipe(const Pipe &p1, StructureType st, bool); //forward
 
@@ -138,11 +146,11 @@ static PairFarm *make_pair_farm(const Pipe &p1, const Pipe &p2, //
 	/* add emitter */
 	ff::ff_node *e;
 	if (p1.in_deg())
-		e = new PairEmitterToFirst(*res->getlb());
+		e = new PairEmitterToFirst();
 	else if (p2.in_deg())
-		e = new PairEmitterToSecond(*res->getlb());
+		e = new PairEmitterToSecond();
 	else
-		e = new PairEmitterToNone(*res->getlb());
+		e = new PairEmitterToNone();
 	res->add_emitter(e);
 
 	/* add argument pipelines as workers */
@@ -152,7 +160,8 @@ static PairFarm *make_pair_farm(const Pipe &p1, const Pipe &p2, //
 	res->add_workers(w);
 
 	/* add collector */
-	res->add_collector(new PairCollector(*res->getgt()));
+	auto p_pair_gt = reinterpret_cast<PairGatherer*>(res->getgt());
+	res->add_collector(new PairCollector(* p_pair_gt));
 
 	return res;
 }

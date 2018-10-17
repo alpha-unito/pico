@@ -48,23 +48,45 @@ class RBK_farm: public NonOrderingFarm {
 	typedef typename Out::valuetype OutV;
 
 public:
-	RBK_farm(int red_par, std::function<OutV(OutV&, OutV&)> reducef) {
-		auto e = new Emitter(red_par, getlb());
+	RBK_farm(int fmap_par, int red_par, std::function<OutV(OutV&, OutV&)> reducef) {
+		auto e = new Emitter(red_par);
 		this->setEmitterF(e);
 		auto c = new ForwardingCollector(red_par);
 		this->setCollectorF(c);
 		std::vector<ff_node *> w;
 		for (int i = 0; i < red_par; ++i)
-			w.push_back(new Worker(reducef));
+			w.push_back(new Worker(fmap_par, reducef));
 		this->add_workers(w);
 		this->cleanup_all();
 	}
 
-private:
-	class Worker: public base_filter {
+	class Emitter: public base_emitter {
 	public:
-		Worker(std::function<OutV(OutV&, OutV&)>& reducef_kernel_) :
-				reduce_kernel(reducef_kernel_) {
+		Emitter(unsigned nworkers_) :
+			base_emitter(nworkers_), nworkers(nworkers_) {
+		}
+
+		void kernel(base_microbatch *in_mb) {
+			auto in_microbatch = reinterpret_cast<mb_t *>(in_mb);
+			send_mb_to(in_mb, key_to_worker((*in_microbatch->begin()).Key()));
+		}
+
+	private:
+		typedef typename TokenType::datatype DataType;
+		typedef typename DataType::keytype keytype;
+		typedef Microbatch<TokenType> mb_t;
+		unsigned nworkers;
+
+		inline size_t key_to_worker(const keytype& k) {
+			return std::hash<keytype> { }(k) % nworkers;
+		}
+	};
+
+private:
+	class Worker: public base_sync_duplicate {
+	public:
+		Worker(int redundancy, std::function<OutV(OutV&, OutV&)>& reducef_kernel_) :
+			base_sync_duplicate(redundancy), reduce_kernel(reducef_kernel_) {
 		}
 
 		void kernel(base_microbatch *in_mb) {
@@ -116,28 +138,6 @@ private:
 			std::unordered_map<OutK, OutV> kvmap;
 		};
 		std::unordered_map<base_microbatch::tag_t, key_state> tag_state;
-	};
-
-	class Emitter: public bk_emitter_t {
-	public:
-		Emitter(unsigned nworkers_, typename NonOrderingFarm::lb_t * lb_) :
-				bk_emitter_t(lb_, nworkers_), nworkers(nworkers_) {
-		}
-
-		void kernel(base_microbatch *in_mb) {
-			auto in_microbatch = reinterpret_cast<mb_t *>(in_mb);
-			send_mb_to(in_mb, key_to_worker((*in_microbatch->begin()).Key()));
-		}
-
-	private:
-		typedef typename TokenType::datatype DataType;
-		typedef typename DataType::keytype keytype;
-		typedef Microbatch<TokenType> mb_t;
-		unsigned nworkers;
-
-		inline size_t key_to_worker(const keytype& k) {
-			return std::hash<keytype> { }(k) % nworkers;
-		}
 	};
 };
 

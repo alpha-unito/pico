@@ -51,7 +51,7 @@ class PReduceWin: public NonOrderingFarm {
 public:
 	PReduceWin(int parallelism, std::function<V(V&, V&)>& preducef,
 			WindowPolicy* win) {
-		auto e = new ByKeyEmitter<TokenType>(parallelism, this->getlb());
+		auto e = new ByKeyEmitter<TokenType>(parallelism);
 		this->setEmitterF(e);
 		this->setCollectorF(new ForwardingCollector(parallelism)); // collects and emits single items
 		std::vector<ff_node *> w;

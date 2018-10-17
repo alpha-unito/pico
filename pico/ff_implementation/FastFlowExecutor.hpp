@@ -31,7 +31,7 @@
 #include <ff/node.hpp>
 #include <ff/pipeline.hpp>
 #include <ff/farm.hpp>
-#include <ff/fftree.hpp>
+#include <ff/optimize.hpp>
 
 #include "../Pipe.hpp"
 #include "../Operators/UnaryOperator.hpp"
@@ -98,7 +98,7 @@ static ff::ff_pipeline *make_ff_pipe(const Pipe &p, StructureType st, //
 		res->add_stage(new iteration_multiplexer());
 		res->add_stage(make_ff_pipe(*p.children().front(), st, false));
 		res->add_stage(cond->iteration_switch());
-		res->wrap_around(true /* multi-input */);
+		res->wrap_around();
 		break;
 	case Pipe::MERGE:
 		std::cerr << "MERGE not implemented yet\n";
@@ -188,19 +188,31 @@ public:
 
 		bool blocking = (m != run_mode::FORCE_NONBLOCKING);
 
+		OptLevel opt;
+		opt.remove_collector=true;
+		opt.verbose_level=2;
+		if(blocking) {
+			ff_pipe->blocking_mode();
+			ff_pipe->no_mapping();
+		}
+		else {
+			opt.max_nb_threads=ff_realNumCores();
+			opt.max_mapped_threads=opt.max_nb_threads;
+			opt.no_default_mapping=true;
+			opt.blocking_mode=true;
+
+		}
+		optimize_static(*ff_pipe, opt);
+
+
+
 		ff_pipe->run();
 
-		if(blocking)
-			ff_pipe->offload(BLK);
+
 
 		ff_pipe->offload(make_sync(tag, PICO_BEGIN));
 		ff_pipe->offload(make_sync(tag, PICO_END));
-		ff_pipe->offload(EOS);
-
-		if (blocking) {
-			assert(ff_pipe->load_result((void ** ) &res));
-			assert((void * )res == BLK);
-		}
+		ff_pipe->offload(FF_EOS);
 
 		assert(ff_pipe->load_result((void ** ) &res));
 		assert(res->payload() == PICO_BEGIN && res->tag() == tag);
@@ -248,10 +260,6 @@ void run_pipe(FastFlowExecutor &e, run_mode m) {
 
 double run_time(FastFlowExecutor &e) {
 	return e.run_time();
-}
-
-void print_executor_info(FastFlowExecutor &e, std::ostream &os) {
-	ff::print_fftrees(os);
 }
 
 void print_executor_stats_(FastFlowExecutor &e, std::ostream &os) {

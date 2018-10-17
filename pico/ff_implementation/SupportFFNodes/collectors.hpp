@@ -23,9 +23,9 @@
 
 #include "base_nodes.hpp"
 
-class ForwardingCollector: public base_collector {
+class ForwardingCollector: public base_sync_duplicate {
 public:
-	using base_collector::base_collector;
+	using base_sync_duplicate::base_sync_duplicate;
 
 	void kernel(base_microbatch* mb) {
 		ff_send_out(mb);
@@ -34,10 +34,10 @@ public:
 
 /* unpacks and streams token-collectors */
 template<typename coll_t>
-class UnpackingCollector: public base_collector {
+class UnpackingCollector: public base_sync_duplicate {
 	typedef typename coll_t::cnode cnode_t;
 public:
-	using base_collector::base_collector;
+	using base_sync_duplicate::base_sync_duplicate;
 
 	void kernel(base_microbatch *mb) {
 		auto wmb = reinterpret_cast<mb_wrapped<cnode_t> *>(mb);

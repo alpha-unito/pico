@@ -16,14 +16,14 @@
 #include "base_nodes.hpp"
 
 template<typename KV, typename TokenType>
-class PReduceCollector: public base_collector {
+class PReduceCollector: public base_sync_duplicate {
 	typedef typename KV::keytype K;
 	typedef typename KV::valuetype V;
 	typedef Microbatch<TokenType> mb_t;
 
 public:
 	PReduceCollector(unsigned nworkers_, std::function<V(V&, V&)>& rk_) :
-		base_collector(nworkers_), rk(rk_) {
+		base_sync_duplicate(nworkers_), rk(rk_) {
 	}
 
 private:

@@ -90,7 +90,7 @@ private:
 		std::unordered_map<base_microbatch::tag_t, state> tag_state;
 	};
 
-	class Collector: public base_collector {
+	class Collector: public base_sync_duplicate {
 	public:
 		Collector(int nworkers_,
 				std::function<void(const State&, State&)> &reducef_) :
