@@ -59,19 +59,4 @@ public:
 	}
 };
 
-/*
- * Broadcasts each token.
- */
-/*
-class BCastEmitter: public base_emitter {
-public:
-	BCastEmitter(ff::ff_loadbalancer *lb_, unsigned nw) :
-			base_emitter(lb_, nw) {
-	}
-
-	void kernel(base_microbatch *mb) {
-		this->broadcast_task(mb);
-	}
-};
-*/
 #endif /* INTERNALS_FFOPERATORS_EMITTER_HPP_ */
