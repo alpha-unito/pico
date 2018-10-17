@@ -32,7 +32,6 @@
 #include <ff/pipeline.hpp>
 #include <ff/farm.hpp>
 #include <ff/optimize.hpp>
-//#include <ff/fftree.hpp>
 
 #include "../Pipe.hpp"
 #include "../Operators/UnaryOperator.hpp"
@@ -215,11 +214,6 @@ public:
 		ff_pipe->offload(make_sync(tag, PICO_END));
 		ff_pipe->offload(FF_EOS);
 
-		/*if (blocking) {
-			assert(ff_pipe->load_result((void ** ) &res));
-			assert((void * )res == BLK);
-		}*/
-
 		assert(ff_pipe->load_result((void ** ) &res));
 		assert(res->payload() == PICO_BEGIN && res->tag() == tag);
 		assert(ff_pipe->load_result((void ** ) &res));
@@ -267,11 +261,7 @@ void run_pipe(FastFlowExecutor &e, run_mode m) {
 double run_time(FastFlowExecutor &e) {
 	return e.run_time();
 }
-/*
-void print_executor_info(FastFlowExecutor &e, std::ostream &os) {
-	ff::print_fftrees(os);
-}
-*/
+
 void print_executor_stats_(FastFlowExecutor &e, std::ostream &os) {
 	e.print_stats(os);
 }
