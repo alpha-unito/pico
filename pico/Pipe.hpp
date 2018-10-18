@@ -216,6 +216,7 @@ public:
 	 */
 	template<typename T>
 	Pipe add(const T &op) const {
+		assert(op.i_degree() < 2);
 		return to(Pipe(op));
 	}
 
