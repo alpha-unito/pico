@@ -216,7 +216,8 @@ public:
 	 */
 	template<typename T>
 	Pipe add(const T &op) const {
-		assert(op.i_degree() < 2);
+		/* check data types */
+		assert(!same_data_type(typeid(T), typeid(Pipe)));
 		return to(Pipe(op));
 	}
 
