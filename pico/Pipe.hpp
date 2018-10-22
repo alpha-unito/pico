@@ -38,7 +38,7 @@
 #include <vector>
 #include <deque>
 #include <cassert>
-
+#include <type_traits>
 
 
 #include "Operators/Operator.hpp"
@@ -215,9 +215,8 @@ public:
 	 *  - Structure Types are not compatible
 	 */
 	template<typename T>
-	Pipe add(const T &op) const {
-		/* check data type */
-		assert(!same_data_type(typeid(T), typeid(Pipe)));
+	typename std::enable_if<!std::is_same<T, Pipe>::value, Pipe>::type
+	add(const T &op) const {
 		return to(Pipe(op));
 	}
 
