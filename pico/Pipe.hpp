@@ -215,7 +215,7 @@ public:
 	 *  - Structure Types are not compatible
 	 */
 	template<typename T>
-	typename std::enable_if<!std::is_same<T, Pipe>::value, Pipe>::type
+	typename std::enable_if<std::is_base_of<Operator, T>::value, Pipe>::type
 	add(const T &op) const {
 		return to(Pipe(op));
 	}
