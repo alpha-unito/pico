@@ -38,7 +38,7 @@
 #include <vector>
 #include <deque>
 #include <cassert>
-
+#include <type_traits>
 
 
 #include "Operators/Operator.hpp"
@@ -215,7 +215,8 @@ public:
 	 *  - Structure Types are not compatible
 	 */
 	template<typename T>
-	Pipe add(const T &op) const {
+	typename std::enable_if<std::is_base_of<Operator, T>::value, Pipe>::type
+	add(const T &op) const {
 		return to(Pipe(op));
 	}
 
