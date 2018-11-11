@@ -33,7 +33,7 @@ std::vector<std::string> seq_duplicate(std::vector<std::string>& vec) {
 
 TEST_CASE( "flatmap", "flatmap tag" ){
 
-	std::string input_file = "./testdata/simple_lines.txt";
+	std::string input_file = "./testdata/lines.txt";
 	std::string output_file = "output.txt";
 
 	/* define i/o operators from/to file */
