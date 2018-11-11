@@ -33,17 +33,8 @@
 
 namespace pico {
 
-/**
- * Defines an operator performing a FlatMap, taking in input one element from
- * the input source and producing zero, one or more elements in output.
- * The FlatMap kernel is defined by the user and can be a lambda function, a functor or a function.
- *
- * It implements a data-parallel operator that ignores any kind of grouping or windowing.
- *
- * The kernel is applied independently to all the elements of the collection (either bounded or unbounded).
- */
 template<typename In, typename Out>
-class FlatMap: public UnaryOperator<In, Out> {
+class FlatMapBase: public UnaryOperator<In, Out> {
 public:
 	/**
 	 * \ingroup op-api
@@ -52,7 +43,7 @@ public:
 	 *
 	 * Creates a new FlatMap operator by defining its kernel function.
 	 */
-	FlatMap(std::function<void(In&, FlatMapCollector<Out> &)> flatmapf_,
+	FlatMapBase(std::function<void(In&, FlatMapCollector<Out> &)> flatmapf_,
 			unsigned par = def_par()) {
 		flatmapf = flatmapf_;
 		this->set_input_degree(1);
@@ -62,7 +53,7 @@ public:
 		this->pardeg(par);
 	}
 
-	FlatMap(const FlatMap &copy) :
+	FlatMapBase(const FlatMapBase &copy) :
 			UnaryOperator<In, Out>(copy), flatmapf(copy.flatmapf) {
 	}
 
@@ -74,9 +65,6 @@ public:
 	}
 
 protected:
-	FlatMap* clone() {
-		return new FlatMap(*this);
-	}
 
 	const OpClass operator_class() {
 		return OpClass::FMAP;
@@ -98,12 +86,53 @@ protected:
 		assert(false);
 	}
 
-private:
 	std::function<void(In&, FlatMapCollector<Out> &)> flatmapf;
+
+};
+
+/**
+ * Defines an operator performing a FlatMap, taking in input one element from
+ * the input source and producing zero, one or more elements in output.
+ * The FlatMap kernel is defined by the user and can be a lambda function, a functor or a function.
+ *
+ * It implements a data-parallel operator that ignores any kind of grouping or windowing.
+ *
+ * The kernel is applied independently to all the elements of the collection (either bounded or unbounded).
+ */
+template<typename In, typename Out>
+class FlatMap: public FlatMapBase<In, Out> {
+public:
+	/**
+	 * \ingroup op-api
+	 *
+	 * FlatMap Constructor
+	 *
+	 * Creates a new FlatMap operator by defining its kernel function.
+	 */
+	FlatMap(std::function<void(In&, FlatMapCollector<Out> &)> flatmapf_,
+			unsigned par = def_par()) : FlatMapBase<In, Out>(flatmapf_, par) {
+	}
+
+	FlatMap(const FlatMap &copy) :
+			FlatMapBase<In, Out>(copy) {
+	}
+
+
+protected:
+	FlatMap* clone() {
+		return new FlatMap(*this);
+	}
+
+
+	ff::ff_node *opt_node(int par, PEGOptimization_t opt, StructureType st, //
+			opt_args_t a) {
+		assert(false);
+	}
+
 };
 
 template<typename In, typename K, typename V>
-class FlatMap<In, KeyValue<K, V>>: public UnaryOperator<In, KeyValue<K, V>> {
+class FlatMap<In, KeyValue<K, V>>: public FlatMapBase<In, KeyValue<K, V>> {
 public:
 	/**
 	 * \ingroup op-api
@@ -113,44 +142,17 @@ public:
 	 * Creates a new FlatMap operator by defining its kernel function.
 	 */
 	FlatMap(std::function<void(In&, FlatMapCollector<KeyValue<K, V>> &)> flatmapf_,
-			unsigned par = def_par()) {
-		flatmapf = flatmapf_;
-		this->set_input_degree(1);
-		this->set_output_degree(1);
-		this->stype(StructureType::BAG, true);
-		this->stype(StructureType::STREAM, true);
-		this->pardeg(par);
+			unsigned par = def_par()) : FlatMapBase<In, KeyValue<K, V>>(flatmapf_, par) {
 	}
 
-	FlatMap(const FlatMap &copy) :
-			UnaryOperator<In, KeyValue<K, V>>(copy), flatmapf(copy.flatmapf) {
+	FlatMap(const FlatMapBase<In, KeyValue<K, V>> &copy) :
+		FlatMapBase<In, KeyValue<K, V>>(copy)  {
 	}
 
-	/**
-	 * Returns the name of the operator, consisting in the name of the class.
-	 */
-	std::string name_short() {
-		return "FlatMap";
-	}
 
 protected:
 	FlatMap* clone() {
 		return new FlatMap(*this);
-	}
-
-	const OpClass operator_class() {
-		return OpClass::FMAP;
-	}
-
-	ff::ff_node* node_operator(int parallelism, StructureType st) {
-		//todo assert unique stype
-		if (st == StructureType::STREAM) {
-			using impl_t = FMapBatchStream<In, KeyValue<K, V>, Token<In>, Token<KeyValue<K, V>>>;
-			return new impl_t(parallelism, flatmapf);
-		}
-		assert(st == StructureType::BAG);
-		using impl_t = FMapBatchBag<In, KeyValue<K, V>, Token<In>, Token<KeyValue<K, V>>>;
-		return new impl_t(parallelism, flatmapf);
 	}
 
 	ff::ff_node *opt_node(int par, PEGOptimization_t opt, StructureType st, //
@@ -158,11 +160,9 @@ protected:
 		assert(opt == FMAP_PREDUCE);
 		assert(st == StructureType::BAG);
 		auto nextop = dynamic_cast<ReduceByKey<KeyValue<K, V>>*>(a.op);
-		return FMapPReduceBatch<Token<In>, Token<KeyValue<K, V>>>(par, flatmapf, nextop->pardeg(), nextop->kernel());
+		return FMapPReduceBatch<Token<In>, Token<KeyValue<K, V>>>(par, this->flatmapf, nextop->pardeg(), nextop->kernel());
 	}
 
-private:
-	std::function<void(In&, FlatMapCollector<KeyValue<K, V>> &)> flatmapf;
 };
 
 } /* namespace pico */
