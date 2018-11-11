@@ -95,16 +95,77 @@ protected:
 
 	ff::ff_node *opt_node(int par, PEGOptimization_t opt, StructureType st, //
 			opt_args_t a) {
-		assert(opt == FMAP_PREDUCE);
-		assert(st == StructureType::BAG);
-		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);
-		return FMapPReduceBatch<Token<In>, Token<Out>>(par, flatmapf, nextop->pardeg(), nextop->kernel());
+		assert(false);
 	}
 
 private:
 	std::function<void(In&, FlatMapCollector<Out> &)> flatmapf;
 };
 
+template<typename In, typename K, typename V>
+class FlatMap<In, KeyValue<K, V>>: public UnaryOperator<In, KeyValue<K, V>> {
+public:
+	/**
+	 * \ingroup op-api
+	 *
+	 * FlatMap Constructor
+	 *
+	 * Creates a new FlatMap operator by defining its kernel function.
+	 */
+	FlatMap(std::function<void(In&, FlatMapCollector<KeyValue<K, V>> &)> flatmapf_,
+			unsigned par = def_par()) {
+		flatmapf = flatmapf_;
+		this->set_input_degree(1);
+		this->set_output_degree(1);
+		this->stype(StructureType::BAG, true);
+		this->stype(StructureType::STREAM, true);
+		this->pardeg(par);
+	}
+
+	FlatMap(const FlatMap &copy) :
+			UnaryOperator<In, KeyValue<K, V>>(copy), flatmapf(copy.flatmapf) {
+	}
+
+	/**
+	 * Returns the name of the operator, consisting in the name of the class.
+	 */
+	std::string name_short() {
+		return "FlatMap";
+	}
+
+protected:
+	FlatMap* clone() {
+		return new FlatMap(*this);
+	}
+
+	const OpClass operator_class() {
+		return OpClass::FMAP;
+	}
+
+	ff::ff_node* node_operator(int parallelism, StructureType st) {
+		//todo assert unique stype
+		if (st == StructureType::STREAM) {
+			using impl_t = FMapBatchStream<In, KeyValue<K, V>, Token<In>, Token<KeyValue<K, V>>>;
+			return new impl_t(parallelism, flatmapf);
+		}
+		assert(st == StructureType::BAG);
+		using impl_t = FMapBatchBag<In, KeyValue<K, V>, Token<In>, Token<KeyValue<K, V>>>;
+		return new impl_t(parallelism, flatmapf);
+	}
+
+	ff::ff_node *opt_node(int par, PEGOptimization_t opt, StructureType st, //
+			opt_args_t a) {
+		assert(opt == FMAP_PREDUCE);
+		assert(st == StructureType::BAG);
+		auto nextop = dynamic_cast<ReduceByKey<KeyValue<K, V>>*>(a.op);
+		return FMapPReduceBatch<Token<In>, Token<KeyValue<K, V>>>(par, flatmapf, nextop->pardeg(), nextop->kernel());
+	}
+
+private:
+	std::function<void(In&, FlatMapCollector<KeyValue<K, V>> &)> flatmapf;
+};
+
 } /* namespace pico */
 
 #endif /* OPERATORS_FLATMAP_HPP_ */
+
