@@ -95,10 +95,7 @@ protected:
 		return new impl_t(parallelism, flatmapf);
 	}
 
-	ff::ff_node *opt_node(int par, PEGOptimization_t opt, StructureType st, //
-			opt_args_t a) {
-		assert(false);
-	}
+
 
 	std::function<void(In&, FlatMapCollector<Out> &)> flatmapf;
 
@@ -130,12 +127,6 @@ public:
 protected:
 	FlatMap* clone() {
 		return new FlatMap(*this);
-	}
-
-
-	ff::ff_node *opt_node(int par, PEGOptimization_t opt, StructureType st, //
-			opt_args_t a) {
-		assert(false);
 	}
 
 };
