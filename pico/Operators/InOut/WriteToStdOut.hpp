@@ -71,6 +71,7 @@ public:
 	WriteToStdOut(const WriteToStdOut &copy) :
 			OutputOperator<In>(copy) {
 		func = copy.func;
+		usr_func = copy.usr_func;
 	}
 
 	/**
