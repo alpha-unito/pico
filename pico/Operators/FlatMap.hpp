@@ -31,7 +31,21 @@
 #include "../ff_implementation/OperatorsFFNodes/FMapBatch.hpp"
 #include "../ff_implementation/OperatorsFFNodes/FMapPReduceBatch.hpp"
 
+/**
+ * This file defines an operator performing a FlatMap, taking in input one element from
+ * the input source and producing zero, one or more elements in output.
+ * The FlatMap kernel is defined by the user and can be a lambda function, a functor or a function.
+ *
+ * It implements a data-parallel operator that ignores any kind of grouping or windowing.
+ *
+ * The kernel is applied independently to all the elements of the collection (either bounded or unbounded).
+ */
+
 namespace pico {
+
+/*
+ * This is the base class for the Flatmap operators
+ */
 
 template<typename In, typename Out>
 class FlatMapBase: public UnaryOperator<In, Out> {
@@ -90,15 +104,10 @@ protected:
 
 };
 
-/**
- * Defines an operator performing a FlatMap, taking in input one element from
- * the input source and producing zero, one or more elements in output.
- * The FlatMap kernel is defined by the user and can be a lambda function, a functor or a function.
- *
- * It implements a data-parallel operator that ignores any kind of grouping or windowing.
- *
- * The kernel is applied independently to all the elements of the collection (either bounded or unbounded).
+/*
+ * This is the general FlatMap operator. It can't create an optimized node.
  */
+
 template<typename In, typename Out>
 class FlatMap: public FlatMapBase<In, Out> {
 public:
@@ -130,6 +139,11 @@ protected:
 	}
 
 };
+
+/*
+ * This is a partial template specialization of FlatMap class in which the output is a pair KeyValue.
+ * This type of FlatMap can create an optimized node.
+ */
 
 template<typename In, typename K, typename V>
 class FlatMap<In, KeyValue<K, V>>: public FlatMapBase<In, KeyValue<K, V>> {
