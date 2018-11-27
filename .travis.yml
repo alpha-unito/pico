@@ -1,7 +1,8 @@
 language: cpp
-
 matrix:
   include:
+
+    # works on Precise and Trusty
     - os: linux
       addons:
         apt:
@@ -12,14 +13,9 @@ matrix:
       env:
         - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
 
-    - os: osx
-      osx_image: xcode8
-      env:
-        - MATRIX_EVAL="brew install gcc6 && CC=gcc-6 && CXX=g++-6"
 
 before_install:
-    - eval "${MATRIX_EVAL}"
-
+        - eval "${MATRIX_EVAL}"
 install:
         - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install libpthread-stubs0-dev ; fi
         - git clone --single-branch -b fastflow3 https://github.com/fastflow/fastflow.git

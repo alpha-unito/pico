@@ -1,4 +1,3 @@
-CXX                  = g++
 LINK_OPT             = 
 VERSION              = 
 OPTIMIZE_FLAGS       = -O3 -g0 -std=c++11
