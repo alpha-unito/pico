@@ -32,6 +32,8 @@ TEST_CASE( "read from stdin and write", "read from stdin and write tag" ){
     std::ofstream out(output_file);
     std::cout.rdbuf(out.rdbuf()); //redirect
 
+    std::cin.tie(0); //untie cin and cout
+
 	/* define i/o operators from/to file */
 	ReadFromStdIn reader('\n');
 	WriteToStdOut<std::string> writer;
@@ -46,6 +48,9 @@ TEST_CASE( "read from stdin and write", "read from stdin and write tag" ){
     /* undo redirection */
     std::cout.rdbuf(coutbuf);
     std::cin.rdbuf(cinbuf);
+    out.close();
+    in.close();
+    std::cin.tie(&std::cout); //tie again cin and cout
 
 	/* forget the order and compare */
 	auto input_lines = read_lines(input_file);
