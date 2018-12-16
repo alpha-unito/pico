@@ -54,27 +54,53 @@ public:
 
 
 
+	void extract_from_buffer(char* buffer, int n, std::string &tail, Microbatch<TokenType>* &mb) {
+		tail.append(buffer, n);
+		std::istringstream f(tail);
+		bool cleared = false;
+		std::string str;
+
+		while (std::getline(f, str, delimiter)) {
+			if (!f.eof()) {         // line contains another delimiter
+				new (mb->allocate()) std::string(str);
+				mb->commit();
+				if (mb->full()) {
+					ff_send_out(reinterpret_cast<void*>(mb));
+					mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+				}
+			} else { // trunked line, store for next parsing
+				tail.clear();
+				cleared = true;
+				tail.append(str);
+			}
+		}
+		if (!cleared)
+			tail.clear();
+	}
+
 	void begin_callback() {
 		/* get a fresh tag */
 		tag = base_microbatch::fresh_tag();
 		begin_cstream(tag);
-		auto mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
-		std::string str;
-		std::string *line;
 
-		while(std::getline(std::cin, str, delimiter)) {
-			line = new (mb->allocate()) std::string();
-			*line = str;
-			mb->commit();
-			if (mb->full()) {
-				send_mb(mb);
-				mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
-			}
+		std::string tail;
+		char buffer[CHUNK_SIZE];
+		auto mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+
+		bzero(buffer, sizeof(buffer));
+		while (std::cin.read(buffer, sizeof(buffer))) {
+			auto n = std::cin.gcount();
+			extract_from_buffer(buffer, n, tail, mb);
+			bzero(buffer, sizeof(buffer));
+		} // end while read
+		auto n = std::cin.gcount();
+		if (n > 0) {
+			extract_from_buffer(buffer, n, tail, mb);
 		}
 
-		if (!mb->empty())
-			send_mb(mb);
-		else
+		if (!mb->empty()) {
+			ff_send_out(reinterpret_cast<void*>(mb));
+		} else
 			DELETE(mb);
 
 		end_cstream(tag);
