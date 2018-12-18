@@ -52,45 +52,31 @@ public:
 		assert(false);
 	}
 
+
+
 	void begin_callback() {
-		/* get a fresh tag */
-		tag = base_microbatch::fresh_tag();
-		begin_cstream(tag);
+			/* get a fresh tag */
+			tag = base_microbatch::fresh_tag();
+			begin_cstream(tag);
+			auto mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+			std::string str;
 
-		std::string tail;
-		char buffer[CHUNK_SIZE];
-		auto mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
-		std::string *line = new (mb->allocate()) std::string();
-
-		bzero(buffer, sizeof(buffer));
-		while (std::cin.read(buffer, sizeof(buffer))) {
-			auto n = std::cin.gcount();
-			tail.append(buffer, n);
-			std::istringstream f(tail);
-			/* initialize a new string within the micro-batch */
-			while (std::getline(f, *line, delimiter)) {
-				if (!f.eof()) {         // line contains another delimiter
-					mb->commit();
-					if (mb->full()) {
-						ff_send_out(reinterpret_cast<void*>(mb));
-						mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
-					}
-					tail.clear();
-					line = new (mb->allocate()) std::string();
-				} else { // trunked line, store for next parsing
-					tail.clear();
-					tail.append(*line);
+			while(std::getline(std::cin, str, delimiter)) {
+				new (mb->allocate()) std::string(str);
+				mb->commit();
+				if (mb->full()) {
+					send_mb(mb);
+					mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
 				}
 			}
-			bzero(buffer, sizeof(buffer));
-		} // end while read
 
-		if (!mb->empty()) {
-			ff_send_out(reinterpret_cast<void*>(mb));
-		} else
-			DELETE(mb);
+			if (!mb->empty())
+				send_mb(mb);
+			else
+				DELETE(mb);
 
-		end_cstream(tag);
+			end_cstream(tag);
+
 	}
 
 private:

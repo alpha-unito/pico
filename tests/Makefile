@@ -10,7 +10,7 @@ PICO_ROOT                 = ..
 
 INCLUDES             = -I$(PICO_ROOT) -I./include
 EXECS                = batch_tests stream_tests
-TARGET_OBJ_BATCH	 = flatmap.o input_output_file.o reduce_by_key.o wordcount.o flatmap_join_by_key.o iteration.o
+TARGET_OBJ_BATCH	   = flatmap.o input_output_file.o reduce_by_key.o wordcount.o flatmap_join_by_key.o iteration.o read_from_stdin.o 
 TARGET_OBJ_STREAM 	 = streaming_reduce_by_key.o
 DRIVER_OBJ           = test_driver.o
 
