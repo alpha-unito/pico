@@ -1,0 +1,8 @@
+add_executable(stock_pricing stock_pricing.cpp)
+add_executable(stock_pricing_stream stock_pricing_stream.cpp)
+add_executable(stock_tweets stock_tweets.cpp)
+
+add_executable(seq_stock_pricing seq_stock_pricing.cpp)
+add_executable(seq_stock_tweets seq_stock_tweets.cpp)
+
+add_subdirectory(testdata)
