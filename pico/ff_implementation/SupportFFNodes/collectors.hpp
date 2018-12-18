@@ -27,7 +27,7 @@ class ForwardingCollector: public base_sync_duplicate {
 public:
 	using base_sync_duplicate::base_sync_duplicate;
 
-	void kernel(base_microbatch* mb) {
+	void kernel(pico::base_microbatch* mb) {
 		ff_send_out(mb);
 	}
 };
@@ -39,8 +39,8 @@ class UnpackingCollector: public base_sync_duplicate {
 public:
 	using base_sync_duplicate::base_sync_duplicate;
 
-	void kernel(base_microbatch *mb) {
-		auto wmb = reinterpret_cast<mb_wrapped<cnode_t> *>(mb);
+	void kernel(pico::base_microbatch *mb) {
+		auto wmb = reinterpret_cast<pico::mb_wrapped<cnode_t> *>(mb);
 		cnode_t *it_, *it = wmb->get();
 		/* send out all the micro-batches in the list */
 		while (it) {

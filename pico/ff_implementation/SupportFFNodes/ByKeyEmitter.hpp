@@ -29,7 +29,6 @@
 #include "farms.hpp"
 #include "../../Internals/Microbatch.hpp"
 
-using namespace pico;
 
 
 template<typename TokenType>
@@ -39,14 +38,14 @@ public:
 		base_emitter(nworkers_), nworkers(nworkers_) {
 	}
 
-	void cstream_begin_callback(base_microbatch::tag_t tag) {
+	void cstream_begin_callback(pico::base_microbatch::tag_t tag) {
 		/* prepare a microbatch for each worker */
 		auto &s(tag_state[tag]);
 		for (unsigned dst = 0; dst < nworkers; ++dst)
-			s.worker_mb[dst] = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+			s.worker_mb[dst] = NEW<mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
 	}
 
-	void kernel(base_microbatch *in_mb) {
+	void kernel(pico::base_microbatch *in_mb) {
 		auto in_microbatch = reinterpret_cast<mb_t *>(in_mb);
 		auto tag = in_mb->tag();
 		auto &s(tag_state[tag]);
@@ -58,13 +57,13 @@ public:
 			if (s.worker_mb[dst]->full()) {
 				send_mb_to(s.worker_mb[dst], dst);
 				s.worker_mb[dst] = NEW<mb_t>(tag,
-						global_params.MICROBATCH_SIZE);
+						pico::global_params.MICROBATCH_SIZE);
 			}
 		}
 		DELETE(in_microbatch);
 	}
 
-	void cstream_end_callback(base_microbatch::tag_t tag) {
+	void cstream_end_callback(pico::base_microbatch::tag_t tag) {
 		auto &s(tag_state[tag]);
 		for (unsigned i = 0; i < nworkers; ++i) {
 			if (!s.worker_mb[i]->empty())
@@ -77,13 +76,13 @@ public:
 private:
 	typedef typename TokenType::datatype DataType;
 	typedef typename DataType::keytype keytype;
-	typedef Microbatch<TokenType> mb_t;
+	typedef pico::Microbatch<TokenType> mb_t;
 	unsigned nworkers;
 
 	struct w_state {
 		std::unordered_map<size_t, mb_t *> worker_mb;
 	};
-	std::unordered_map<base_microbatch::tag_t, w_state> tag_state;
+	std::unordered_map<pico::base_microbatch::tag_t, w_state> tag_state;
 
 	inline size_t key_to_worker(const keytype& k) {
 		return std::hash<keytype> { }(k) % nworkers;

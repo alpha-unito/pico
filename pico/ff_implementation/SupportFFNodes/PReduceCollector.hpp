@@ -19,7 +19,7 @@ template<typename KV, typename TokenType>
 class PReduceCollector: public base_sync_duplicate {
 	typedef typename KV::keytype K;
 	typedef typename KV::valuetype V;
-	typedef Microbatch<TokenType> mb_t;
+	typedef pico::Microbatch<TokenType> mb_t;
 
 public:
 	PReduceCollector(unsigned nworkers_, std::function<V(V&, V&)>& rk_) :
@@ -28,14 +28,14 @@ public:
 
 private:
 	std::function<V(V&, V&)> rk;
-	const int mb_size = global_params.MICROBATCH_SIZE;
+	const int mb_size = pico::global_params.MICROBATCH_SIZE;
 
 	struct key_state {
 		std::unordered_map<K, V> kvmap;
 	};
-	std::unordered_map<base_microbatch::tag_t, key_state> tag_state;
+	std::unordered_map<pico::base_microbatch::tag_t, key_state> tag_state;
 
-	void kernel(base_microbatch *in) {
+	void kernel(pico::base_microbatch *in) {
 		auto in_microbatch = reinterpret_cast<mb_t *>(in);
 		auto tag = in->tag();
 		auto &s(tag_state[tag]);
@@ -50,7 +50,7 @@ private:
 		DELETE(in_microbatch);
 	}
 
-	void cstream_end_callback(base_microbatch::tag_t tag) {
+	void cstream_end_callback(pico::base_microbatch::tag_t tag) {
 		/* stream the internal map downstream */
 		auto &s(tag_state[tag]);
 		auto out_microbatch = NEW<mb_t>(tag, mb_size);

@@ -28,11 +28,11 @@
  */
 class NonOrderingFarm: public ff::ff_farm {
 public:
-	void setEmitterF(ff_node* f) {
+	void setEmitterF(ff::ff_node* f) {
 		this->add_emitter(f);
 	}
 
-	void setCollectorF(ff_node* f) {
+	void setCollectorF(ff::ff_node* f) {
 		this->add_collector(f);
 	}
 };
@@ -46,11 +46,11 @@ public:
 	OrderingFarm() {
 		set_ordered();
 	}
-	void setEmitterF(ff_node* f) {
+	void setEmitterF(ff::ff_node* f) {
 		this->add_emitter(f);
 	}
 
-	void setCollectorF(ff_node* f) {
+	void setCollectorF(ff::ff_node* f) {
 		this->add_collector(f);
 	}
 

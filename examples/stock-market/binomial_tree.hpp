@@ -27,7 +27,6 @@
 #include <vector>
 #include <algorithm>
 #include "defs.h"
-using namespace std;
 
 /* Template code for the binomial tree
  * Instructions to build the code are here

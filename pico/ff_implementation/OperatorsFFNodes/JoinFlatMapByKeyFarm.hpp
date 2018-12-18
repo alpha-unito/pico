@@ -29,7 +29,6 @@
 #include "../SupportFFNodes/PairFarm.hpp"
 #include "../SupportFFNodes/RBKOptFarm.hpp"
 
-using namespace pico;
 
 /*
  * base_JFMBK_Farm serves as base for the following cases:
@@ -41,12 +40,12 @@ class base_JFMBK_Farm: public NonOrderingFarm {
 	typedef typename TokenTypeIn1::datatype In1;
 	typedef typename TokenTypeIn2::datatype In2;
 	typedef typename TokenTypeOut::datatype Out;
-	typedef Microbatch<TokenTypeIn1> mb_in1;
-	typedef Microbatch<TokenTypeIn2> mb_in2;
-	typedef Microbatch<TokenTypeOut> mb_out;
+	typedef pico::Microbatch<TokenTypeIn1> mb_in1;
+	typedef pico::Microbatch<TokenTypeIn2> mb_in2;
+	typedef pico::Microbatch<TokenTypeOut> mb_out;
 	typedef typename In1::keytype K;
-	typedef std::function<void(In1&, In2&, FlatMapCollector<Out> &)> kernel_t;
-	typedef base_microbatch::tag_t tag_t;
+	typedef std::function<void(In1&, In2&, pico::FlatMapCollector<Out> &)> kernel_t;
+	typedef pico::base_microbatch::tag_t tag_t;
 
 public:
 	/*
@@ -55,7 +54,7 @@ public:
 	 */
 	typedef base_emitter emitter_t;
 	class Emitter: public emitter_t {
-		typedef base_microbatch::tag_t tag_t;
+		typedef pico::base_microbatch::tag_t tag_t;
 
 	public:
 		Emitter(unsigned nworkers_, unsigned mbsize_, NonOrderingFarm &farm_) :
@@ -65,7 +64,7 @@ public:
 
 	private:
 		/* on c-stream begin, forward both begin and origin */
-		virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
+		virtual void handle_cstream_begin(pico::base_microbatch::tag_t tag) {
 			/* initialize tag state */
 			assert(tag_state.find(tag) == tag_state.end());
 			cstream_begin_tag = tag;
@@ -74,7 +73,7 @@ public:
 
 		}
 
-		virtual void handle_cstream_after_begin(base_microbatch *origin_mb){
+		virtual void handle_cstream_after_begin(pico::base_microbatch *origin_mb){
 			auto &s(tag_state[cstream_begin_tag]);
 			if (origin_mb->payload() == PICO_CSTREAM_FROM_LEFT) {
 				send_mb(make_sync(cstream_begin_tag, PICO_CSTREAM_FROM_LEFT));
@@ -93,13 +92,13 @@ public:
 		}
 
 		/* on c-stream end, notify */
-		virtual void handle_cstream_end(base_microbatch::tag_t tag) {
+		virtual void handle_cstream_end(pico::base_microbatch::tag_t tag) {
 			finalize(tag);
 			send_mb(make_sync(tag, PICO_CSTREAM_END));
 		}
 
 		/* dispatch data with micro-batch buffering */
-		void kernel(base_microbatch *in_mb_) {
+		void kernel(pico::base_microbatch *in_mb_) {
 			if (cstream_begin_rcv) {
 				handle_cstream_after_begin(in_mb_);
 				return;
@@ -117,7 +116,7 @@ public:
 		}
 
 		/* on finalizing, flush remainder micro-batches */
-		void finalize(base_microbatch::tag_t tag) {
+		void finalize(pico::base_microbatch::tag_t tag) {
 			auto &s(tag_state[tag]);
 			if (s.from_left) {
 				flush_remainder(s.mb2w_from_left);
@@ -171,10 +170,10 @@ public:
 			std::vector<key_state2> mb2w_from_right;
 			bool from_left;
 		};
-		std::unordered_map<base_microbatch::tag_t, origin_state> tag_state;
+		std::unordered_map<pico::base_microbatch::tag_t, origin_state> tag_state;
 
 		bool cstream_begin_rcv;
-		base_microbatch::tag_t cstream_begin_tag;
+		pico::base_microbatch::tag_t cstream_begin_tag;
 
 		template<typename K>
 		inline size_t key_to_worker(const K& k) {
@@ -208,14 +207,14 @@ class base_JFMBK_worker: public base_filter {
 	typedef typename TokenTypeIn1::datatype In1;
 	typedef typename TokenTypeIn2::datatype In2;
 	typedef typename TokenTypeOut::datatype Out;
-	typedef Microbatch<TokenTypeIn1> mb_in1;
-	typedef Microbatch<TokenTypeIn2> mb_in2;
-	typedef Microbatch<TokenTypeOut> mb_out;
+	typedef pico::Microbatch<TokenTypeIn1> mb_in1;
+	typedef pico::Microbatch<TokenTypeIn2> mb_in2;
+	typedef pico::Microbatch<TokenTypeOut> mb_out;
 	typedef typename In1::keytype K;
-	typedef std::function<void(In1&, In2&, FlatMapCollector<Out> &)> kernel_t;
-	typedef base_microbatch::tag_t tag_t;
+	typedef std::function<void(In1&, In2&, pico::FlatMapCollector<Out> &)> kernel_t;
+	typedef pico::base_microbatch::tag_t tag_t;
 
-	typedef typename TokenCollector<Out>::cnode cnode_t;
+	typedef typename pico::TokenCollector<Out>::cnode cnode_t;
 	typedef std::unordered_map<K, std::vector<mb_in1 *>> key_state_left;
 	typedef std::unordered_map<K, std::vector<mb_in2 *>> key_state_right;
 	struct origin_state {
@@ -230,7 +229,7 @@ public:
 	}
 
 	/* on c-stream begin, forward only if non-cached tag */
-	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
+	virtual void handle_cstream_begin(pico::base_microbatch::tag_t tag) {
 		/* initialize tag state */
 		assert(tag_state.find(tag) == tag_state.end());
 		cstream_begin_rcv = true;
@@ -238,7 +237,7 @@ public:
 
 	}
 
-	virtual void handle_after_cstream_begin(base_microbatch *origin_mb) {
+	virtual void handle_after_cstream_begin(pico::base_microbatch *origin_mb) {
 		auto &s(tag_state[cstream_begin_tag]);
 		/* update internal state */
 		if (origin_mb->payload() == PICO_CSTREAM_FROM_LEFT) {
@@ -255,7 +254,7 @@ public:
 			send_mb(make_sync(cstream_begin_tag, PICO_CSTREAM_BEGIN));
 			non_cached_tags.push_back(cstream_begin_tag);
 		} else {
-			assert(cached_tag == base_microbatch::nil_tag());
+			assert(cached_tag == pico::base_microbatch::nil_tag());
 			cached_tag = cstream_begin_tag;
 		}
 
@@ -264,7 +263,7 @@ public:
 		cstream_begin_rcv = false;
 	}
 
-	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
+	virtual void handle_cstream_end(pico::base_microbatch::tag_t tag) {
 		auto &s(tag_state[tag]);
 		assert(tag_state.find(tag) != tag_state.end());
 
@@ -290,14 +289,14 @@ public:
 
 	void end_callback() {
 		/* clear cached collection from store */
-		if (cached_tag != base_microbatch::nil_tag()) {
+		if (cached_tag != pico::base_microbatch::nil_tag()) {
 			auto &s(tag_state[cached_tag]);
 			assert(tag_state.find(cached_tag) != tag_state.end());
 			clear_tag_state(s);
 		}
 	}
 
-	void kernel(base_microbatch *in_mb) {
+	void kernel(pico::base_microbatch *in_mb) {
 		if (cstream_begin_rcv) {
 			handle_after_cstream_begin(in_mb);
 			return;
@@ -338,7 +337,7 @@ private:
 		auto k = (*in_mb->begin()).Key();
 		auto &s(tag_state[tag]);
 
-		if (!s.cached && cached_tag != base_microbatch::nil_tag()) {
+		if (!s.cached && cached_tag != pico::base_microbatch::nil_tag()) {
 			auto &match_kmbs = tag_state[cached_tag].kmb_from_right[k];
 			from_left_(in_mb, match_kmbs, tag);
 		} else if (s.cached) {
@@ -357,7 +356,7 @@ private:
 		auto k = (*in_mb->begin()).Key();
 		auto &s(tag_state[tag]);
 
-		if (!s.cached && cached_tag != base_microbatch::nil_tag()) {
+		if (!s.cached && cached_tag != pico::base_microbatch::nil_tag()) {
 			auto &match_kmbs = tag_state[cached_tag].kmb_from_left[k];
 			from_right_(in_mb, match_kmbs, tag);
 		} else if (s.cached) {
@@ -410,7 +409,7 @@ private:
 		}
 	}
 
-	TokenCollector<Out> collector;
+	pico::TokenCollector<Out> collector;
 	kernel_t fkernel;
 
 	/* for each tag, key-value store for both origins */
@@ -418,13 +417,13 @@ private:
 
 	bool cache_from_left; //tells if caching tag from left-input pipe
 	std::vector<tag_t> non_cached_tags;
-	tag_t cached_tag = base_microbatch::nil_tag();
+	tag_t cached_tag = pico::base_microbatch::nil_tag();
 
 	bool cache_complete = false;
 	std::vector<tag_t> uncleared_tags;
 
 	bool cstream_begin_rcv;
-	base_microbatch::tag_t cstream_begin_tag;
+	pico::base_microbatch::tag_t cstream_begin_tag;
 };
 
 /*
@@ -436,13 +435,13 @@ class JoinFlatMapByKeyFarm: public base_JFMBK_Farm<TokenTypeIn1, TokenTypeIn2,
 	typedef typename TokenTypeIn1::datatype In1;
 	typedef typename TokenTypeIn2::datatype In2;
 	typedef typename TokenTypeOut::datatype Out;
-	typedef Microbatch<TokenTypeIn1> mb_in1;
-	typedef Microbatch<TokenTypeIn2> mb_in2;
-	typedef Microbatch<TokenTypeOut> mb_out;
+	typedef pico::Microbatch<TokenTypeIn1> mb_in1;
+	typedef pico::Microbatch<TokenTypeIn2> mb_in2;
+	typedef pico::Microbatch<TokenTypeOut> mb_out;
 	typedef typename In1::keytype K;
-	typedef std::function<void(In1&, In2&, FlatMapCollector<Out> &)> kernel_t;
-	typedef base_microbatch::tag_t tag_t;
-	typedef typename TokenCollector<Out>::cnode cnode_t;
+	typedef std::function<void(In1&, In2&, pico::FlatMapCollector<Out> &)> kernel_t;
+	typedef pico::base_microbatch::tag_t tag_t;
+	typedef typename pico::TokenCollector<Out>::cnode cnode_t;
 
 	typedef base_JFMBK_Farm<TokenTypeIn1, TokenTypeIn2, TokenTypeOut> base_farm_t;
 	typedef typename base_farm_t::Emitter emitter_t;
@@ -452,7 +451,7 @@ class JoinFlatMapByKeyFarm: public base_JFMBK_Farm<TokenTypeIn1, TokenTypeIn2,
 		using worker_t::worker_t;
 
 		void handle_output(tag_t tag, cnode_t *cb) {
-			this->send_mb(NEW<mb_wrapped<cnode_t>>(tag, cb));
+			this->send_mb(NEW<pico::mb_wrapped<cnode_t>>(tag, cb));
 		}
 
 		void finalize_output_tag(tag_t tag) {
@@ -463,11 +462,11 @@ class JoinFlatMapByKeyFarm: public base_JFMBK_Farm<TokenTypeIn1, TokenTypeIn2,
 public:
 	JoinFlatMapByKeyFarm(unsigned nw, kernel_t kernel, bool left_input) :
 			base_farm_t(nw) {
-		auto e = new emitter_t(nw, global_params.MICROBATCH_SIZE, *this);
+		auto e = new emitter_t(nw, pico::global_params.MICROBATCH_SIZE, *this);
 		std::vector<ff::ff_node *> w;
 		for (unsigned i = 0; i < nw; ++i)
 			w.push_back(new Worker(kernel, left_input));
-		auto c = new UnpackingCollector<TokenCollector<Out>>(nw);
+		auto c = new UnpackingCollector<pico::TokenCollector<Out>>(nw);
 
 		this->setEmitterF(e);
 		this->setCollectorF(c);
@@ -487,12 +486,12 @@ class JFMRBK_seq_red: public base_JFMBK_Farm<TT1, TT2, TTO> {
 	typedef typename TTO::datatype Out;
 	typedef typename Out::keytype OutK;
 	typedef typename Out::valuetype OutV;
-	typedef std::function<void(In1&, In2&, FlatMapCollector<Out> &)> mapf_t;
+	typedef std::function<void(In1&, In2&, pico::FlatMapCollector<Out> &)> mapf_t;
 	typedef std::function<OutV(OutV&, OutV&)> redf_t;
 
-	typedef base_microbatch::tag_t tag_t;
-	typedef typename TokenCollector<Out>::cnode cnode_t;
-	typedef Microbatch<TTO> mb_out;
+	typedef pico::base_microbatch::tag_t tag_t;
+	typedef typename pico::TokenCollector<Out>::cnode cnode_t;
+	typedef pico::Microbatch<TTO> mb_out;
 
 	typedef base_JFMBK_Farm<TT1, TT2, TTO> base_farm_t;
 	typedef typename base_farm_t::Emitter emitter_t;
@@ -529,13 +528,13 @@ class JFMRBK_seq_red: public base_JFMBK_Farm<TT1, TT2, TTO> {
 		void finalize_output_tag(tag_t tag) {
 			/* stream out reduce state */
 			auto &s(tag_state[tag]);
-			auto mb = NEW<mb_out>(tag, global_params.MICROBATCH_SIZE);
+			auto mb = NEW<mb_out>(tag, pico::global_params.MICROBATCH_SIZE);
 			for (auto it = s.kvmap.begin(); it != s.kvmap.end(); ++it) {
 				new (mb->allocate()) Out(it->first, it->second);
 				mb->commit();
 				if (mb->full()) {
 					this->send_mb(mb);
-					mb = NEW<mb_out>(tag, global_params.MICROBATCH_SIZE);
+					mb = NEW<mb_out>(tag, pico::global_params.MICROBATCH_SIZE);
 				}
 			}
 
@@ -555,17 +554,17 @@ class JFMRBK_seq_red: public base_JFMBK_Farm<TT1, TT2, TTO> {
 		struct key_state {
 			std::unordered_map<OutK, OutV> kvmap;
 		};
-		std::unordered_map<base_microbatch::tag_t, key_state> tag_state;
+		std::unordered_map<pico::base_microbatch::tag_t, key_state> tag_state;
 	};
 
 public:
 	JFMRBK_seq_red(unsigned nw, bool left_input, mapf_t mapf, redf_t redf) :
 			base_JFMBK_Farm<TT1, TT2, TTO>(nw) {
-		auto e = new emitter_t(nw, global_params.MICROBATCH_SIZE, *this);
+		auto e = new emitter_t(nw, pico::global_params.MICROBATCH_SIZE, *this);
 		std::vector<ff::ff_node *> w;
 		for (unsigned i = 0; i < nw; ++i)
 			w.push_back(new Worker(mapf, redf, left_input));
-		auto c = new PReduceCollector<Out, Token<Out>>(nw, redf);
+		auto c = new PReduceCollector<Out, pico::Token<Out>>(nw, redf);
 
 		this->setEmitterF(e);
 		this->setCollectorF(c);
@@ -588,9 +587,9 @@ class JFMRBK_par_red: public ff::ff_pipeline {
 	typedef typename TTO::datatype Out;
 	typedef typename Out::keytype OutK;
 	typedef typename Out::valuetype OutV;
-	typedef std::function<void(In1&, In2&, FlatMapCollector<Out> &)> mapf_t;
+	typedef std::function<void(In1&, In2&, pico::FlatMapCollector<Out> &)> mapf_t;
 	typedef std::function<OutV(OutV&, OutV&)> redf_t;
-	typedef Microbatch<TTO> mb_out;
+	typedef pico::Microbatch<TTO> mb_out;
 	typedef std::unordered_map<OutK, OutV> red_map_t;
 	typedef typename RBK_farm<TTO>::Emitter emitter_t;
 
@@ -601,8 +600,8 @@ private:
 		typedef base_JFMBK_worker<TT1, TT2, TTO> worker_t;
 
 		class Worker: public worker_t {
-			typedef base_microbatch::tag_t tag_t;
-			typedef typename TokenCollector<Out>::cnode cnode_t;
+			typedef pico::base_microbatch::tag_t tag_t;
+			typedef typename pico::TokenCollector<Out>::cnode cnode_t;
 
 		public:
 			Worker(mapf_t mapf, unsigned rbk_par_, redf_t redf_, bool left_in) :
@@ -655,13 +654,13 @@ private:
 				this->send_mb(make_sync(tag, PICO_CSTREAM_END));
 			}
 
-			const int mb_size = global_params.MICROBATCH_SIZE;
+			const int mb_size = pico::global_params.MICROBATCH_SIZE;
 			unsigned rbk_par;
 			redf_t redf;
 			struct key_state {
 				red_map_t red_map;
 			};
-			std::unordered_map<base_microbatch::tag_t, key_state> tag_state;
+			std::unordered_map<pico::base_microbatch::tag_t, key_state> tag_state;
 
 			inline size_t key_to_worker(const OutK& k) {
 				return std::hash<OutK> { }(k) % rbk_par;
@@ -672,7 +671,7 @@ private:
 		FM_farm(unsigned nw, bool left_input, mapf_t mapf, unsigned rbk_par,
 				redf_t redf) :
 				base_JFMBK_Farm<TT1, TT2, TTO>(nw) {
-			auto e = new emitter_t(nw, global_params.MICROBATCH_SIZE, *this);
+			auto e = new emitter_t(nw, pico::global_params.MICROBATCH_SIZE, *this);
 			std::vector<ff::ff_node *> w;
 			for (unsigned i = 0; i < nw; ++i)
 				w.push_back(new Worker(mapf, rbk_par, redf, left_input));
@@ -699,7 +698,7 @@ public:
 
 		/* combine the farms with shuffle */
 		auto combined_farm =
-				combine_farms<emitter_t, emitter_t>(*fm_farm, emitter, *rbk_farm, nullptr, false);
+				ff::combine_farms<emitter_t, emitter_t>(*fm_farm, emitter, *rbk_farm, nullptr, false);
 
 		/* compose the pipeline */
 		this->add_stage(combined_farm);

@@ -36,8 +36,6 @@
 #include "../../SupportFFNodes/base_nodes.hpp"
 #include "../../ff_config.hpp"
 
-using namespace ff;
-using namespace pico;
 
 /*
  *******************************************************************************
@@ -71,7 +69,7 @@ struct prange {
  *******************************************************************************
  */
 class getline_textfile: public base_filter {
-	typedef Microbatch<Token<std::string>> mb_t;
+	typedef pico::Microbatch<pico::Token<std::string>> mb_t;
 
 public:
 	getline_textfile(std::string fname_) :
@@ -79,12 +77,12 @@ public:
 		assert(file.is_open());
 	}
 
-	void kernel(base_microbatch *in_mb) {
-		auto wmb = reinterpret_cast<mb_wrapped<prange> *>(in_mb);
+	void kernel(pico::base_microbatch *in_mb) {
+		auto wmb = reinterpret_cast<pico::mb_wrapped<prange> *>(in_mb);
 		auto tag = in_mb->tag();
 		prange *r = (prange *) wmb->get();
 		file.seekg(r->begin);
-		mb_t *mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+		mb_t *mb = NEW<mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
 		while (true) {
 			auto pos = file.tellg();
 			if (pos < r->end && pos != -1) {
@@ -96,7 +94,7 @@ public:
 					/* create next micro-batch if complete */
 					if (mb->full()) {
 						ff_send_out(reinterpret_cast<void*>(mb));
-						mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+						mb = NEW<mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
 					}
 				} else
 					assert(false);
@@ -132,7 +130,7 @@ private:
  *******************************************************************************
  */
 class read_textfile: public base_filter {
-	typedef Microbatch<Token<std::string>> mb_t;
+	typedef pico::Microbatch<pico::Token<std::string>> mb_t;
 
 public:
 	read_textfile(std::string fname) {
@@ -147,13 +145,13 @@ public:
 		fclose(fd);
 	}
 
-	void kernel(base_microbatch *wmb) {
-		auto r_ = reinterpret_cast<mb_wrapped<prange> *>(wmb);
+	void kernel(pico::base_microbatch *wmb) {
+		auto r_ = reinterpret_cast<pico::mb_wrapped<prange> *>(wmb);
 		auto tag = wmb->tag();
 		prange *r = (prange *) r_->get();
 		fseek(fd, r->begin, SEEK_SET);
 		ssize_t remainder = r->end - r->begin;
-		auto mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+		auto mb = NEW<mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
 		std::string *line = new (mb->allocate()) std::string();
 		bool continued = false;
 		do {
@@ -170,7 +168,7 @@ public:
 						/* create next micro-batch if complete */
 						if (mb->full()) {
 							ff_send_out(reinterpret_cast<void*>(mb));
-							mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+							mb = NEW<mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
 						}
 						line = new (mb->allocate()) std::string();
 					}
@@ -253,7 +251,7 @@ private:
 
 		void begin_callback() {
 			/* get a fresh tag */
-			tag = base_microbatch::fresh_tag();
+			tag = pico::base_microbatch::fresh_tag();
 			begin_cstream(tag);
 
 			/* get file size */
@@ -289,17 +287,17 @@ private:
 			end_cstream(tag);
 		}
 
-		void kernel(base_microbatch *) {
+		void kernel(pico::base_microbatch *) {
 			assert(false);
 		}
 
 	private:
 		FILE *fd;
 		unsigned partitions;
-		base_microbatch::tag_t tag = 0; //a tag for the generated collection
+		pico::base_microbatch::tag_t tag = 0; //a tag for the generated collection
 
 		void wrap_and_send(prange *p) {
-			auto wmb = NEW<mb_wrapped<prange>>(tag, p);
+			auto wmb = NEW<pico::mb_wrapped<prange>>(tag, p);
 			ff_send_out(wmb);
 		}
 	};
@@ -311,7 +309,7 @@ private:
  * Sequential ReadFromFile node.
  */
 class ReadFromFileFFNode_seq: public base_filter {
-	typedef Microbatch<Token<std::string>> mb_t;
+	typedef pico::Microbatch<pico::Token<std::string>> mb_t;
 
 public:
 	ReadFromFileFFNode_seq(std::string fname_) :
@@ -324,11 +322,11 @@ public:
 
 	void begin_callback() {
 		/* get a fresh tag */
-		tag = base_microbatch::fresh_tag();
+		tag = pico::base_microbatch::fresh_tag();
 		begin_cstream(tag);
 
 		std::string line;
-		mb_t *mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+		mb_t *mb = NEW<mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
 		while (true) {
 			/* initialize a new string within the micro-batch */
 			std::string *line = new (mb->allocate()) std::string();
@@ -339,7 +337,7 @@ public:
 				/* send out micro-batch if complete */
 				if (mb->full()) {
 					send_mb(mb);
-					mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+					mb = NEW<mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
 				}
 			} else
 				break;
@@ -355,12 +353,12 @@ public:
 		end_cstream(tag);
 	}
 
-	void kernel(base_microbatch *) {
+	void kernel(pico::base_microbatch *) {
 		assert(false);
 	}
 
 private:
-	base_microbatch::tag_t tag = 0; //a tag for the generated collection
+	pico::base_microbatch::tag_t tag = 0; //a tag for the generated collection
 	std::string fname;
 	std::ifstream infile;
 };

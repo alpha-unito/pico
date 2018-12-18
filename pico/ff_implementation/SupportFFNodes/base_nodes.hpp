@@ -34,13 +34,12 @@
 
 #include "../defs.hpp"
 
-using namespace pico;
 
-using base_node = ff::ff_node_t<base_microbatch, base_microbatch>;
-using base_monode = ff::ff_monode_t<base_microbatch, base_microbatch>;
+using base_node = ff::ff_node_t<pico::base_microbatch, pico::base_microbatch>;
+using base_monode = ff::ff_monode_t<pico::base_microbatch, pico::base_microbatch>;
 
-static base_microbatch *make_sync(base_microbatch::tag_t tag, char *token) {
-	return NEW<base_microbatch>(tag, token);
+static pico::base_microbatch *make_sync(pico::base_microbatch::tag_t tag, char *token) {
+	return NEW<pico::base_microbatch>(tag, token);
 }
 
 class sync_handler{
@@ -52,15 +51,15 @@ protected:
 	/*
 	 * to be overridden by user code
 	 */
-	virtual void kernel(base_microbatch *) = 0;
+	virtual void kernel(pico::base_microbatch *) = 0;
 
 	/* default behaviors cannot be given for routing sync tokens */
-	virtual void handle_begin(base_microbatch::tag_t tag) = 0;
-	virtual void handle_end(base_microbatch::tag_t tag) = 0;
-	virtual void handle_cstream_begin(base_microbatch::tag_t tag) = 0;
-	virtual void handle_cstream_end(base_microbatch::tag_t tag) = 0;
+	virtual void handle_begin(pico::base_microbatch::tag_t tag) = 0;
+	virtual void handle_end(pico::base_microbatch::tag_t tag) = 0;
+	virtual void handle_cstream_begin(pico::base_microbatch::tag_t tag) = 0;
+	virtual void handle_cstream_end(pico::base_microbatch::tag_t tag) = 0;
 
-	virtual void handle_sync(base_microbatch *sync_mb) {
+	virtual void handle_sync(pico::base_microbatch *sync_mb) {
 		char *token = sync_mb->payload();
 		auto tag = sync_mb->tag();
 		if (token == PICO_BEGIN)
@@ -86,10 +85,10 @@ protected:
 	virtual void end_callback() {
 	}
 
-	virtual void cstream_begin_callback(base_microbatch::tag_t) {
+	virtual void cstream_begin_callback(pico::base_microbatch::tag_t) {
 	}
 
-	virtual void cstream_end_callback(base_microbatch::tag_t) {
+	virtual void cstream_end_callback(pico::base_microbatch::tag_t) {
 	}
 
 	virtual bool propagate_cstream_sync() {
@@ -99,11 +98,11 @@ protected:
 	/*
 	 * to be called by user code and runtime
 	 */
-	void begin_cstream(base_microbatch::tag_t tag) {
+	void begin_cstream(pico::base_microbatch::tag_t tag) {
 		send_mb(make_sync(tag, PICO_CSTREAM_BEGIN));
 	}
 
-	void end_cstream(base_microbatch::tag_t tag) {
+	void end_cstream(pico::base_microbatch::tag_t tag) {
 		send_mb(make_sync(tag, PICO_CSTREAM_END));
 	}
 
@@ -111,9 +110,9 @@ protected:
 	 * to be overridden by user code
 	 */
 
-	virtual void send_mb(base_microbatch *sync_mb) = 0;
+	virtual void send_mb(pico::base_microbatch *sync_mb) = 0;
 
-	void work_flow(base_microbatch* in) {
+	void work_flow(pico::base_microbatch* in) {
 #ifdef TRACE_PICO
 		auto t0 = std::chrono::high_resolution_clock::now();
 #endif
@@ -137,28 +136,28 @@ protected:
 	}
 
 private:
-	virtual void handle_begin(base_microbatch::tag_t tag) {
+	virtual void handle_begin(pico::base_microbatch::tag_t tag) {
 		//fprintf(stderr, "> %p begin tag=%llu\n", this, tag);
-		assert(tag == base_microbatch::nil_tag());
+		assert(tag == pico::base_microbatch::nil_tag());
 		send_mb(make_sync(tag, PICO_BEGIN));
 		begin_callback();
 	}
 
-	virtual void handle_end(base_microbatch::tag_t tag) {
+	virtual void handle_end(pico::base_microbatch::tag_t tag) {
 		//fprintf(stderr, "> %p end tag=%llu\n", this, tag);
-		assert(tag == base_microbatch::nil_tag());
+		assert(tag == pico::base_microbatch::nil_tag());
 		end_callback();
 		send_mb(make_sync(tag, PICO_END));
 	}
 
-	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
+	virtual void handle_cstream_begin(pico::base_microbatch::tag_t tag) {
 		//fprintf(stderr, "> %p c-begin tag=%llu\n", this, tag);
 		if (propagate_cstream_sync())
 			begin_cstream(tag);
 		cstream_begin_callback(tag);
 	}
 
-	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
+	virtual void handle_cstream_end(pico::base_microbatch::tag_t tag) {
 		//fprintf(stderr, "> %p c-end tag=%llu\n", this, tag);
 		cstream_end_callback(tag);
 		if (propagate_cstream_sync())
@@ -171,7 +170,7 @@ private:
 		unsigned long long sent_data = 0, sent_sync = 0;
 		unsigned long long rcvd_data = 0, rcvd_sync = 0;
 	};
-	std::unordered_map<base_microbatch::tag_t, mb_cnt> tag_cnt;
+	std::unordered_map<pico::base_microbatch::tag_t, mb_cnt> tag_cnt;
 
 protected:
 	void print_mb_cnt(std::ostream & os) {
@@ -211,7 +210,7 @@ public:
 protected:
 
 
-	virtual void send_mb(base_microbatch *sync_mb) {
+	virtual void send_mb(pico::base_microbatch *sync_mb) {
 		ff_send_out(sync_mb);
 #ifdef TRACE_PICO
 		if (!is_sync(sync_mb->payload()))
@@ -223,7 +222,7 @@ protected:
 
 private:
 
-	base_microbatch* svc(base_microbatch* in) {
+	pico::base_microbatch* svc(pico::base_microbatch* in) {
 		work_flow(in);
 		return GO_ON;
 	}
@@ -241,11 +240,11 @@ public:
 	}
 
 protected:
-	void send_mb_to(base_microbatch *task, unsigned i) {
+	void send_mb_to(pico::base_microbatch *task, unsigned i) {
 		ff_send_out_to(task, i);
 	}
 
-	void send_mb(base_microbatch *sync_mb) {
+	void send_mb(pico::base_microbatch *sync_mb) {
 		for (unsigned i = 0; i < nw; ++i)
 			send_mb_to(make_sync(sync_mb->tag(), sync_mb->payload()), i);
 	}
@@ -253,7 +252,7 @@ protected:
 private:
 	unsigned nw;
 
-	base_microbatch* svc(base_microbatch* in) {
+	pico::base_microbatch* svc(pico::base_microbatch* in) {
 		work_flow(in);
 		return GO_ON;
 	}
@@ -281,7 +280,7 @@ public:
 	 * works only with strict round-robin load balancer (e.g. ordered farm)
 	 */
 
-	void send_mb(base_microbatch *sync_mb) {
+	void send_mb(pico::base_microbatch *sync_mb) {
 		for (unsigned i = 0; i < nw; ++i)
 			ff_send_out(make_sync(sync_mb->tag(), sync_mb->payload()));
 	}
@@ -310,23 +309,23 @@ public:
 	}
 
 private:
-	void handle_end(base_microbatch::tag_t tag) {
-		assert(tag == base_microbatch::nil_tag());
+	void handle_end(pico::base_microbatch::tag_t tag) {
+		assert(tag == pico::base_microbatch::nil_tag());
 		assert(pending_begin < pending_end);
 		if (!--pending_end)
 			send_mb(make_sync(tag, PICO_END));
 		assert(pending_begin <= pending_end);
 	}
 
-	void handle_begin(base_microbatch::tag_t tag) {
-		assert(tag == base_microbatch::nil_tag());
+	void handle_begin(pico::base_microbatch::tag_t tag) {
+		assert(tag == pico::base_microbatch::nil_tag());
 		assert(pending_begin <= pending_end);
 		if (!--pending_begin)
 			send_mb(make_sync(tag, PICO_BEGIN));
 		assert(pending_begin < pending_end);
 	}
 
-	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
+	virtual void handle_cstream_end(pico::base_microbatch::tag_t tag) {
 		assert(pending_cstream_begin.find(tag) != pending_cstream_begin.end());
 		if (pending_cstream_end.find(tag) == pending_cstream_end.end())
 			pending_cstream_end[tag] = nw;
@@ -338,7 +337,7 @@ private:
 		}
 	}
 
-	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
+	virtual void handle_cstream_begin(pico::base_microbatch::tag_t tag) {
 		if (pending_cstream_begin.find(tag) == pending_cstream_begin.end()) {
 			if (propagate_cstream_sync())
 				send_mb(make_sync(tag, PICO_CSTREAM_BEGIN));
@@ -351,8 +350,8 @@ private:
 
 private:
 	unsigned nw;
-	std::unordered_map<base_microbatch::tag_t, unsigned> pending_cstream_begin;
-	std::unordered_map<base_microbatch::tag_t, unsigned> pending_cstream_end;
+	std::unordered_map<pico::base_microbatch::tag_t, unsigned> pending_cstream_begin;
+	std::unordered_map<pico::base_microbatch::tag_t, unsigned> pending_cstream_end;
 	unsigned pending_end, pending_begin;
 };
 
@@ -364,13 +363,13 @@ public:
 protected:
 
 
-	void send_mb_to(base_microbatch *task, unsigned dst) {
+	void send_mb_to(pico::base_microbatch *task, unsigned dst) {
 		this->ff_send_out_to(task, dst);
 	}
 
 private:
 
-	base_microbatch* svc(base_microbatch* in) {
+	pico::base_microbatch* svc(pico::base_microbatch* in) {
 		if (!is_sync(in->payload()))
 			kernel(in);
 		else {
@@ -382,8 +381,8 @@ private:
 	}
 };
 
-class base_mplex: public ff::ff_minode_t<base_microbatch, base_microbatch> {
-	typedef ff::ff_minode_t<base_microbatch, base_microbatch> base_t;
+class base_mplex: public ff::ff_minode_t<pico::base_microbatch, pico::base_microbatch> {
+	typedef ff::ff_minode_t<pico::base_microbatch, pico::base_microbatch> base_t;
 
 public:
 	virtual ~base_mplex() {
@@ -393,15 +392,15 @@ protected:
 	/*
 	 * to be overridden by user code
 	 */
-	virtual void kernel(base_microbatch *) = 0;
+	virtual void kernel(pico::base_microbatch *) = 0;
 
 	/* default behaviors cannot be given for routing sync tokens */
-	virtual void handle_begin(base_microbatch::tag_t tag) = 0;
-	virtual bool handle_end(base_microbatch::tag_t tag) = 0;
-	virtual void handle_cstream_begin(base_microbatch::tag_t tag) = 0;
-	virtual void handle_cstream_end(base_microbatch::tag_t tag) = 0;
+	virtual void handle_begin(pico::base_microbatch::tag_t tag) = 0;
+	virtual bool handle_end(pico::base_microbatch::tag_t tag) = 0;
+	virtual void handle_cstream_begin(pico::base_microbatch::tag_t tag) = 0;
+	virtual void handle_cstream_end(pico::base_microbatch::tag_t tag) = 0;
 
-	void send_mb(base_microbatch *task) {
+	void send_mb(pico::base_microbatch *task) {
 		this->ff_send_out(task);
 	}
 
@@ -410,7 +409,7 @@ protected:
 	}
 
 private:
-	bool handle_sync(base_microbatch *sync_mb) {
+	bool handle_sync(pico::base_microbatch *sync_mb) {
 		char *token = sync_mb->payload();
 		auto tag = sync_mb->tag();
 		if (token == PICO_BEGIN)
@@ -424,7 +423,7 @@ private:
 		return false;
 	}
 
-	base_microbatch* svc(base_microbatch* in) {
+	pico::base_microbatch* svc(pico::base_microbatch* in) {
 		if (!is_sync(in->payload()))
 			kernel(in);
 		else {

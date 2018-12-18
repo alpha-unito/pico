@@ -39,8 +39,6 @@
 
 #include "../../ff_config.hpp"
 
-using namespace ff;
-using namespace pico;
 
 #define CHUNK_SIZE 512
 
@@ -48,7 +46,7 @@ using namespace pico;
  * reads a stream from a socket, maintains the order
  */
 class ReadFromSocketFFNode: public base_filter {
-	typedef Token<std::string> TokenType;
+	typedef pico::Token<std::string> TokenType;
 
 public:
 	ReadFromSocketFFNode(std::string& server_name_, int port_, char delimiter_) :
@@ -72,7 +70,7 @@ public:
 
 	void begin_callback() {
 		/* get a fresh tag */
-		tag = base_microbatch::fresh_tag();
+		tag = pico::base_microbatch::fresh_tag();
 		begin_cstream(tag);
 
 		std::string tail;
@@ -82,7 +80,7 @@ public:
 			error("ERROR connecting");
 		}
 		bzero(buffer, sizeof(buffer));
-		auto mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+		auto mb = NEW<mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
 		std::string *line = new (mb->allocate()) std::string();
 
 		while ((n = read(sockfd, buffer, sizeof(buffer))) > 0) {
@@ -94,7 +92,7 @@ public:
 					mb->commit();
 					if (mb->full()) {
 						ff_send_out(reinterpret_cast<void*>(mb));
-						mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+						mb = NEW<mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
 					}
 					tail.clear();
 					line = new (mb->allocate()) std::string();
@@ -119,19 +117,19 @@ public:
 		close(sockfd);
 	}
 
-	void kernel(base_microbatch *) {
+	void kernel(pico::base_microbatch *) {
 		assert(false);
 	}
 
 private:
-	typedef Microbatch<TokenType> mb_t;
+	typedef pico::Microbatch<TokenType> mb_t;
 	std::string server_name;
 	int port;
 	int sockfd = 0, n = 0;
 	struct sockaddr_in serv_addr;
 	struct hostent *server = nullptr;
 	char delimiter;
-	base_microbatch::tag_t tag = 0; //a tag for the generated collection
+	pico::base_microbatch::tag_t tag = 0; //a tag for the generated collection
 
 	void error(const char *msg) {
 		perror(msg);

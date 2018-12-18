@@ -47,8 +47,8 @@ static std::set<std::string> stock_names;
  * - filters out all those tweets mentioning zero or multiple stock names
  * - count the number of words for each remaining tweet
  */
-auto filterTweets = FlatMap<std::string, StockAndCount>( //
-		[] (std::string& tweet, FlatMapCollector<StockAndCount>& collector)
+auto filterTweets = pico::FlatMap<std::string, StockAndCount>( //
+		[] (std::string& tweet, pico::FlatMapCollector<StockAndCount>& collector)
 		{
 			StockName stock;
 			bool single_stock = false;
@@ -107,15 +107,15 @@ int main(int argc, char** argv) {
 	}
 
 	/* define i/o operators from/to standard input/output */
-	ReadFromSocket readTweets(server, port, '-');
+	pico::ReadFromSocket readTweets(server, port, '-');
 
-	WriteToStdOut<StockAndCount> writeCounts(
+	pico::WriteToStdOut<StockAndCount> writeCounts(
 			[](StockAndCount c) {return c.to_string();});
 
 	/* compose the main pipeline */
-	auto stockTweets = Pipe(readTweets) //
+	auto stockTweets = pico::Pipe(readTweets) //
 	.add(filterTweets) //
-	.add(ReduceByKey<StockAndCount>([] (unsigned p1, unsigned p2)
+	.add(pico::ReduceByKey<StockAndCount>([] (unsigned p1, unsigned p2)
 	{
 		return std::max(p1,p2);
 	}).window(8)).add(writeCounts);

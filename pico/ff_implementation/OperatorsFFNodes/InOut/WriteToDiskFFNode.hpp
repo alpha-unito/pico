@@ -29,8 +29,6 @@
 
 #include "../../SupportFFNodes/base_nodes.hpp"
 
-using namespace ff;
-using namespace pico;
 
 /*
  * TODO only works with non-decorating token
@@ -52,8 +50,8 @@ public:
 		return false;
 	}
 
-	void kernel(base_microbatch *in_mb) {
-		auto mb = reinterpret_cast<Microbatch<Token<In>>*>(in_mb);
+	void kernel(pico::base_microbatch *in_mb) {
+		auto mb = reinterpret_cast<pico::Microbatch<pico::Token<In>>*>(in_mb);
 		for (In& in : *mb)
 			outfile << wkernel(in) << std::endl;
 		DELETE(mb);
@@ -80,8 +78,8 @@ public:
 		return false;
 	}
 
-	void kernel(base_microbatch *in_mb) {
-		auto mb = reinterpret_cast<Microbatch<Token<In>>*>(in_mb);
+	void kernel(pico::base_microbatch *in_mb) {
+		auto mb = reinterpret_cast<pico::Microbatch<pico::Token<In>>*>(in_mb);
 		for (In& in : *mb)
 			outfile << in << std::endl;
 		DELETE(mb);

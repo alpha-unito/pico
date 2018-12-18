@@ -31,8 +31,6 @@
 #include "../../Internals/TimedToken.hpp"
 #include "../../Internals/Microbatch.hpp"
 
-using namespace ff;
-using namespace pico;
 
 /*
  * todo
@@ -66,7 +64,7 @@ public:
 			base_emitter(nworkers_), nworkers(nworkers_) {
 		}
 
-		void kernel(base_microbatch *in_mb) {
+		void kernel(pico::base_microbatch *in_mb) {
 			auto in_microbatch = reinterpret_cast<mb_t *>(in_mb);
 			send_mb_to(in_mb, key_to_worker((*in_microbatch->begin()).Key()));
 		}
@@ -74,7 +72,7 @@ public:
 	private:
 		typedef typename TokenType::datatype DataType;
 		typedef typename DataType::keytype keytype;
-		typedef Microbatch<TokenType> mb_t;
+		typedef pico::Microbatch<TokenType> mb_t;
 		unsigned nworkers;
 
 		inline size_t key_to_worker(const keytype& k) {
@@ -89,7 +87,7 @@ private:
 			base_sync_duplicate(redundancy), reduce_kernel(reducef_kernel_) {
 		}
 
-		void kernel(base_microbatch *in_mb) {
+		void kernel(pico::base_microbatch *in_mb) {
 			/*
 			 * got a microbatch to process and delete
 			 */
@@ -110,15 +108,15 @@ private:
 			DELETE(in_mb);
 		}
 
-		void cstream_end_callback(base_microbatch::tag_t tag) {
+		void cstream_end_callback(pico::base_microbatch::tag_t tag) {
 			auto &s(tag_state[tag]);
-			auto mb = NEW<kv_mb>(tag, global_params.MICROBATCH_SIZE);
+			auto mb = NEW<kv_mb>(tag, pico::global_params.MICROBATCH_SIZE);
 			for (auto it = s.kvmap.begin(); it != s.kvmap.end(); ++it) {
 				new (mb->allocate()) Out(it->first, it->second);
 				mb->commit();
 				if (mb->full()) {
 					ff_send_out(reinterpret_cast<void*>(mb));
-					mb = NEW<kv_mb>(tag, global_params.MICROBATCH_SIZE);
+					mb = NEW<kv_mb>(tag, pico::global_params.MICROBATCH_SIZE);
 				}
 			}
 
@@ -131,13 +129,13 @@ private:
 		}
 
 	private:
-		typedef Microbatch<TokenType> kv_mb;
+		typedef pico::Microbatch<TokenType> kv_mb;
 
 		std::function<OutV(OutV&, OutV&)> reduce_kernel;
 		struct key_state {
 			std::unordered_map<OutK, OutV> kvmap;
 		};
-		std::unordered_map<base_microbatch::tag_t, key_state> tag_state;
+		std::unordered_map<pico::base_microbatch::tag_t, key_state> tag_state;
 	};
 };
 

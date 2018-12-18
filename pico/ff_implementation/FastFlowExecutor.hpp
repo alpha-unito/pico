@@ -43,56 +43,55 @@
 #include "SupportFFNodes/base_nodes.hpp"
 #include "defs.hpp"
 
-using namespace pico;
 
-static ff::ff_pipeline *make_ff_pipe(const Pipe &, StructureType, bool);
-static void add_chain(ff::ff_pipeline *, const std::vector<Pipe *> &, StructureType);
+static ff::ff_pipeline *make_ff_pipe(const pico::Pipe &, pico::StructureType, bool);
+static void add_chain(ff::ff_pipeline *, const std::vector<pico::Pipe *> &, pico::StructureType);
 #if 0
 static ff::ff_farm<> *make_merge_farm(const Pipe &);
 static ff::ff_farm<> *make_multito_farm(const Pipe &);
 #endif
 
 template<typename ItType>
-void add_plain(ff::ff_pipeline *p, ItType it, StructureType st) {
-	if ((*it)->term_node_type() == Pipe::OPERATOR) {
+void add_plain(ff::ff_pipeline *p, ItType it, pico::StructureType st) {
+	if ((*it)->term_node_type() == pico::Pipe::OPERATOR) {
 		/* standalone operator */
-		base_UnaryOperator *op;
-		op = dynamic_cast<base_UnaryOperator *>((*it)->get_operator_ptr());
+		pico::base_UnaryOperator *op;
+		op = dynamic_cast<pico::base_UnaryOperator *>((*it)->get_operator_ptr());
 		p->add_stage(op->node_operator(op->pardeg(), st));
 	} else
 		/* complex sub-term */
 		p->add_stage(make_ff_pipe(**it, st, false));
 }
 
-static ff::ff_pipeline *make_ff_pipe(const Pipe &p, StructureType st, //
+static ff::ff_pipeline *make_ff_pipe(const pico::Pipe &p, pico::StructureType st, //
 		bool acc) {
 	/* create the ff pipeline with automatic node cleanup */
 	auto *res = new ff::ff_pipeline(acc);
 	res->cleanup_nodes();
-	Operator *op;
-	base_UnaryOperator *uop;
-	base_BinaryOperator *bop;
-	TerminationCondition *cond;
+	pico::Operator *op;
+	pico::base_UnaryOperator *uop;
+	pico::base_BinaryOperator *bop;
+	pico::TerminationCondition *cond;
 
 	switch (p.term_node_type()) {
-	case Pipe::EMPTY:
+	case pico::Pipe::EMPTY:
 		res->add_stage(new ForwardingNode());
 		break;
-	case Pipe::OPERATOR:
+	case pico::Pipe::OPERATOR:
 		op = p.get_operator_ptr();
-		uop = dynamic_cast<base_UnaryOperator *>(op);
+		uop = dynamic_cast<pico::base_UnaryOperator *>(op);
 		res->add_stage(uop->node_operator(uop->pardeg(), st));
 		break;
-	case Pipe::TO:
+	case pico::Pipe::TO:
 		add_chain(res, p.children(), st);
 		break;
-	case Pipe::MULTITO:
+	case pico::Pipe::MULTITO:
 		std::cerr << "MULTI-TO not implemented yet\n";
 		assert(false);
 		//res->add_stage(make_ff_pipe(*p.children().front(), false, par));
 		//res->add_stage(make_multito_farm(p, par));
 		break;
-	case Pipe::ITERATE:
+	case pico::Pipe::ITERATE:
 		cond = p.get_termination_ptr();
 		assert(p.children().size() == 1);
 		res->add_stage(new iteration_multiplexer());
@@ -100,18 +99,18 @@ static ff::ff_pipeline *make_ff_pipe(const Pipe &p, StructureType st, //
 		res->add_stage(cond->iteration_switch());
 		res->wrap_around();
 		break;
-	case Pipe::MERGE:
+	case pico::Pipe::MERGE:
 		std::cerr << "MERGE not implemented yet\n";
 		assert(false);
 		//res->add_stage(make_merge_farm(p, par));
 		break;
-	case Pipe::PAIR:
+	case pico::Pipe::PAIR:
 		op = p.get_operator_ptr();
 		assert(op);
 		assert(p.children().size() == 2);
 		res->add_stage(make_pair_farm(*p.children()[0], *p.children()[1], st));
 		/* add the operator */
-		bop = dynamic_cast<base_BinaryOperator *>(op);
+		bop = dynamic_cast<pico::base_BinaryOperator *>(op);
 		bool left_input = p.children()[0]->in_deg();
 		res->add_stage(bop->node_operator(bop->pardeg(), left_input, st));
 		break;
@@ -155,8 +154,8 @@ ff::ff_farm<> *make_multito_farm(const Pipe &p) {
 }
 #endif
 
-void add_chain(ff::ff_pipeline *p, const std::vector<Pipe *> &s, //
-		StructureType st) {
+void add_chain(ff::ff_pipeline *p, const std::vector<pico::Pipe *> &s, //
+		pico::StructureType st) {
 	/* apply PEG optimizations */
 	auto it = s.begin();
 	for (; it < s.end() - 1; ++it) {
@@ -174,7 +173,7 @@ void add_chain(ff::ff_pipeline *p, const std::vector<Pipe *> &s, //
 
 class FastFlowExecutor {
 public:
-	FastFlowExecutor(const Pipe &p) {
+	FastFlowExecutor(const pico::Pipe &p) {
 		ff_pipe = make_ff_pipe(p, p.structure_type(), true);
 	}
 
@@ -183,12 +182,12 @@ public:
 	}
 
 	void run(run_mode m) const {
-		auto tag = base_microbatch::nil_tag();
-		base_microbatch *res;
+		auto tag = pico::base_microbatch::nil_tag();
+		pico::base_microbatch *res;
 
 		bool blocking = (m != run_mode::FORCE_NONBLOCKING);
 
-		OptLevel opt;
+		ff::OptLevel opt;
 		opt.remove_collector=true;
 		opt.verbose_level=2;
 		if(blocking) {
@@ -212,7 +211,7 @@ public:
 
 		ff_pipe->offload(make_sync(tag, PICO_BEGIN));
 		ff_pipe->offload(make_sync(tag, PICO_END));
-		ff_pipe->offload(FF_EOS);
+		ff_pipe->offload(ff::FF_EOS);
 
 		assert(ff_pipe->load_result((void ** ) &res));
 		assert(res->payload() == PICO_BEGIN && res->tag() == tag);
@@ -242,10 +241,10 @@ private:
 	}
 };
 
-FastFlowExecutor *make_executor(const Pipe &p) {
+FastFlowExecutor *make_executor(const pico::Pipe &p) {
 	auto mb_env = std::getenv("MBSIZE");
 	if (mb_env)
-		global_params.MICROBATCH_SIZE = atoi(mb_env);
+		pico::global_params.MICROBATCH_SIZE = atoi(mb_env);
 
 	return new FastFlowExecutor(p);
 }
