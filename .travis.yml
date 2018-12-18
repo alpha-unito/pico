@@ -50,7 +50,6 @@ matrix:
 before_install:
         - eval "${MATRIX_EVAL}"
 install:
-        #        - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install libpthread-stubs0-dev ; fi
         - git clone --single-branch -b fastflow3 https://github.com/fastflow/fastflow.git
         - ln -s fastflow/ff ff
 script:
