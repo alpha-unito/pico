@@ -30,11 +30,9 @@
  */
 
 /* implements the empty pipeline as forwarding node (i.e., identity map) */
-class ForwardingNode: public base_filter {
-public:
-	void kernel(pico::base_microbatch* task) {
-		ff_send_out(task);
-	}
+class ForwardingNode : public base_filter {
+ public:
+  void kernel(pico::base_microbatch* task) { ff_send_out(task); }
 };
 
 #endif /* FF_IMPLEMENTATION_SUPPORTFFNODES_FORWARDINGNODE_HPP_ */

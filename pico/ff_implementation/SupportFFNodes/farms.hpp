@@ -26,34 +26,23 @@
 /*
  * A non-ordering farm.
  */
-class NonOrderingFarm: public ff::ff_farm {
-public:
-	void setEmitterF(ff::ff_node* f) {
-		this->add_emitter(f);
-	}
+class NonOrderingFarm : public ff::ff_farm {
+ public:
+  void setEmitterF(ff::ff_node* f) { this->add_emitter(f); }
 
-	void setCollectorF(ff::ff_node* f) {
-		this->add_collector(f);
-	}
+  void setCollectorF(ff::ff_node* f) { this->add_collector(f); }
 };
 
 /*
  * An ordering farm.
  */
 
-class OrderingFarm: public ff::ff_farm {
-public:
-	OrderingFarm() {
-		set_ordered();
-	}
-	void setEmitterF(ff::ff_node* f) {
-		this->add_emitter(f);
-	}
+class OrderingFarm : public ff::ff_farm {
+ public:
+  OrderingFarm() { set_ordered(); }
+  void setEmitterF(ff::ff_node* f) { this->add_emitter(f); }
 
-	void setCollectorF(ff::ff_node* f) {
-		this->add_collector(f);
-	}
-
+  void setCollectorF(ff::ff_node* f) { this->add_collector(f); }
 };
 
 #endif /* INTERNALS_FFOPERATORS_SUPPORTFFNODES_FARMWRAPPER_HPP_ */

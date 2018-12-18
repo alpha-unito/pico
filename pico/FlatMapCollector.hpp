@@ -21,10 +21,10 @@
 #ifndef INTERNALS_TYPES_FLATMAPCOLLECTOR_HPP_
 #define INTERNALS_TYPES_FLATMAPCOLLECTOR_HPP_
 
-#include "defines/Global.hpp"
-#include "ff_implementation/ff_config.hpp"
 #include "Internals/Microbatch.hpp"
 #include "Internals/Token.hpp"
+#include "defines/Global.hpp"
+#include "ff_implementation/ff_config.hpp"
 
 namespace pico {
 
@@ -33,117 +33,108 @@ namespace pico {
  *
  * Collector for FlatMap user kernels.
  */
-template<typename Out>
+template <typename Out>
 class FlatMapCollector {
-public:
-	virtual void add(const Out &) = 0;
-	virtual void add(Out &&) = 0;
+ public:
+  virtual void add(const Out &) = 0;
+  virtual void add(Out &&) = 0;
 
-	virtual ~FlatMapCollector() {
-	}
+  virtual ~FlatMapCollector() {}
 
-	void tag(base_microbatch::tag_t tag__) {
-		tag_ = tag__;
-	}
+  void tag(base_microbatch::tag_t tag__) { tag_ = tag__; }
 
-protected:
-	base_microbatch::tag_t tag() const {
-		return tag_;
-	}
+ protected:
+  base_microbatch::tag_t tag() const { return tag_; }
 
-private:
-	base_microbatch::tag_t tag_ = 0;
+ private:
+  base_microbatch::tag_t tag_ = 0;
 };
 
 /**
  * A FlatMapCollector for non-decorated collection items
  */
-template<typename DataType>
-class TokenCollector: public FlatMapCollector<DataType> {
-	typedef Microbatch<Token<DataType>> mb_t;
+template <typename DataType>
+class TokenCollector : public FlatMapCollector<DataType> {
+  typedef Microbatch<Token<DataType>> mb_t;
 
-public:
-	TokenCollector() {
-		clear();
-	}
+ public:
+  TokenCollector() { clear(); }
 
-	/**
-	 * Add a token by copying a DataType value
-	 */
-	inline void add(const DataType &x) {
-		make_room();
+  /**
+   * Add a token by copying a DataType value
+   */
+  inline void add(const DataType &x) {
+    make_room();
 
-		/* insert the element and its token decoration */
-		new (head->mb->allocate()) DataType(x);
-		//TokenType *t = new (mb_t::token_desc(item)) TokenType(*item);
-		head->mb->commit();
-	}
+    /* insert the element and its token decoration */
+    new (head->mb->allocate()) DataType(x);
+    // TokenType *t = new (mb_t::token_desc(item)) TokenType(*item);
+    head->mb->commit();
+  }
 
-	/**
-	 * Add a token by moving a DataType value
-	 */
-	inline void add(DataType &&x) {
-		make_room();
+  /**
+   * Add a token by moving a DataType value
+   */
+  inline void add(DataType &&x) {
+    make_room();
 
-		/* insert the element and its token decoration */
-		new (head->mb->allocate()) DataType(std::move(x));
-		//TokenType *t = new (mb_t::token_desc(item)) TokenType(*item);
-		head->mb->commit();
-	}
+    /* insert the element and its token decoration */
+    new (head->mb->allocate()) DataType(std::move(x));
+    // TokenType *t = new (mb_t::token_desc(item)) TokenType(*item);
+    head->mb->commit();
+  }
 
-	/**
-	 * Clear the list without destroying it.
-	 */
-	inline void clear() {
-		first = head = nullptr;
-		this->tag(0);
-	}
+  /**
+   * Clear the list without destroying it.
+   */
+  inline void clear() {
+    first = head = nullptr;
+    this->tag(0);
+  }
 
-	/**
-	 * A collector is stored as a list of Microbatch objects.
-	 * They travel together in order to guarantee the semantics of FlatMap
-	 * when processed.
-	 *
-	 * The list type is exposed since it is freed externally.
-	 */
-	struct cnode {
-		mb_t *mb;
-		struct cnode *next;
-	};
+  /**
+   * A collector is stored as a list of Microbatch objects.
+   * They travel together in order to guarantee the semantics of FlatMap
+   * when processed.
+   *
+   * The list type is exposed since it is freed externally.
+   */
+  struct cnode {
+    mb_t *mb;
+    struct cnode *next;
+  };
 
-	cnode* begin() {
-		return first;
-	}
+  cnode *begin() { return first; }
 
-private:
-	cnode *first, *head;
+ private:
+  cnode *first, *head;
 
-	/*
-	 * ensure there is an available slot in the head node
-	 */
-	inline void make_room() {
-		if (first) {
-			if (head->mb->full()) {
-				assert(head->next == nullptr);
-				head->next = allocate();
-				head = head->next;
-			}
-		}
+  /*
+   * ensure there is an available slot in the head node
+   */
+  inline void make_room() {
+    if (first) {
+      if (head->mb->full()) {
+        assert(head->next == nullptr);
+        head->next = allocate();
+        head = head->next;
+      }
+    }
 
-		else {
-			/* initializes the list */
-			first = allocate();
-			head = first;
-		}
-	}
+    else {
+      /* initializes the list */
+      first = allocate();
+      head = first;
+    }
+  }
 
-	inline cnode * allocate() {
-		assert(this->tag());
-		cnode *res = (cnode *) MALLOC(sizeof(cnode));
-		res->next = nullptr;
-		res->mb = NEW<mb_t>(this->tag(), global_params.MICROBATCH_SIZE);
-		return res;
-	}
+  inline cnode *allocate() {
+    assert(this->tag());
+    cnode *res = (cnode *)MALLOC(sizeof(cnode));
+    res->next = nullptr;
+    res->mb = NEW<mb_t>(this->tag(), global_params.MICROBATCH_SIZE);
+    return res;
+  }
 };
 
 } /* namespace pico */

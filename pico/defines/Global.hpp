@@ -25,15 +25,15 @@
 
 #include <getopt.h>
 #include <iostream>
-#include <string>
 #include <sstream>
+#include <string>
 
 #include <ff/mapper.hpp>
 
 namespace pico {
 
 struct {
-	int MICROBATCH_SIZE = 8;
+  int MICROBATCH_SIZE = 8;
 } global_params;
 
 } /* namespace pico */

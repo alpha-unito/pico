@@ -27,11 +27,14 @@ namespace pico {
 
 /**
  * Defines a Reduce operator performing a tree reduce function.
- * The reduce kernel is defined by the user and can be a lambda function, a functor or a function.
+ * The reduce kernel is defined by the user and can be a lambda function, a
+ * functor or a function.
  *
- * The reduce kernel function operates on windows and/or groups if defined on the Pipe.
+ * The reduce kernel function operates on windows and/or groups if defined on
+ * the Pipe.
  *
- * It implements a tree reduce operator where input and output value are the same.
+ * It implements a tree reduce operator where input and output value are the
+ * same.
  */
 #if 0
 template<typename In>

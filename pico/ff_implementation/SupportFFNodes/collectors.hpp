@@ -23,36 +23,35 @@
 
 #include "base_nodes.hpp"
 
-class ForwardingCollector: public base_sync_duplicate {
-public:
-	using base_sync_duplicate::base_sync_duplicate;
+class ForwardingCollector : public base_sync_duplicate {
+ public:
+  using base_sync_duplicate::base_sync_duplicate;
 
-	void kernel(pico::base_microbatch* mb) {
-		ff_send_out(mb);
-	}
+  void kernel(pico::base_microbatch *mb) { ff_send_out(mb); }
 };
 
 /* unpacks and streams token-collectors */
-template<typename coll_t>
-class UnpackingCollector: public base_sync_duplicate {
-	typedef typename coll_t::cnode cnode_t;
-public:
-	using base_sync_duplicate::base_sync_duplicate;
+template <typename coll_t>
+class UnpackingCollector : public base_sync_duplicate {
+  typedef typename coll_t::cnode cnode_t;
 
-	void kernel(pico::base_microbatch *mb) {
-		auto wmb = reinterpret_cast<pico::mb_wrapped<cnode_t> *>(mb);
-		cnode_t *it_, *it = wmb->get();
-		/* send out all the micro-batches in the list */
-		while (it) {
-			ff_send_out(reinterpret_cast<void *>(it->mb));
+ public:
+  using base_sync_duplicate::base_sync_duplicate;
 
-			/* clean up and skip to the next micro-batch */
-			it_ = it;
-			it = it->next;
-			FREE(it_);
-		};
-		DELETE(wmb);
-	}
+  void kernel(pico::base_microbatch *mb) {
+    auto wmb = reinterpret_cast<pico::mb_wrapped<cnode_t> *>(mb);
+    cnode_t *it_, *it = wmb->get();
+    /* send out all the micro-batches in the list */
+    while (it) {
+      ff_send_out(reinterpret_cast<void *>(it->mb));
+
+      /* clean up and skip to the next micro-batch */
+      it_ = it;
+      it = it->next;
+      FREE(it_);
+    };
+    DELETE(wmb);
+  }
 };
 
 #endif /* INTERNALS_FFOPERATORS_FARMCOLLECTOR_HPP_ */

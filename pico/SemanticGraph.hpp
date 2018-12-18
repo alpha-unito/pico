@@ -25,235 +25,221 @@
 #ifndef PICO_SEMANTICGRAPH_HPP_
 #define PICO_SEMANTICGRAPH_HPP_
 
-#include <map>
-#include <string>
 #include <fstream>
+#include <map>
 #include <queue>
+#include <string>
 #include <vector>
 
 #include "Pipe.hpp"
 
 namespace pico {
 
-enum SemNodeRole {
-	Empty, Processing, Merge
-};
+enum SemNodeRole { Empty, Processing, Merge };
 
 class SemanticGraph {
-public:
-	SemanticGraph() {
-	}
+ public:
+  SemanticGraph() {}
 
-	SemanticGraph(const Pipe &p) {
-		*this = from_pipe(p);
-	}
+  SemanticGraph(const Pipe &p) { *this = from_pipe(p); }
 
-	void destroy() {
-		for (auto adj : graph)
-			delete adj.first;
-	}
+  void destroy() {
+    for (auto adj : graph) delete adj.first;
+  }
 
-	void print(std::ostream &os) {
-		print_(os);
-	}
+  void print(std::ostream &os) { print_(os); }
 
-	void dot(std::string fname) {
-		std::ofstream of(fname);
-		if (of.is_open()) {
-			dot_(of);
-			of.close();
-		} else
-			std::cerr << "Unable to open file " << fname << std::endl;
-	}
+  void dot(std::string fname) {
+    std::ofstream of(fname);
+    if (of.is_open()) {
+      dot_(of);
+      of.close();
+    } else
+      std::cerr << "Unable to open file " << fname << std::endl;
+  }
 
-private:
-	struct SemGraphNode {
-		Operator *op;
-		SemNodeRole role;
+ private:
+  struct SemGraphNode {
+    Operator *op;
+    SemNodeRole role;
 
-		SemGraphNode(SemNodeRole role_) :
-				op(nullptr), role(role_) {
-		}
+    SemGraphNode(SemNodeRole role_) : op(nullptr), role(role_) {}
 
-		SemGraphNode(Operator *op_) :
-				op(op_), role(SemNodeRole::Processing) {
-		}
+    SemGraphNode(Operator *op_) : op(op_), role(SemNodeRole::Processing) {}
 
-		/*
-		 * Returns an unique name for the node.
-		 */
-		std::string name() const {
-			std::string name;
-			std::ostringstream address;
-			address << (void const *) this;
-			name = "a" + address.str().erase(0, 2);
-			return name;
-		}
+    /*
+     * Returns an unique name for the node.
+     */
+    std::string name() const {
+      std::string name;
+      std::ostringstream address;
+      address << (void const *)this;
+      name = "a" + address.str().erase(0, 2);
+      return name;
+    }
 
-		std::string name_short() const {
-			if (role == SemNodeRole::Processing) {
-				assert(op);
-				return op->name_short();
-			}
-			if (role == SemNodeRole::Merge)
-				return "Merge";
-			assert(role == SemNodeRole::Empty);
-			return "Empty";
-		}
-	};
+    std::string name_short() const {
+      if (role == SemNodeRole::Processing) {
+        assert(op);
+        return op->name_short();
+      }
+      if (role == SemNodeRole::Merge) return "Merge";
+      assert(role == SemNodeRole::Empty);
+      return "Empty";
+    }
+  };
 
-	std::map<SemGraphNode*, std::vector<SemGraphNode*>> graph;
-	SemGraphNode *lastdagnode = nullptr, *firstdagnode = nullptr;
+  std::map<SemGraphNode *, std::vector<SemGraphNode *>> graph;
+  SemGraphNode *lastdagnode = nullptr, *firstdagnode = nullptr;
 
-	SemanticGraph from_pipe(const Pipe &p) const {
-		SemanticGraph res;
-		std::vector<SemanticGraph> subg; //children graphs
-		SemGraphNode *node_;
+  SemanticGraph from_pipe(const Pipe &p) const {
+    SemanticGraph res;
+    std::vector<SemanticGraph> subg;  // children graphs
+    SemGraphNode *node_;
 
-		switch (p.term_node_type()) {
-		case Pipe::EMPTY:
-			/* singleton graph */
-			node_ = new SemGraphNode(SemNodeRole::Empty);
-			res.graph[node_] = std::vector<SemGraphNode *>();
-			res.firstdagnode = res.lastdagnode = node_;
-			break;
-		case Pipe::OPERATOR:
-			/* singleton graph */
-			node_ = new SemGraphNode(p.get_operator_ptr());
-			res.graph[node_] = std::vector<SemGraphNode *>();
-			res.firstdagnode = res.lastdagnode = node_;
-			break;
-		case Pipe::TO:
-			/* merge children graphs */
-			for (auto p_ : p.children()) {
-				subg.push_back(from_pipe(*p_));
-				res.merge_with(subg.back());
-			}
-			/* link subgraphs */
-			for (std::vector<SemanticGraph>::size_type i = 0;
-					i < subg.size() - 1; ++i)
-				res.graph[subg[i].lastdagnode].push_back(
-						subg[i + 1].firstdagnode);
-			/* set first and last nodes */
-			res.firstdagnode = subg[0].firstdagnode;
-			res.lastdagnode = subg[subg.size() - 1].lastdagnode;
-			break;
-		case Pipe::MULTITO:
-			if (p.out_deg() == 1)
-				node_ = new SemGraphNode(SemNodeRole::Merge); //merge
-			/* merge children graphs */
-			for (auto p_ : p.children()) {
-				subg.push_back(from_pipe(*p_));
-				res.merge_with(subg.back());
-			}
-			/* link children (having output) with merge node */
-			if (p.out_deg())
-				for (auto it = subg.begin() + 1; it != subg.end(); ++it)
-					if (it->lastdagnode->op->o_degree())
-						res.graph[it->lastdagnode].push_back(node_);
-			/* set first and last nodes */
-			res.firstdagnode = subg[0].firstdagnode;
-			res.lastdagnode = p.out_deg() ? node_ : subg.back().lastdagnode;
-			break;
-		case Pipe::ITERATE:
-			/* add a feedback edge to child graph */
-			assert(p.children().size() == 1);
-			res = from_pipe(*p.children()[0]);
-			res.graph[res.lastdagnode].push_back(res.firstdagnode);
-			//TODO termination
-			break;
-		case Pipe::MERGE:
-			node_ = new SemGraphNode(SemNodeRole::Merge);
-			/* merge children graphs */
-			for (auto p_ : p.children()) {
-				subg.push_back(from_pipe(*p_));
-				res.merge_with(subg.back());
-				/* link with merge node */
-				res.graph[subg.back().lastdagnode].push_back(node_);
-				/* set as first node if pipe has input*/
-				if (p_->in_deg()) {
-					assert(!res.firstdagnode);
-					res.firstdagnode = subg.back().firstdagnode;
-				}
-			}
-			res.lastdagnode = node_;
-			break;
-		case Pipe::PAIR:
-			node_ = new SemGraphNode(p.get_operator_ptr());
-			/* merge children graphs */
-			for (auto p_ : p.children()) {
-				subg.push_back(from_pipe(*p_));
-				res.merge_with(subg.back());
-				/* link with merge node */
-				res.graph[subg.back().lastdagnode].push_back(node_);
-				/* set as first node if pipe has input*/
-				if (p_->in_deg()) {
-					assert(!res.firstdagnode);
-					res.firstdagnode = subg.back().firstdagnode;
-				}
-			}
-			res.lastdagnode = node_;
-			break;
-		}
-		return res;
-	}
+    switch (p.term_node_type()) {
+      case Pipe::EMPTY:
+        /* singleton graph */
+        node_ = new SemGraphNode(SemNodeRole::Empty);
+        res.graph[node_] = std::vector<SemGraphNode *>();
+        res.firstdagnode = res.lastdagnode = node_;
+        break;
+      case Pipe::OPERATOR:
+        /* singleton graph */
+        node_ = new SemGraphNode(p.get_operator_ptr());
+        res.graph[node_] = std::vector<SemGraphNode *>();
+        res.firstdagnode = res.lastdagnode = node_;
+        break;
+      case Pipe::TO:
+        /* merge children graphs */
+        for (auto p_ : p.children()) {
+          subg.push_back(from_pipe(*p_));
+          res.merge_with(subg.back());
+        }
+        /* link subgraphs */
+        for (std::vector<SemanticGraph>::size_type i = 0; i < subg.size() - 1;
+             ++i)
+          res.graph[subg[i].lastdagnode].push_back(subg[i + 1].firstdagnode);
+        /* set first and last nodes */
+        res.firstdagnode = subg[0].firstdagnode;
+        res.lastdagnode = subg[subg.size() - 1].lastdagnode;
+        break;
+      case Pipe::MULTITO:
+        if (p.out_deg() == 1)
+          node_ = new SemGraphNode(SemNodeRole::Merge);  // merge
+        /* merge children graphs */
+        for (auto p_ : p.children()) {
+          subg.push_back(from_pipe(*p_));
+          res.merge_with(subg.back());
+        }
+        /* link children (having output) with merge node */
+        if (p.out_deg())
+          for (auto it = subg.begin() + 1; it != subg.end(); ++it)
+            if (it->lastdagnode->op->o_degree())
+              res.graph[it->lastdagnode].push_back(node_);
+        /* set first and last nodes */
+        res.firstdagnode = subg[0].firstdagnode;
+        res.lastdagnode = p.out_deg() ? node_ : subg.back().lastdagnode;
+        break;
+      case Pipe::ITERATE:
+        /* add a feedback edge to child graph */
+        assert(p.children().size() == 1);
+        res = from_pipe(*p.children()[0]);
+        res.graph[res.lastdagnode].push_back(res.firstdagnode);
+        // TODO termination
+        break;
+      case Pipe::MERGE:
+        node_ = new SemGraphNode(SemNodeRole::Merge);
+        /* merge children graphs */
+        for (auto p_ : p.children()) {
+          subg.push_back(from_pipe(*p_));
+          res.merge_with(subg.back());
+          /* link with merge node */
+          res.graph[subg.back().lastdagnode].push_back(node_);
+          /* set as first node if pipe has input*/
+          if (p_->in_deg()) {
+            assert(!res.firstdagnode);
+            res.firstdagnode = subg.back().firstdagnode;
+          }
+        }
+        res.lastdagnode = node_;
+        break;
+      case Pipe::PAIR:
+        node_ = new SemGraphNode(p.get_operator_ptr());
+        /* merge children graphs */
+        for (auto p_ : p.children()) {
+          subg.push_back(from_pipe(*p_));
+          res.merge_with(subg.back());
+          /* link with merge node */
+          res.graph[subg.back().lastdagnode].push_back(node_);
+          /* set as first node if pipe has input*/
+          if (p_->in_deg()) {
+            assert(!res.firstdagnode);
+            res.firstdagnode = subg.back().firstdagnode;
+          }
+        }
+        res.lastdagnode = node_;
+        break;
+    }
+    return res;
+  }
 
-	void merge_with(const SemanticGraph &g) {
-		for (auto adj_entry : g.graph) {
-			auto src = adj_entry.first;
-			assert(graph.find(src) == graph.end());
-			graph[adj_entry.first] = adj_entry.second;
-		}
-	}
+  void merge_with(const SemanticGraph &g) {
+    for (auto adj_entry : g.graph) {
+      auto src = adj_entry.first;
+      assert(graph.find(src) == graph.end());
+      graph[adj_entry.first] = adj_entry.second;
+    }
+  }
 
-	/*
-	 * printing utilities
-	 */
-	void print_(std::ostream &os) {
-		os << "[SEMGRAPH] adjacency [operator]=>[operators]:\n";
-		//iterate over keys
-		for (auto el : graph) {
-			//iterate over each list of values
-			os << "\t" << el.first->name() << "[" << el.first << "] => ";
-			for (auto& node : el.second) {
-				os << node->name() << "[" << node << "] ";
-			}
-			os << std::endl;
-		}
+  /*
+   * printing utilities
+   */
+  void print_(std::ostream &os) {
+    os << "[SEMGRAPH] adjacency [operator]=>[operators]:\n";
+    // iterate over keys
+    for (auto el : graph) {
+      // iterate over each list of values
+      os << "\t" << el.first->name() << "[" << el.first << "] => ";
+      for (auto &node : el.second) {
+        os << node->name() << "[" << node << "] ";
+      }
+      os << std::endl;
+    }
 
-		os << "[SEMGRAPH] first operator: ";
-		os << firstdagnode->name() << std::endl;
-		os << "[SEMGRAPH] last operator: ";
-		os << lastdagnode->name() << std::endl;
+    os << "[SEMGRAPH] first operator: ";
+    os << firstdagnode->name() << std::endl;
+    os << "[SEMGRAPH] last operator: ";
+    os << lastdagnode->name() << std::endl;
 
 #if 0
 		os << "[SEMGRAPH] Printing BFS:\n";
 		bfs(os);
 #endif
 
-		os << std::endl;
-	}
+    os << std::endl;
+  }
 
-	void dot_(std::ofstream &dotfile) {
-		dotfile << "digraph sem {\n rankdir=LR;\n";
+  void dot_(std::ofstream &dotfile) {
+    dotfile << "digraph sem {\n rankdir=LR;\n";
 
-		//preparing labels
-		for (auto it = graph.begin(); it != graph.end(); ++it) {
-			dotfile << it->first->name() << " [label=" << "\""
-					<< it->first->name_short() << "\"]\n";
-		}
-		//printing graph
-		for (auto it = graph.begin(); it != graph.end(); ++it) {
-			if (it->second.size() > 0) {
-				dotfile << it->first->name() << " -> {";
-				for (SemGraphNode* node : it->second) {
-					dotfile << node->name() << " ";
-				}
-				dotfile << "}\n";
-			}
-		}
-		dotfile << "}\n";
-	}
+    // preparing labels
+    for (auto it = graph.begin(); it != graph.end(); ++it) {
+      dotfile << it->first->name() << " [label="
+              << "\"" << it->first->name_short() << "\"]\n";
+    }
+    // printing graph
+    for (auto it = graph.begin(); it != graph.end(); ++it) {
+      if (it->second.size() > 0) {
+        dotfile << it->first->name() << " -> {";
+        for (SemGraphNode *node : it->second) {
+          dotfile << node->name() << " ";
+        }
+        dotfile << "}\n";
+      }
+    }
+    dotfile << "}\n";
+  }
 
 #if 0
 	void bfs(std::ostream &os) {
@@ -285,20 +271,18 @@ private:
 };
 
 SemanticGraph *make_semantic_graph(const Pipe &p) {
-	return new SemanticGraph(p);
+  return new SemanticGraph(p);
 }
 
 void destroy_semantic_graph(SemanticGraph *g) {
-	g->destroy();
-	delete g;
+  g->destroy();
+  delete g;
 }
 
-void print_semantic_graph(SemanticGraph &g, std::ostream &os) {
-	g.print(os);
-}
+void print_semantic_graph(SemanticGraph &g, std::ostream &os) { g.print(os); }
 
 void print_dot_semantic_graph(SemanticGraph &g, std::string fname) {
-	g.dot(fname);
+  g.dot(fname);
 }
 
 } /* namespace pico */

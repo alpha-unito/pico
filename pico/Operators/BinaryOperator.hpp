@@ -21,32 +21,33 @@
 #ifndef OPERATORS_BINARYOPERATOR_HPP_
 #define OPERATORS_BINARYOPERATOR_HPP_
 
-#include "Operator.hpp"
 #include "../Internals/PEGOptimization/defs.hpp"
+#include "Operator.hpp"
 
 namespace pico {
 
 /**
- * Base class for actor nodes with *two* input streams and *one* output stream, either bound or unbound and grouped or plain.
- * It is provided with methods for input/output type checking.
+ * Base class for actor nodes with *two* input streams and *one* output stream,
+ * either bound or unbound and grouped or plain. It is provided with methods for
+ * input/output type checking.
  */
-class base_BinaryOperator: public Operator {
-public:
-	virtual ff::ff_node* node_operator(int, bool, StructureType)=0;
+class base_BinaryOperator : public Operator {
+ public:
+  virtual ff::ff_node* node_operator(int, bool, StructureType) = 0;
 
-	virtual ff::ff_node* opt_node(int, bool, PEGOptimization_t, StructureType, //
-			opt_args_t) {
-		assert(false);
-		return nullptr;
-	}
+  virtual ff::ff_node* opt_node(int, bool, PEGOptimization_t, StructureType,  //
+                                opt_args_t) {
+    assert(false);
+    return nullptr;
+  }
 };
 
-template<typename In1, typename In2, typename Out>
-class BinaryOperator: public base_BinaryOperator {
-public:
-	typedef In1 inFirstT;
-	typedef In2 inSecondT;
-	typedef Out outT;
+template <typename In1, typename In2, typename Out>
+class BinaryOperator : public base_BinaryOperator {
+ public:
+  typedef In1 inFirstT;
+  typedef In2 inSecondT;
+  typedef Out outT;
 };
 
 } /* namespace pico */

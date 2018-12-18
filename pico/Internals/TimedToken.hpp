@@ -23,61 +23,46 @@
 
 namespace pico {
 
-template<typename T>
+template <typename T>
 class TimedToken {
-public:
-	typedef T datatype;
+ public:
+  typedef T datatype;
 
-	TimedToken() :
-			data(nullptr), timestamp(0) {
-	}
+  TimedToken() : data(nullptr), timestamp(0) {}
 
-	TimedToken(const T &item_) :
-			data(item_), timestamp(0) {
-	}
+  TimedToken(const T& item_) : data(item_), timestamp(0) {}
 
-	TimedToken(T&& item_, size_t timestamp_) :
-			data(std::move(item_)), timestamp(timestamp_) {
-	}
+  TimedToken(T&& item_, size_t timestamp_)
+      : data(std::move(item_)), timestamp(timestamp_) {}
 
-	TimedToken(T&& item) :
-			data(std::move(item)), timestamp(0) {
-	}
+  TimedToken(T&& item) : data(std::move(item)), timestamp(0) {}
 
-	TimedToken(T&& item_, const TimedToken<T> &tt) :
-			data(std::move(item_)), timestamp(tt.get_timestamp()) {
-	}
+  TimedToken(T&& item_, const TimedToken<T>& tt)
+      : data(std::move(item_)), timestamp(tt.get_timestamp()) {}
 
-	TimedToken(TimedToken &&tt) :
-			data(std::move(tt.data)), timestamp(std::move(tt.timestamp)) {
-	}
+  TimedToken(TimedToken&& tt)
+      : data(std::move(tt.data)), timestamp(std::move(tt.timestamp)) {}
 
-	TimedToken& operator=(TimedToken &&tt) {
-		data = std::move(tt.data);
-		timestamp = std::move(tt.timestamp);
-		return *this;
-	}
+  TimedToken& operator=(TimedToken&& tt) {
+    data = std::move(tt.data);
+    timestamp = std::move(tt.timestamp);
+    return *this;
+  }
 
-	friend std::ostream& operator<<(std::ostream& os, const TimedToken& tt) {
-		os << "<" << tt.data << ", " << tt.timestamp << ">";
-		return os;
-	}
+  friend std::ostream& operator<<(std::ostream& os, const TimedToken& tt) {
+    os << "<" << tt.data << ", " << tt.timestamp << ">";
+    return os;
+  }
 
-	T &get_data() {
-		return data;
-	}
+  T& get_data() { return data; }
 
-	inline size_t get_timestamp() const {
-		return timestamp;
-	}
+  inline size_t get_timestamp() const { return timestamp; }
 
-	void set_timestamp(size_t t) {
-		timestamp = t;
-	}
+  void set_timestamp(size_t t) { timestamp = t; }
 
-private:
-	T data;
-	size_t timestamp;
+ private:
+  T data;
+  size_t timestamp;
 };
 
 } /* namespace pico */

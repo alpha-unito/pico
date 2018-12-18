@@ -26,11 +26,14 @@
 namespace pico {
 
 /**
- * Defines an operator performing the policy for generating input (i.e. read from file).
+ * Defines an operator performing the policy for generating input (i.e. read
+ *from file).
  *
- * The input generation kernel is defined by the user and can be a lambda function, a functor or a function.
+ * The input generation kernel is defined by the user and can be a lambda
+ *function, a functor or a function.
  *
- * Furthermore, the user specifies the structure of the data type the Emitter generates. It can be:
+ * Furthermore, the user specifies the structure of the data type the Emitter
+ *generates. It can be:
  *	- Bag (spec: unordered, bounded)
  *	- List (spec: ordered, bounded)
  *	- Stream (spec: ordered, unbounded)
@@ -38,45 +41,35 @@ namespace pico {
  *
  * The operator is global and unique for the Pipe it refers to.
  */
-template<typename Out>
-class InputOperator: public UnaryOperator<void, Out> {
+template <typename Out>
+class InputOperator : public UnaryOperator<void, Out> {
+ public:
+  /**
+   * Constructor.
+   * Creates a new Emitter by defining its kernel function
+   * genf: void -> Out
+   * operating on a specified datatype.
+   */
+  InputOperator(StructureType st_) {
+    this->set_input_degree(0);
+    this->set_output_degree(1);
+    this->stype(st_, true);
+  }
 
-public:
-	/**
-	 * Constructor.
-	 * Creates a new Emitter by defining its kernel function
-	 * genf: void -> Out
-	 * operating on a specified datatype.
-	 */
-	InputOperator(StructureType st_) {
-		this->set_input_degree(0);
-		this->set_output_degree(1);
-		this->stype(st_, true);
-	}
+  /**
+   * Copy constructor
+   */
+  InputOperator(const InputOperator &copy) : UnaryOperator<void, Out>(copy) {}
 
-	/**
-	 * Copy constructor
-	 */
-	InputOperator(const InputOperator &copy) :
-			UnaryOperator<void, Out>(copy) {
+  /**
+   * Returns the name of the operator, consisting in the name of the class.
+   */
+  std::string name_short() { return "Emitter"; }
 
-	}
+  virtual ~InputOperator() {}
 
-	/**
-	 * Returns the name of the operator, consisting in the name of the class.
-	 */
-	std::string name_short() {
-		return "Emitter";
-	}
-
-	virtual ~InputOperator() {
-	}
-
-//protected:
-	const OpClass operator_class() {
-		return OpClass::INPUT;
-	}
-
+  // protected:
+  const OpClass operator_class() { return OpClass::INPUT; }
 };
 
 } /* namespace pico */

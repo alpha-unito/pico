@@ -25,38 +25,31 @@
 
 #include "base_iteration.hpp"
 
-class fixed_length_iteration_dispatcher: public base_iteration_dispatcher {
-	typedef pico::base_microbatch::tag_t tag_t;
+class fixed_length_iteration_dispatcher : public base_iteration_dispatcher {
+  typedef pico::base_microbatch::tag_t tag_t;
 
-public:
-	fixed_length_iteration_dispatcher(unsigned niters_) :
-			niters(niters_) {
-	}
+ public:
+  fixed_length_iteration_dispatcher(unsigned niters_) : niters(niters_) {}
 
-private:
-	void go_ahead() {
-		if (!closed()) {
-			bool accepting = true;
-			unsigned iters_cnt = n_iterations();
-			while(iters_cnt < niters && accepting) {
-				new_iteration();
-				accepting = n_iterations() - iters_cnt;
-				iters_cnt = n_iterations();
-			};
-			if (iters_cnt == niters)
-				close();
-		}
-	}
+ private:
+  void go_ahead() {
+    if (!closed()) {
+      bool accepting = true;
+      unsigned iters_cnt = n_iterations();
+      while (iters_cnt < niters && accepting) {
+        new_iteration();
+        accepting = n_iterations() - iters_cnt;
+        iters_cnt = n_iterations();
+      };
+      if (iters_cnt == niters) close();
+    }
+  }
 
-	void cstream_iteration_heartbeat_callback(tag_t) {
-		go_ahead();
-	}
+  void cstream_iteration_heartbeat_callback(tag_t) { go_ahead(); }
 
-	void cstream_iteration_end_callback(tag_t) {
-		go_ahead();
-	}
+  void cstream_iteration_end_callback(tag_t) { go_ahead(); }
 
-	const unsigned niters;
+  const unsigned niters;
 };
 
 #endif /* PICO_FF_IMPLEMENTATION_ITERATION_FIXED_LENGTH_HPP_ */

@@ -32,61 +32,52 @@
 
 #include "../../ff_config.hpp"
 
-
 #define CHUNK_SIZE 512
 
 /*
  * TODO only works with non-decorating token
  */
 
-template<typename TokenType>
-class ReadFromStdInFFNode: public base_filter {
-public:
-	ReadFromStdInFFNode(char delimiter_) :
-			delimiter(delimiter_) {
-	}
+template <typename TokenType>
+class ReadFromStdInFFNode : public base_filter {
+ public:
+  ReadFromStdInFFNode(char delimiter_) : delimiter(delimiter_) {}
 
-	void kernel(pico::base_microbatch *) {
-		assert(false);
-	}
+  void kernel(pico::base_microbatch *) { assert(false); }
 
+  void begin_callback() {
+    /* get a fresh tag */
+    tag = pico::base_microbatch::fresh_tag();
+    begin_cstream(tag);
+    auto mb = NEW<mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
+    std::string str;
 
+    while (std::getline(std::cin, str, delimiter)) {
+      new (mb->allocate()) std::string(str);
+      mb->commit();
+      if (mb->full()) {
+        send_mb(mb);
+        mb = NEW<mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
+      }
+    }
 
-	void begin_callback() {
-			/* get a fresh tag */
-			tag = pico::base_microbatch::fresh_tag();
-			begin_cstream(tag);
-			auto mb = NEW<mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
-			std::string str;
+    if (!mb->empty())
+      send_mb(mb);
+    else
+      DELETE(mb);
 
-			while(std::getline(std::cin, str, delimiter)) {
-				new (mb->allocate()) std::string(str);
-				mb->commit();
-				if (mb->full()) {
-					send_mb(mb);
-					mb = NEW<mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
-				}
-			}
+    end_cstream(tag);
+  }
 
-			if (!mb->empty())
-				send_mb(mb);
-			else
-				DELETE(mb);
+ private:
+  typedef pico::Microbatch<TokenType> mb_t;
+  char delimiter;
+  pico::base_microbatch::tag_t tag = 0;  // a tag for the generated collection
 
-			end_cstream(tag);
-
-	}
-
-private:
-	typedef pico::Microbatch<TokenType> mb_t;
-	char delimiter;
-	pico::base_microbatch::tag_t tag = 0; //a tag for the generated collection
-
-	void error(const char *msg) {
-		perror(msg);
-		exit(0);
-	}
+  void error(const char *msg) {
+    perror(msg);
+    exit(0);
+  }
 };
 
 #endif /* INTERNALS_FFOPERATORS_INOUT_READFROMSTDINFFNODE_HPP_ */
-

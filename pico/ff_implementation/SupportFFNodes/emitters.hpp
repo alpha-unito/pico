@@ -30,32 +30,23 @@
  * Forwards non-sync tokens and broadcasts sync tokens.
  */
 
-class ForwardingEmitter: public base_emitter {
-public:
-	ForwardingEmitter(unsigned nw) :
-			base_emitter(nw) {
-	}
+class ForwardingEmitter : public base_emitter {
+ public:
+  ForwardingEmitter(unsigned nw) : base_emitter(nw) {}
 
-	void kernel(pico::base_microbatch *mb) {
-		this->ff_send_out(mb);
-	}
+  void kernel(pico::base_microbatch *mb) { this->ff_send_out(mb); }
 };
-
 
 /*
  * Forwards non-sync tokens and broadcasts sync tokens.
  * (for ordered farm)
  */
 
-class OrdForwardingEmitter: public base_ord_emitter {
-public:
-	OrdForwardingEmitter(unsigned nw) :
-		base_ord_emitter(nw) {
-	}
+class OrdForwardingEmitter : public base_ord_emitter {
+ public:
+  OrdForwardingEmitter(unsigned nw) : base_ord_emitter(nw) {}
 
-	void kernel(pico::base_microbatch *mb) {
-		this->ff_send_out(mb);
-	}
+  void kernel(pico::base_microbatch *mb) { this->ff_send_out(mb); }
 };
 
 #endif /* INTERNALS_FFOPERATORS_EMITTER_HPP_ */

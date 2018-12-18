@@ -34,66 +34,59 @@ namespace pico {
  * The FlatMap produces zero or more elements in output, for each input pair,
  * according to the callable kernel.
  */
-template<typename In1, typename In2, typename Out>
-class JoinFlatMapByKey: public BinaryOperator<In1, In2, Out> {
-public:
-	/**
-	 * \ingroup op-api
-	 *
-	 * JoinFlatMapByKey Constructor
-	 *
-	 * Creates a new JoinFlatMapByKey operator by defining its kernel function.
-	 */
-	JoinFlatMapByKey(
-			std::function<void(In1&, In2&, FlatMapCollector<Out> &)> kernel_,
-			unsigned par = def_par()) {
-		kernel = kernel_;
-		this->set_input_degree(2);
-		this->set_output_degree(1);
-		this->stype(StructureType::BAG, true);
-		this->stype(StructureType::STREAM, false);
-		this->pardeg(par);
-	}
+template <typename In1, typename In2, typename Out>
+class JoinFlatMapByKey : public BinaryOperator<In1, In2, Out> {
+ public:
+  /**
+   * \ingroup op-api
+   *
+   * JoinFlatMapByKey Constructor
+   *
+   * Creates a new JoinFlatMapByKey operator by defining its kernel function.
+   */
+  JoinFlatMapByKey(
+      std::function<void(In1 &, In2 &, FlatMapCollector<Out> &)> kernel_,
+      unsigned par = def_par()) {
+    kernel = kernel_;
+    this->set_input_degree(2);
+    this->set_output_degree(1);
+    this->stype(StructureType::BAG, true);
+    this->stype(StructureType::STREAM, false);
+    this->pardeg(par);
+  }
 
-	JoinFlatMapByKey(const JoinFlatMapByKey &copy) :
-			BinaryOperator<In1, In2, Out>(copy), kernel(copy.kernel) {
-	}
+  JoinFlatMapByKey(const JoinFlatMapByKey &copy)
+      : BinaryOperator<In1, In2, Out>(copy), kernel(copy.kernel) {}
 
-	std::string name_short() {
-		return "JoinFlatMapByKey";
-	}
+  std::string name_short() { return "JoinFlatMapByKey"; }
 
-	const OpClass operator_class() {
-		return OpClass::BFMAP;
-	}
+  const OpClass operator_class() { return OpClass::BFMAP; }
 
-	ff::ff_node* node_operator(int parallelism, bool left_input, //
-			StructureType st) {
-		assert(st == StructureType::BAG);
-		using t = JoinFlatMapByKeyFarm<Token<In1>, Token<In2>, Token<Out>>;
-		return new t(parallelism, kernel, left_input);
-	}
+  ff::ff_node *node_operator(int parallelism, bool left_input,  //
+                             StructureType st) {
+    assert(st == StructureType::BAG);
+    using t = JoinFlatMapByKeyFarm<Token<In1>, Token<In2>, Token<Out>>;
+    return new t(parallelism, kernel, left_input);
+  }
 
-	ff::ff_node *opt_node(int pardeg, bool lin, PEGOptimization_t opt,
-			StructureType st, opt_args_t a) {
-		assert(opt == PJFMAP_PREDUCE);
-		assert(st == StructureType::BAG);
-		auto nextop = dynamic_cast<ReduceByKey<Out>*>(a.op);
-		if (nextop->pardeg() == 1) {
-			using t = JFMRBK_seq_red<Token<In1>, Token<In2>, Token<Out>>;
-			return new t(pardeg, lin, kernel, nextop->kernel());
-		}
-		using t = JFMRBK_par_red<Token<In1>, Token<In2>, Token<Out>>;
-		return new t(pardeg, lin, kernel, nextop->pardeg(), nextop->kernel());
-	}
+  ff::ff_node *opt_node(int pardeg, bool lin, PEGOptimization_t opt,
+                        StructureType st, opt_args_t a) {
+    assert(opt == PJFMAP_PREDUCE);
+    assert(st == StructureType::BAG);
+    auto nextop = dynamic_cast<ReduceByKey<Out> *>(a.op);
+    if (nextop->pardeg() == 1) {
+      using t = JFMRBK_seq_red<Token<In1>, Token<In2>, Token<Out>>;
+      return new t(pardeg, lin, kernel, nextop->kernel());
+    }
+    using t = JFMRBK_par_red<Token<In1>, Token<In2>, Token<Out>>;
+    return new t(pardeg, lin, kernel, nextop->pardeg(), nextop->kernel());
+  }
 
-protected:
-	JoinFlatMapByKey* clone() {
-		return new JoinFlatMapByKey(*this);
-	}
+ protected:
+  JoinFlatMapByKey *clone() { return new JoinFlatMapByKey(*this); }
 
-private:
-	std::function<void(In1&, In2&, FlatMapCollector<Out> &)> kernel;
+ private:
+  std::function<void(In1 &, In2 &, FlatMapCollector<Out> &)> kernel;
 };
 
 } /* namespace pico */

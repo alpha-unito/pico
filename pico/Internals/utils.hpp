@@ -24,9 +24,9 @@
 /*
  * todo - move
  */
-#include <utility>
-#include <typeinfo>
 #include <map>
+#include <typeinfo>
+#include <utility>
 
 #include <ff/config.hpp>
 
@@ -37,11 +37,21 @@ namespace pico {
 using TypeInfoRef = std::reference_wrapper<const std::type_info>;
 
 enum StructureType {
-	BAG, STREAM //LIST, UBAG
+  BAG,
+  STREAM  // LIST, UBAG
 };
 
 enum OpClass {
-	MAP, FMAP, BMAP, BFMAP, REDUCE, FOLDREDUCE, INPUT, OUTPUT, MERGE, none
+  MAP,
+  FMAP,
+  BMAP,
+  BFMAP,
+  REDUCE,
+  FOLDREDUCE,
+  INPUT,
+  OUTPUT,
+  MERGE,
+  none
 };
 
 typedef std::map<StructureType, bool> st_map_t;

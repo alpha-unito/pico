@@ -24,83 +24,55 @@
 namespace pico {
 
 class WindowPolicy {
-public:
-	WindowPolicy() :
-			w_size(1), w_slide(1) {
-	}
+ public:
+  WindowPolicy() : w_size(1), w_slide(1) {}
 
-	WindowPolicy(size_t w_size_, size_t w_slide_) :
-			w_size(w_size_), w_slide(w_slide_) {
-	}
+  WindowPolicy(size_t w_size_, size_t w_slide_)
+      : w_size(w_size_), w_slide(w_slide_) {}
 
-	WindowPolicy(const WindowPolicy &w) :
-			w_size(w.w_size), w_slide(w.w_slide) {
-	}
+  WindowPolicy(const WindowPolicy &w) : w_size(w.w_size), w_slide(w.w_slide) {}
 
-	WindowPolicy& operator=(const WindowPolicy &w) {
-		w_slide = w.w_slide;
-		w_size = w.w_size;
-		return *this;
-	}
+  WindowPolicy &operator=(const WindowPolicy &w) {
+    w_slide = w.w_slide;
+    w_size = w.w_size;
+    return *this;
+  }
 
-	size_t slide_factor() {
-		return w_slide;
-	}
+  size_t slide_factor() { return w_slide; }
 
-	size_t win_size() {
-		return w_size;
-	}
+  size_t win_size() { return w_size; }
 
-	virtual WindowPolicy *clone() = 0;
+  virtual WindowPolicy *clone() = 0;
 
-	virtual ~WindowPolicy() {
-	}
+  virtual ~WindowPolicy() {}
 
-protected:
-	size_t w_size;
-	size_t w_slide;
+ protected:
+  size_t w_size;
+  size_t w_slide;
 };
 
-template<typename TokenType>
-class BatchWindow: public WindowPolicy {
+template <typename TokenType>
+class BatchWindow : public WindowPolicy {
+ public:
+  BatchWindow() : WindowPolicy() {}
 
-public:
-	BatchWindow() :
-			WindowPolicy() {
-	}
+  BatchWindow(const BatchWindow &copy) : WindowPolicy(copy) {}
 
-	BatchWindow(const BatchWindow &copy) :
-			WindowPolicy(copy) {
-	}
+  BatchWindow(size_t w_size_) : WindowPolicy(w_size_, w_size_) {}
 
-	BatchWindow(size_t w_size_) :
-			WindowPolicy(w_size_, w_size_) {
-	}
-
-	BatchWindow *clone() {
-		return new BatchWindow(*this);
-	}
+  BatchWindow *clone() { return new BatchWindow(*this); }
 };
 
-template<typename TokenType>
-class ByKeyWindow: public WindowPolicy {
+template <typename TokenType>
+class ByKeyWindow : public WindowPolicy {
+ public:
+  ByKeyWindow() : WindowPolicy() {}
 
-public:
-	ByKeyWindow() :
-			WindowPolicy() {
-	}
+  ByKeyWindow(const ByKeyWindow &copy) : WindowPolicy(copy) {}
 
-	ByKeyWindow(const ByKeyWindow &copy) :
-			WindowPolicy(copy) {
-	}
+  ByKeyWindow(size_t w_size_) : WindowPolicy(w_size_, w_size_) {}
 
-	ByKeyWindow(size_t w_size_) :
-			WindowPolicy(w_size_, w_size_) {
-	}
-
-	ByKeyWindow *clone() {
-		return new ByKeyWindow(*this);
-	}
+  ByKeyWindow *clone() { return new ByKeyWindow(*this); }
 };
 } /* namespace pico */
 
