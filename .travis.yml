@@ -53,6 +53,7 @@ install:
         - git clone --single-branch -b fastflow3 https://github.com/fastflow/fastflow.git
         - ln -s fastflow/ff ff
 script:
-        - cd tests
+        - mkdir build && cd build
+        - cmake ..
         - make
-        - ./run_tests.sh
+        - cd tests && sh run_tests.sh
