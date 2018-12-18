@@ -22,7 +22,6 @@
 #define INTERNALS_FFOPERATORS_EMITTER_HPP_
 
 #include <ff/node.hpp>
-using namespace ff;
 
 #include "base_nodes.hpp"
 #include "farms.hpp"
@@ -37,7 +36,7 @@ public:
 			base_emitter(nw) {
 	}
 
-	void kernel(base_microbatch *mb) {
+	void kernel(pico::base_microbatch *mb) {
 		this->ff_send_out(mb);
 	}
 };
@@ -54,7 +53,7 @@ public:
 		base_ord_emitter(nw) {
 	}
 
-	void kernel(base_microbatch *mb) {
+	void kernel(pico::base_microbatch *mb) {
 		this->ff_send_out(mb);
 	}
 };

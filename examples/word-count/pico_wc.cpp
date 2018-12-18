@@ -30,9 +30,8 @@
 #include <string>
 
 #include <pico/pico.hpp>
-using namespace pico;
 
-typedef KeyValue<std::string, int> KV;
+typedef pico::KeyValue<std::string, int> KV;
 
 int main(int argc, char** argv) {
 	// parse command line
@@ -43,8 +42,8 @@ int main(int argc, char** argv) {
 	std::string in_fname(argv[1]), out_fname(argv[2]);
 
 	/* define a generic word-count pipeline */
-	FlatMap<std::string, KV> tokenizer(
-			[](std::string& in, FlatMapCollector<KV>& collector) {
+	pico::FlatMap<std::string, KV> tokenizer(
+			[](std::string& in, pico::FlatMapCollector<KV>& collector) {
 				std::string::size_type i = 0, j;
 				while((j = in.find_first_of(' ', i)) != std::string::npos) {
 					collector.add(KV(in.substr(i, j - i), 1));
@@ -54,9 +53,9 @@ int main(int argc, char** argv) {
 				collector.add(KV(in.substr(i, in.size() - i), 1));
 			});
 
-	auto countWords = Pipe() //the empty pipeline
+	auto countWords = pico::Pipe() //the empty pipeline
 	.add(tokenizer) //
-	.add(ReduceByKey<KV>([](int v1, int v2) {return v1+v2;}));
+	.add(pico::ReduceByKey<KV>([](int v1, int v2) {return v1+v2;}));
 
 	// countWords can now be used to build batch pipelines.
 	// If we enrich the last combine operator with a windowing policy (i.e.,
@@ -64,11 +63,11 @@ int main(int argc, char** argv) {
 	// and streaming pipelines.
 
 	/* define i/o operators from/to file */
-	ReadFromFile reader(in_fname);
-	WriteToDisk<KV> writer(out_fname);
+	pico::ReadFromFile reader(in_fname);
+	pico::WriteToDisk<KV> writer(out_fname);
 
 	/* compose the pipeline */
-	auto wc = Pipe() //the empty pipeline
+	auto wc = pico::Pipe() //the empty pipeline
 	.add(reader) //
 	.to(countWords) //
 	.add(writer);

@@ -34,8 +34,6 @@
 
 #include "../SupportFFNodes/RBKOptFarm.hpp"
 
-using namespace ff;
-using namespace pico;
 
 template<typename TokenTypeIn, typename TokenTypeOut>
 class FMRBK_seq_red: public NonOrderingFarm {
@@ -47,7 +45,7 @@ class FMRBK_seq_red: public NonOrderingFarm {
 
 public:
 	FMRBK_seq_red(int fmap_par,
-			std::function<void(In&, FlatMapCollector<Out> &)>& flatmapf,
+			std::function<void(In&, pico::FlatMapCollector<Out> &)>& flatmapf,
 			std::function<OutV(OutV&, OutV&)> reducef) {
 		auto e = new fw_emitter_t(fmap_par);
 		this->setEmitterF(e);
@@ -64,12 +62,12 @@ private:
 
 	class Worker: public base_filter {
 	public:
-		Worker(std::function<void(In&, FlatMapCollector<Out> &)>& kernel_, //
+		Worker(std::function<void(In&, pico::FlatMapCollector<Out> &)>& kernel_, //
 				std::function<OutV(OutV&, OutV&)>& reducef_kernel_) :
 				map_kernel(kernel_), reduce_kernel(reducef_kernel_) {
 		}
 
-		void kernel(base_microbatch *in_mb) {
+		void kernel(pico::base_microbatch *in_mb) {
 			/*
 			 * got a microbatch to process and delete
 			 */
@@ -107,15 +105,15 @@ private:
 			collector.clear();
 		}
 
-		void cstream_end_callback(base_microbatch::tag_t tag) {
+		void cstream_end_callback(pico::base_microbatch::tag_t tag) {
 			auto &s(tag_state[tag]);
-			auto mb = NEW<mb_out>(tag, global_params.MICROBATCH_SIZE);
+			auto mb = NEW<mb_out>(tag, pico::global_params.MICROBATCH_SIZE);
 			for (auto it = s.kvmap.begin(); it != s.kvmap.end(); ++it) {
 				new (mb->allocate()) Out(it->first, it->second);
 				mb->commit();
 				if (mb->full()) {
 					ff_send_out(reinterpret_cast<void*>(mb));
-					mb = NEW<mb_out>(tag, global_params.MICROBATCH_SIZE);
+					mb = NEW<mb_out>(tag, pico::global_params.MICROBATCH_SIZE);
 				}
 			}
 
@@ -128,16 +126,16 @@ private:
 		}
 
 	private:
-		typedef Microbatch<TokenTypeIn> mb_in;
-		typedef Microbatch<TokenTypeOut> mb_out;
+		typedef pico::Microbatch<TokenTypeIn> mb_in;
+		typedef pico::Microbatch<TokenTypeOut> mb_out;
 
-		TokenCollector<Out> collector;
-		std::function<void(In&, FlatMapCollector<Out> &)> map_kernel;
+		pico::TokenCollector<Out> collector;
+		std::function<void(In&, pico::FlatMapCollector<Out> &)> map_kernel;
 		std::function<OutV(OutV&, OutV&)> reduce_kernel;
 		struct key_state {
 			std::unordered_map<OutK, OutV> kvmap;
 		};
-		std::unordered_map<base_microbatch::tag_t, key_state> tag_state;
+		std::unordered_map<pico::base_microbatch::tag_t, key_state> tag_state;
 	};
 };
 
@@ -155,7 +153,7 @@ class FMRBK_par_red: public ff::ff_pipeline {
 
 public:
 	FMRBK_par_red(int fmap_par,
-			std::function<void(In&, FlatMapCollector<Out> &)>& fmap_f,
+			std::function<void(In&, pico::FlatMapCollector<Out> &)>& fmap_f,
 			int red_par, //
 			std::function<OutV(OutV&, OutV&)> red_f) {
 		/* create the flatmap farm */
@@ -168,7 +166,7 @@ public:
 
 		/* combine the farms with shuffle */
 		auto combined_farm =
-				combine_farms<emitter_t, emitter_t>(*fmap_farm, emitter, *rbk_farm, nullptr, false);
+				ff::combine_farms<emitter_t, emitter_t>(*fmap_farm, emitter, *rbk_farm, nullptr, false);
 
 		/* compose the pipeline */
 		this->add_stage(combined_farm);
@@ -183,7 +181,7 @@ private:
 	class FM_farm: public NonOrderingFarm {
 	public:
 		FM_farm(int fmap_par,
-				std::function<void(In&, FlatMapCollector<Out> &)>& flatmapf,
+				std::function<void(In&, pico::FlatMapCollector<Out> &)>& flatmapf,
 				int rbk_par, //
 				std::function<OutV(OutV&, OutV&)> reducef) {
 			using emitter_t = ForwardingEmitter;
@@ -203,14 +201,14 @@ private:
 		class Worker: public base_filter {
 		public:
 			Worker(
-					std::function<void(In&, FlatMapCollector<Out> &)>& kernel_, //
+					std::function<void(In&, pico::FlatMapCollector<Out> &)>& kernel_, //
 					int rbk_par_,
 					std::function<OutV(OutV&, OutV&)>& reducef_kernel_) :
 					map_kernel(kernel_), //
 					rbk_par(rbk_par_), rbk_f(reducef_kernel_) {
 			}
 
-			void kernel(base_microbatch *in_mb) {
+			void kernel(pico::base_microbatch *in_mb) {
 				/*
 				 * got a microbatch to process and delete
 				 */
@@ -248,7 +246,7 @@ private:
 				collector.clear();
 			}
 
-			void cstream_end_callback(base_microbatch::tag_t tag) {
+			void cstream_end_callback(pico::base_microbatch::tag_t tag) {
 				std::vector<mb_out *> worker_mb;
 				for (unsigned wid = 0; wid < rbk_par; ++wid)
 					worker_mb.push_back(nullptr);
@@ -271,20 +269,20 @@ private:
 			}
 
 		private:
-			typedef Microbatch<TokenTypeIn> mb_in;
-			typedef Microbatch<TokenTypeOut> mb_out;
+			typedef pico::Microbatch<TokenTypeIn> mb_in;
+			typedef pico::Microbatch<TokenTypeOut> mb_out;
 			typedef std::unordered_map<OutK, OutV> red_map_t;
-			int mb_size = global_params.MICROBATCH_SIZE;
+			int mb_size = pico::global_params.MICROBATCH_SIZE;
 
-			TokenCollector<Out> collector;
-			std::function<void(In&, FlatMapCollector<Out> &)> map_kernel;
+			pico::TokenCollector<Out> collector;
+			std::function<void(In&, pico::FlatMapCollector<Out> &)> map_kernel;
 			unsigned rbk_par;
 			std::function<OutV(OutV&, OutV&)> rbk_f;
 
 			struct tag_kv {
 				red_map_t red_map;
 			};
-			std::unordered_map<base_microbatch::tag_t, tag_kv> tag_state;
+			std::unordered_map<pico::base_microbatch::tag_t, tag_kv> tag_state;
 
 			inline size_t key_to_worker(const OutK& k) {
 				return std::hash<OutK> { }(k) % rbk_par;
@@ -302,7 +300,7 @@ using tkn_vt = typename tkn_dt<TokenType>::valuetype;
 template<typename TI, typename TO>
 ff::ff_node *FMapPReduceBatch(
 		int fmap_par, //
-		std::function<void(tkn_dt<TI> &, FlatMapCollector<tkn_dt<TO>> &)> f,
+		std::function<void(tkn_dt<TI> &, pico::FlatMapCollector<tkn_dt<TO>> &)> f,
 		int red_par, //
 		std::function<tkn_vt<TO>(tkn_vt<TO> &, tkn_vt<TO> &)> redf) {
 	if (red_par > 1)

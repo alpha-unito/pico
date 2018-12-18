@@ -228,7 +228,7 @@ private:
  * A utility class for wrapping a pointer into a micro-batch.
  */
 template<typename T>
-class mb_wrapped: public Microbatch<Token<T *>> {
+class mb_wrapped: public pico::Microbatch<Token<T *>> {
 public:
 	mb_wrapped(base_microbatch::tag_t tag, T *ptr) :
 			Microbatch<Token<T *>>(tag, 1) {

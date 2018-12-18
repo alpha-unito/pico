@@ -29,8 +29,6 @@
 #include "../../Internals/TimedToken.hpp"
 #include "../../Internals/Microbatch.hpp"
 
-using namespace ff;
-using namespace pico;
 
 template<typename In, typename Out, typename Farm, typename TokenTypeIn,
 		typename TokenTypeOut>
@@ -38,14 +36,14 @@ class MapBatch: public Farm {
 public:
 
 	MapBatch(int par, std::function<Out(In&)>& mapf) {
-		ff_node* e;
+		ff::ff_node* e;
 		if (this->isOFarm())
 			e = new OrdForwardingEmitter(par);
 		else
 			e = new ForwardingEmitter(par);
 		this->setEmitterF(e);
 		this->setCollectorF(new ForwardingCollector(par));
-		std::vector<ff_node *> w;
+		std::vector<ff::ff_node *> w;
 		for (int i = 0; i < par; ++i)
 			w.push_back(new Worker(mapf));
 		this->add_workers(w);
@@ -59,10 +57,10 @@ private:
 				mkernel(kernel_) {
 		}
 
-		void kernel(base_microbatch *in_mb) {
+		void kernel(pico::base_microbatch *in_mb) {
 			auto in_microbatch = reinterpret_cast<mb_in*>(in_mb);
 			auto tag = in_mb->tag();
-			auto out_mb = NEW<mb_out>(tag, global_params.MICROBATCH_SIZE);
+			auto out_mb = NEW<mb_out>(tag, pico::global_params.MICROBATCH_SIZE);
 			// iterate over microbatch
 			for (In &in : *in_microbatch) {
 				/* build item and enable copy elision */
@@ -74,8 +72,8 @@ private:
 		}
 
 	private:
-		typedef Microbatch<TokenTypeIn> mb_in;
-		typedef Microbatch<TokenTypeOut> mb_out;
+		typedef pico::Microbatch<TokenTypeIn> mb_in;
+		typedef pico::Microbatch<TokenTypeOut> mb_out;
 		std::function<Out(In&)> mkernel;
 	};
 };

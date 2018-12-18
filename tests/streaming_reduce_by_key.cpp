@@ -11,7 +11,7 @@
 
 #include "common/io.hpp"
 
-typedef KeyValue<char, int> KV;
+typedef pico::KeyValue<char, int> KV;
 
 /*
  * simple reduce by key with windowing that sums pairs.
@@ -32,14 +32,14 @@ TEST_CASE("streaming reduce by key", "streaming reduce by key tag" ) {
     std::cout.rdbuf(out.rdbuf()); //redirect
 
     /* build the pipeline */
-    ReadFromSocket reader("localhost", 4000, '\n');
-    WriteToStdOut<KV> writer([](KV in) { return in.to_string(); });
+    pico::ReadFromSocket reader("localhost", 4000, '\n');
+    pico::WriteToStdOut<KV> writer([](KV in) { return in.to_string(); });
 
     auto test_pipe = 
-        Pipe()
+    		pico::Pipe()
 	.add(reader)
-        .add(Map<std::string, KV>([](std::string line) { return KV::from_string(line); })) 
-	.add(ReduceByKey<KV>([](int v1, int v2) { return v1+v2; }).window(wsize)) //
+        .add(pico::Map<std::string, KV>([](std::string line) { return KV::from_string(line); }))
+	.add(pico::ReduceByKey<KV>([](int v1, int v2) { return v1+v2; }).window(wsize)) //
 	.add(writer);
 
     /* execute the pipeline */

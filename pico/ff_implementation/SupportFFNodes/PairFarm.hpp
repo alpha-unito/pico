@@ -30,15 +30,15 @@ public:
 	}
 
 	/* ensure no c-streams are sent to input-less pipes */
-	void kernel(base_microbatch *) {
+	void kernel(pico::base_microbatch *) {
 		assert(false);
 	}
 
-	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
+	virtual void handle_cstream_begin(pico::base_microbatch::tag_t tag) {
 		assert(false);
 	}
 
-	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
+	virtual void handle_cstream_end(pico::base_microbatch::tag_t tag) {
 		assert(false);
 	}
 };
@@ -50,17 +50,17 @@ public:
 			PairEmitter_base_t(2) {
 	}
 
-	void kernel(base_microbatch *in_mb) {
+	void kernel(pico::base_microbatch *in_mb) {
 		send_mb_to(in_mb, To);
 	}
 
 	/* do not notify input-less pipe about c-stream begin/end */
-	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
+	virtual void handle_cstream_begin(pico::base_microbatch::tag_t tag) {
 		send_mb_to(make_sync(tag, PICO_CSTREAM_BEGIN), To);
 		//cstream_begin_callback(tag);
 	}
 
-	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
+	virtual void handle_cstream_end(pico::base_microbatch::tag_t tag) {
 		//cstream_end_callback(tag);
 		send_mb_to(make_sync(tag, PICO_CSTREAM_END), To);
 	}
@@ -102,7 +102,7 @@ public:
 	}
 
 	/* on c-stream begin, forward and notify about origin */
-	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
+	virtual void handle_cstream_begin(pico::base_microbatch::tag_t tag) {
 		send_mb(make_sync(tag, PICO_CSTREAM_BEGIN));
 		if (!gt.from())
 			send_mb(make_sync(tag, PICO_CSTREAM_FROM_LEFT));
@@ -111,13 +111,13 @@ public:
 	}
 
 	/* on c-stream end, notify */
-	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
+	virtual void handle_cstream_end(pico::base_microbatch::tag_t tag) {
 		//cstream_end_callback(tag);
 		send_mb(make_sync(tag, PICO_CSTREAM_END));
 	}
 
 	/* forward data */
-	void kernel(base_microbatch *in_mb) {
+	void kernel(pico::base_microbatch *in_mb) {
 		send_mb(in_mb);
 	}
 
@@ -126,7 +126,7 @@ private:
 };
 
 
-class PairFarm: public ff_farm{
+class PairFarm: public ff::ff_farm{
 public:
 	PairFarm(){
 		setlb(new NonOrderingFarm::lb_t(max_nworkers)); //memory leak?
@@ -135,10 +135,10 @@ public:
 
 };
 
-static ff::ff_pipeline *make_ff_pipe(const Pipe &p1, StructureType st, bool); //forward
+static ff::ff_pipeline *make_ff_pipe(const pico::Pipe &p1, pico::StructureType st, bool); //forward
 
-static PairFarm *make_pair_farm(const Pipe &p1, const Pipe &p2, //
-		StructureType st) {
+static PairFarm *make_pair_farm(const pico::Pipe &p1, const pico::Pipe &p2, //
+		pico::StructureType st) {
 	/* create and configure */
 	auto res = new PairFarm();
 	res->cleanup_all();

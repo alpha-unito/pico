@@ -12,7 +12,7 @@
 
 #include "common/io.hpp"
 
-typedef KeyValue<std::string, int> KV;
+typedef pico::KeyValue<std::string, int> KV;
 
 /*
  * sequential wordcount
@@ -34,7 +34,7 @@ std::unordered_map<std::string, int> seq_wc(std::vector<std::string> lines){
 }
 
 /* static tokenizer function */
-static auto tokenizer = [](std::string& in, FlatMapCollector<KV>& collector) {
+static auto tokenizer = [](std::string& in, pico::FlatMapCollector<KV>& collector) {
     std::string::size_type i = 0, j;
     while ((j = in.find_first_of(' ', i)) != std::string::npos) {
         collector.add(KV(in.substr(i, j - i), 1));
@@ -64,17 +64,17 @@ TEST_CASE("wordcount", "wordcount tag" ) {
 
     /* define a generic word-count pipeline */
     auto countWords = 
-        Pipe() //the empty pipeline
-	.add(FlatMap<std::string, KV>(tokenizer)) //
-	.add(ReduceByKey<KV>([](int v1, int v2) { return v1+v2; } ));
+    		pico::Pipe() //the empty pipeline
+	.add(pico::FlatMap<std::string, KV>(tokenizer)) //
+	.add(pico::ReduceByKey<KV>([](int v1, int v2) { return v1+v2; } ));
 
 
-    ReadFromFile reader(input_file);
-    WriteToDisk<KV> writer(output_file, [](KV in) { return in.to_string(); });
+    pico::ReadFromFile reader(input_file);
+    pico::WriteToDisk<KV> writer(output_file, [](KV in) { return in.to_string(); });
 
     /* compose the pipeline */
     auto wc = 
-        Pipe()
+    		pico::Pipe()
 	.add(reader)
 	.to(countWords)
 	.add(writer);

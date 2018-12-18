@@ -33,13 +33,12 @@
 
 #include "../defs.hpp"
 
-using namespace pico;
 
 /*
  * An iteration is identified by its output collection-tag.
  */
 class base_iteration_dispatcher: public base_switch {
-	typedef base_microbatch::tag_t tag_t;
+	typedef pico::base_microbatch::tag_t tag_t;
 
 protected:
 	/*
@@ -71,11 +70,11 @@ protected:
 		tag_t res;
 
 		assert(!closed_);
-		assert(root_iteration != base_microbatch::nil_tag());
-		assert(last_iteration != base_microbatch::nil_tag());
+		assert(root_iteration != pico::base_microbatch::nil_tag());
+		assert(last_iteration != pico::base_microbatch::nil_tag());
 
 		/* get a fresh tag */
-		res = base_microbatch::fresh_tag();
+		res = pico::base_microbatch::fresh_tag();
 		assert(input_of.find(res) == output_of.end());
 
 		/* bind to the last iteration */
@@ -105,8 +104,8 @@ protected:
 	 */
 	void close() {
 		/* state-consistency check */
-		assert(root_iteration != base_microbatch::nil_tag());
-		assert(last_iteration != base_microbatch::nil_tag());
+		assert(root_iteration != pico::base_microbatch::nil_tag());
+		assert(last_iteration != pico::base_microbatch::nil_tag());
 
 		closed_ = true;
 		output_of[last_iteration] = root_iteration;
@@ -126,7 +125,7 @@ protected:
 
 private:
 
-	void kernel(base_microbatch *mb) {
+	void kernel(pico::base_microbatch *mb) {
 		auto tag = mb->tag();
 		assert(is_inflight[tag]);
 		if (has_output(tag) && is_inflight[output_of[tag]] && !is_last(tag)) {
@@ -151,15 +150,15 @@ private:
 		send_mb(make_sync(nil, PICO_END), true);
 	}
 
-	void handle_cstream_begin(base_microbatch::tag_t tag) {
-		if (root_iteration == base_microbatch::nil_tag())
+	void handle_cstream_begin(pico::base_microbatch::tag_t tag) {
+		if (root_iteration == pico::base_microbatch::nil_tag())
 			record_root_iteration(tag);
 
 		/* consistency check */
 		assert(is_inflight.find(tag) != is_inflight.end() && is_inflight[tag]);
 		assert(n_iterations_);
-		assert(root_iteration != base_microbatch::nil_tag());
-		assert(last_iteration != base_microbatch::nil_tag());
+		assert(root_iteration != pico::base_microbatch::nil_tag());
+		assert(last_iteration != pico::base_microbatch::nil_tag());
 		assert(input_of.find(tag) != input_of.end());
 
 		if (has_output(tag) && output_of[tag] == root_iteration) {
@@ -182,7 +181,7 @@ private:
 		cstream_iteration_heartbeat_callback(tag);
 	}
 
-	void handle_cstream_end(base_microbatch::tag_t tag) {
+	void handle_cstream_end(pico::base_microbatch::tag_t tag) {
 		assert(inflight.front() == tag);
 		inflight.pop();
 		is_inflight[tag] = false;
@@ -199,7 +198,7 @@ private:
 			send_mb(make_sync(root_iteration, PICO_CSTREAM_END), true);
 
 			/* generate and send the end token to feedback */
-			send_mb(make_sync(base_microbatch::nil_tag(), PICO_END), false);
+			send_mb(make_sync(pico::base_microbatch::nil_tag(), PICO_END), false);
 		}
 
 		else {
@@ -248,7 +247,7 @@ private:
 		return output_of.find(tag) != output_of.end();
 	}
 
-	void send_mb(base_microbatch *mb, bool fw) {
+	void send_mb(pico::base_microbatch *mb, bool fw) {
 		this->send_mb_to(mb, fw);
 	}
 
@@ -275,7 +274,7 @@ private:
 	void record_root_iteration(tag_t tag) {
 		/* first iteration */
 		assert(!closed_);
-		assert(last_iteration == base_microbatch::nil_tag());
+		assert(last_iteration == pico::base_microbatch::nil_tag());
 
 		root_iteration = last_iteration = tag; //tag to be consumed/produced
 
@@ -293,7 +292,7 @@ private:
 		++n_iterations_;
 
 		/* assign nil tag as input iteration */
-		input_of[tag] = base_microbatch::nil_tag();
+		input_of[tag] = pico::base_microbatch::nil_tag();
 	}
 
 	inline bool is_last(tag_t tag) {
@@ -305,8 +304,8 @@ private:
 	bool closed_ = false;
 
 	/* root tag is the tag consumed/produced by the iterative pipe */
-	tag_t root_iteration = base_microbatch::nil_tag();
-	tag_t last_iteration = base_microbatch::nil_tag();
+	tag_t root_iteration = pico::base_microbatch::nil_tag();
+	tag_t last_iteration = pico::base_microbatch::nil_tag();
 
 	std::queue<tag_t> inflight, ready;
 	std::unordered_map<tag_t, bool> is_inflight;
@@ -316,12 +315,12 @@ private:
 	std::unordered_map<tag_t, tag_t> input_of;
 
 	/* output buffer for each iteration */
-	std::unordered_map<tag_t, std::vector<base_microbatch *>> out_buf;
+	std::unordered_map<tag_t, std::vector<pico::base_microbatch *>> out_buf;
 };
 
 class iteration_multiplexer: //
 public base_mplex {
-	typedef base_microbatch::tag_t tag_t;
+	typedef pico::base_microbatch::tag_t tag_t;
 
 	void handle_begin(tag_t nil) {
 		assert(this->from());
@@ -336,15 +335,15 @@ public base_mplex {
 		return false;
 	}
 
-	virtual void handle_cstream_begin(base_microbatch::tag_t tag) {
+	virtual void handle_cstream_begin(pico::base_microbatch::tag_t tag) {
 		this->send_mb(make_sync(tag, PICO_CSTREAM_BEGIN));
 	}
 
-	virtual void handle_cstream_end(base_microbatch::tag_t tag) {
+	virtual void handle_cstream_end(pico::base_microbatch::tag_t tag) {
 		this->send_mb(make_sync(tag, PICO_CSTREAM_END));
 	}
 
-	virtual void kernel(base_microbatch *in) {
+	virtual void kernel(pico::base_microbatch *in) {
 		this->send_mb(in);
 	}
 

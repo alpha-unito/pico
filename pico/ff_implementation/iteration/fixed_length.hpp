@@ -26,7 +26,7 @@
 #include "base_iteration.hpp"
 
 class fixed_length_iteration_dispatcher: public base_iteration_dispatcher {
-	typedef base_microbatch::tag_t tag_t;
+	typedef pico::base_microbatch::tag_t tag_t;
 
 public:
 	fixed_length_iteration_dispatcher(unsigned niters_) :

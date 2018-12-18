@@ -28,8 +28,6 @@
 #include "../../../Internals/Microbatch.hpp"
 #include "../../../Internals/Token.hpp"
 
-using namespace ff;
-using namespace pico;
 
 /*
  * TODO only works with non-decorating token
@@ -47,8 +45,8 @@ public:
 		return false;
 	}
 
-	void kernel(base_microbatch *in_mb) {
-		auto in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(in_mb);
+	void kernel(pico::base_microbatch *in_mb) {
+		auto in_microbatch = reinterpret_cast<pico::Microbatch<TokenType>*>(in_mb);
 		for (In& tt : *in_microbatch)
 			std::cout << wkernel(tt) << std::endl;
 		DELETE(in_microbatch);
@@ -66,8 +64,8 @@ public:
 		return false;
 	}
 
-	void kernel(base_microbatch *in_mb) {
-		auto in_microbatch = reinterpret_cast<Microbatch<TokenType>*>(in_mb);
+	void kernel(pico::base_microbatch *in_mb) {
+		auto in_microbatch = reinterpret_cast<pico::Microbatch<TokenType>*>(in_mb);
 		for (In& tt : *in_microbatch)
 			std::cout << tt << std::endl;
 		DELETE(in_microbatch);

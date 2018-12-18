@@ -14,7 +14,6 @@
 
 #include "common/io.hpp"
 
-using namespace pico;
 
 
 TEST_CASE( "read and write", "read and write tag" ){
@@ -23,11 +22,11 @@ TEST_CASE( "read and write", "read and write tag" ){
 	std::string output_file = "output.txt";
 
 	/* define i/o operators from/to file */
-	ReadFromFile reader(input_file);
-	WriteToDisk<std::string> writer(output_file);
+	pico::ReadFromFile reader(input_file);
+	pico::WriteToDisk<std::string> writer(output_file);
 
 	/* compose the pipeline */
-	auto io_file_pipe = Pipe() //the empty pipeline
+	auto io_file_pipe = pico::Pipe() //the empty pipeline
 	.add(reader)
 	.add(writer);
 

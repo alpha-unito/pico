@@ -26,7 +26,6 @@
 #include <cmath>
 #include <vector>
 #include <algorithm>
-using namespace std;
 
 /* Template code for the Explicit Finite Difference
  */
@@ -49,8 +48,8 @@ double explicitCallOption(double S0, // price
 	}
 	// setup and initialise the final conditions on the option price
 	for (int j = 0; j <= jMax; j++) {
-		vOld[j] = max(S[j] - X, 0.);
-		vNew[j] = max(S[j] - X, 0.);
+		vOld[j] = std::max(S[j] - X, 0.);
+		vNew[j] = std::max(S[j] - X, 0.);
 	}
 	// loop through time levels, setting the option price at each grid point, and also on the boundaries
 	for (int i = iMax - 1; i >= 0; i--) {

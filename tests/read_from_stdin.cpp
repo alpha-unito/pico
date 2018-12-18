@@ -14,7 +14,6 @@
 
 #include "common/io.hpp"
 
-using namespace pico;
 
 
 TEST_CASE( "read from stdin and write", "read from stdin and write tag" ){
@@ -35,11 +34,11 @@ TEST_CASE( "read from stdin and write", "read from stdin and write tag" ){
     std::cin.tie(0); //untie cin and cout
 
 	/* define i/o operators from/to file */
-	ReadFromStdIn reader('\n');
-	WriteToStdOut<std::string> writer;
+    pico::ReadFromStdIn reader('\n');
+    pico::WriteToStdOut<std::string> writer;
 
 	/* compose the pipeline */
-	auto io_file_pipe = Pipe() //the empty pipeline
+	auto io_file_pipe = pico::Pipe() //the empty pipeline
 	.add(reader)
 	.add(writer);
 

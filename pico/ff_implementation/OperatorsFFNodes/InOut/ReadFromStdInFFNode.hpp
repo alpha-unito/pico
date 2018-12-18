@@ -32,8 +32,6 @@
 
 #include "../../ff_config.hpp"
 
-using namespace ff;
-using namespace pico;
 
 #define CHUNK_SIZE 512
 
@@ -48,7 +46,7 @@ public:
 			delimiter(delimiter_) {
 	}
 
-	void kernel(base_microbatch *) {
+	void kernel(pico::base_microbatch *) {
 		assert(false);
 	}
 
@@ -56,9 +54,9 @@ public:
 
 	void begin_callback() {
 			/* get a fresh tag */
-			tag = base_microbatch::fresh_tag();
+			tag = pico::base_microbatch::fresh_tag();
 			begin_cstream(tag);
-			auto mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+			auto mb = NEW<mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
 			std::string str;
 
 			while(std::getline(std::cin, str, delimiter)) {
@@ -66,7 +64,7 @@ public:
 				mb->commit();
 				if (mb->full()) {
 					send_mb(mb);
-					mb = NEW<mb_t>(tag, global_params.MICROBATCH_SIZE);
+					mb = NEW<mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
 				}
 			}
 
@@ -80,9 +78,9 @@ public:
 	}
 
 private:
-	typedef Microbatch<TokenType> mb_t;
+	typedef pico::Microbatch<TokenType> mb_t;
 	char delimiter;
-	base_microbatch::tag_t tag = 0; //a tag for the generated collection
+	pico::base_microbatch::tag_t tag = 0; //a tag for the generated collection
 
 	void error(const char *msg) {
 		perror(msg);

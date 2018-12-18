@@ -34,8 +34,6 @@
 
 #include "../SupportFFNodes/RBKOptFarm.hpp"
 
-using namespace ff;
-using namespace pico;
 
 template<typename TokenTypeIn, typename TokenTypeOut>
 class MRBK_seq_red: public NonOrderingFarm {
@@ -68,7 +66,7 @@ private:
 				map_kernel(kernel_), reduce_kernel(reducef_kernel_) {
 		}
 
-		void kernel(base_microbatch *in_mb) {
+		void kernel(pico::base_microbatch *in_mb) {
 			auto in_microbatch = reinterpret_cast<in_mb_t*>(in_mb);
 			auto &s(tag_state[in_mb->tag()]);
 			for (In &x : *in_microbatch) {
@@ -82,16 +80,16 @@ private:
 			DELETE(in_microbatch);
 		}
 
-		void cstream_end_callback(base_microbatch::tag_t tag) {
+		void cstream_end_callback(pico::base_microbatch::tag_t tag) {
 			auto &s(tag_state[tag]);
 			out_mb_t *out_mb;
-			out_mb = NEW<out_mb_t>(tag, global_params.MICROBATCH_SIZE);
+			out_mb = NEW<out_mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
 			for (auto it = s.kvmap.begin(); it != s.kvmap.end(); ++it) {
 				new (out_mb->allocate()) Out(it->first, it->second);
 				out_mb->commit();
 				if (out_mb->full()) {
 					ff_send_out(reinterpret_cast<void*>(out_mb));
-					out_mb = NEW<out_mb_t>(tag, global_params.MICROBATCH_SIZE);
+					out_mb = NEW<out_mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
 				}
 			}
 
@@ -102,14 +100,14 @@ private:
 		}
 
 	private:
-		typedef Microbatch<TokenTypeIn> in_mb_t;
-		typedef Microbatch<TokenTypeOut> out_mb_t;
+		typedef pico::Microbatch<TokenTypeIn> in_mb_t;
+		typedef pico::Microbatch<TokenTypeOut> out_mb_t;
 		std::function<Out(In&)> map_kernel;
 		std::function<OutV(OutV&, OutV&)> reduce_kernel;
 		struct key_state {
 			std::unordered_map<OutK, OutV> kvmap;
 		};
-		std::unordered_map<base_microbatch::tag_t, key_state> tag_state;
+		std::unordered_map<pico::base_microbatch::tag_t, key_state> tag_state;
 	};
 };
 
@@ -137,7 +135,7 @@ public:
 
 		/* combine the farms with shuffle */
 		auto combined_farm =
-				combine_farms<emitter_t, emitter_t>(*fmap_farm, emitter, *rbk_farm, nullptr, false);
+				ff::combine_farms<emitter_t, emitter_t>(*fmap_farm, emitter, *rbk_farm, nullptr, false);
 
 		/* compose the pipeline */
 		this->add_stage(combined_farm);
@@ -177,7 +175,7 @@ private:
 					rbk_par(rbk_par_), rbk_f(reducef_kernel_) {
 			}
 
-			void kernel(base_microbatch *in_mb) {
+			void kernel(pico::base_microbatch *in_mb) {
 				/*
 				 * got a microbatch to process and delete
 				 */
@@ -200,7 +198,7 @@ private:
 				DELETE(in_microbatch);
 			}
 
-			void cstream_end_callback(base_microbatch::tag_t tag) {
+			void cstream_end_callback(pico::base_microbatch::tag_t tag) {
 				std::vector<mb_out *> worker_mb;
 				for (unsigned wid = 0; wid < rbk_par; ++wid)
 					worker_mb.push_back(nullptr);
@@ -223,10 +221,10 @@ private:
 			}
 
 		private:
-			typedef Microbatch<TokenTypeIn> mb_in;
-			typedef Microbatch<TokenTypeOut> mb_out;
+			typedef pico::Microbatch<TokenTypeOut> mb_out;
+			typedef pico::Microbatch<TokenTypeIn> mb_in;
 			typedef std::unordered_map<OutK, OutV> red_map_t;
-			int mb_size = global_params.MICROBATCH_SIZE;
+			int mb_size = pico::global_params.MICROBATCH_SIZE;
 
 			std::function<Out(In&)> map_kernel;
 			unsigned rbk_par;
@@ -235,7 +233,7 @@ private:
 			struct tag_kv {
 				red_map_t red_map;
 			};
-			std::unordered_map<base_microbatch::tag_t, tag_kv> tag_state;
+			std::unordered_map<pico::base_microbatch::tag_t, tag_kv> tag_state;
 
 			inline size_t key_to_worker(const OutK& k) {
 				return std::hash<OutK> { }(k) % rbk_par;

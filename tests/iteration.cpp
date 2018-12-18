@@ -16,7 +16,7 @@
 #include "common/basic_pipes.hpp"
 #include "common/common_functions.hpp"
 
-typedef KeyValue<char, int> KV;
+typedef pico::KeyValue<char, int> KV;
 
 typedef std::unordered_map<char, std::unordered_multiset<int>> KvMultiMap;
 
@@ -26,7 +26,7 @@ typedef std::unordered_map<char, std::unordered_multiset<int>> KvMultiMap;
  *  kernel function returns a not-empty Pipe.
  *
  */
-static auto fltmp_kernel = [](KV& in, FlatMapCollector<KV>& collector) {
+static auto fltmp_kernel = [](KV& in, pico::FlatMapCollector<KV>& collector) {
     int val_mod = std::abs(in.Value()) % 10;
     if (val_mod % 10 != 0) {
         for (int i = 0; i <= val_mod; ++i) {
@@ -88,13 +88,13 @@ TEST_CASE("iteration", "[iterationTag]" ) {
     std::string input_file = "./testdata/pairs.txt";
     std::string output_file = "outputIter.txt";
 
-    WriteToDisk<KV> writer(output_file, [](KV in) { return in.to_string(); });
+    pico::WriteToDisk<KV> writer(output_file, [](KV in) { return in.to_string(); });
 
     const int num_iter = 3;
-    FixedIterations cond(num_iter);
+    pico::FixedIterations cond(num_iter);
     auto iter_pipe = 
-        Pipe()
-        .add(FlatMap<KV, KV>(fltmp_kernel))
+    		pico::Pipe()
+        .add(pico::FlatMap<KV, KV>(fltmp_kernel))
 	.iterate(cond);
 
     auto test_pipe = 
@@ -112,7 +112,7 @@ TEST_CASE("iteration", "[iterationTag]" ) {
     REQUIRE(expected == observed);
 }
 
-static auto kernel_fltmapjoin = [](KV& in1, KV& in2, FlatMapCollector<KV>& collector) {
+static auto kernel_fltmapjoin = [](KV& in1, KV& in2, pico::FlatMapCollector<KV>& collector) {
     KV res = in1+in2;
     int res_value = res.Value();
     int res_abs = std::abs(res_value);
@@ -169,15 +169,15 @@ TEST_CASE("iteration with JoinFlatMapByKey", "[iterationTag]" ) {
     std::string input_file = "./testdata/pairs_64.txt";
     std::string output_file = "output.txt";
 
-    WriteToDisk<KV> writer(output_file, [](KV in) { return in.to_string(); });
+    pico::WriteToDisk<KV> writer(output_file, [](KV in) { return in.to_string(); });
 
     auto pairs = pipe_pairs_creator<KV>(input_file);
 
     const int num_iter = 3;
     auto iter_pipe = 
-        Pipe()
-	.pair_with(pairs, JoinFlatMapByKey<KV, KV, KV>(kernel_fltmapjoin))
-	.iterate(FixedIterations(num_iter));
+    		pico::Pipe()
+	.pair_with(pairs, pico::JoinFlatMapByKey<KV, KV, KV>(kernel_fltmapjoin))
+	.iterate(pico::FixedIterations(num_iter));
 
     auto test_pipe = 
         pairs

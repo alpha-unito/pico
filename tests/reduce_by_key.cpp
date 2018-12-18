@@ -12,25 +12,25 @@
 
 #include "common/io.hpp"
 
-typedef KeyValue<char, int> KV;
+typedef pico::KeyValue<char, int> KV;
 
 TEST_CASE("reduce by key", "reduce by key tag" ){
     std::string input_file = "./testdata/pairs.txt";
     std::string output_file = "output.txt";
 
     /* define i/o operators from/to file */
-    ReadFromFile reader(input_file);
+    pico::ReadFromFile reader(input_file);
 
-    WriteToDisk<KV> writer(output_file, [&](KV in) {
+    pico::WriteToDisk<KV> writer(output_file, [&](KV in) {
             return in.to_string();
 	});
 
     /* compose the pipeline */
     auto test_pipe = 
-        Pipe()
+    		pico::Pipe()
 	.add(reader)
-	.add(Map<std::string, KV>([](std::string line) { return KV::from_string(line); }))
-	.add(ReduceByKey<KV>([](int v1, int v2) { return v1+v2; }))
+	.add(pico::Map<std::string, KV>([](std::string line) { return KV::from_string(line); }))
+	.add(pico::ReduceByKey<KV>([](int v1, int v2) { return v1+v2; }))
 	.add(writer);
 
     test_pipe.run();

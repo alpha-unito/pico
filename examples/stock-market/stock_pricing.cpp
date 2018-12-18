@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 	 * 3. extracts the maximum price for each stock name
 	 * 4. write prices to file
 	 */
-	Map<std::string, StockAndPrice> blackScholes([] (const std::string& in) {
+	pico::Map<std::string, StockAndPrice> blackScholes([] (const std::string& in) {
 		OptionData opt;
 		char otype, name[128];
 		parse_opt(opt, otype, name, in);
@@ -59,11 +59,11 @@ int main(int argc, char** argv) {
 		return StockAndPrice(std::string(name), black_scholes(opt));
 	});
 
-	auto stockPricing = Pipe() //
-	.add(ReadFromFile(in_fname)) //
+	auto stockPricing = pico::Pipe() //
+	.add(pico::ReadFromFile(in_fname)) //
 	.add(blackScholes) //
 	.add(SPReducer()) //
-	.add(WriteToDisk<StockAndPrice>(out_fname));
+	.add(pico::WriteToDisk<StockAndPrice>(out_fname));
 
 	/* print the semantic graph and generate dot file */
 	stockPricing.print_semantics();

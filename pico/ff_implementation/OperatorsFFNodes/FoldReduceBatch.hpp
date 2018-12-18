@@ -29,7 +29,6 @@
 #include "../ff_config.hpp"
 #include "../../Internals/Token.hpp"
 
-using namespace pico;
 
 template<typename In, typename State, typename Farm, typename TokenTypeIn,
 		typename TokenTypeState>
@@ -41,9 +40,9 @@ public:
 
 		this->setEmitterF(
 				new ByKeyEmitter<TokenTypeIn>(parallelism, this->getlb(),
-						global_params.MICROBATCH_SIZE));
+						pico::global_params.MICROBATCH_SIZE));
 		this->setCollectorF(new Collector(parallelism, reducef_));
-		std::vector<ff_node *> w;
+		std::vector<ff::ff_node *> w;
 		for (int i = 0; i < parallelism; ++i) {
 			w.push_back(new Worker(foldf_));
 		}
@@ -60,11 +59,11 @@ private:
 
 		}
 
-		void cstream_begin_callback(base_microbatch::tag_t tag) {
+		void cstream_begin_callback(pico::base_microbatch::tag_t tag) {
 			tag_state[tag].state_ = NEW<State>();
 		}
 
-		void kernel(base_microbatch *in_mb) {
+		void kernel(pico::base_microbatch *in_mb) {
 			mb_t *in_microbatch = reinterpret_cast<mb_t*>(in_mb);
 			auto &s(tag_state[in_mb->tag()]);
 			// iterate over microbatch
@@ -75,19 +74,19 @@ private:
 			DELETE(in_microbatch);
 		}
 
-		void cstream_end_callback(base_microbatch::tag_t tag) {
+		void cstream_end_callback(pico::base_microbatch::tag_t tag) {
 			/* wrap state into a microbatch and send out */
 			auto &s(tag_state[tag]);
-			ff_send_out(NEW<mb_wrapped<State>>(tag, s.state_));
+			ff_send_out(NEW<pico::mb_wrapped<State>>(tag, s.state_));
 		}
 
 	private:
-		typedef Microbatch<TokenTypeIn> mb_t;
+		typedef pico::Microbatch<TokenTypeIn> mb_t;
 		std::function<void(const In&, State&)> &foldf;
 		struct state {
 			State* state_;
 		};
-		std::unordered_map<base_microbatch::tag_t, state> tag_state;
+		std::unordered_map<pico::base_microbatch::tag_t, state> tag_state;
 	};
 
 	class Collector: public base_sync_duplicate {
@@ -97,12 +96,12 @@ private:
 				reducef(reducef_) {
 		}
 
-		void cstream_begin_callback(base_microbatch::tag_t tag) {
+		void cstream_begin_callback(pico::base_microbatch::tag_t tag) {
 			tag_state[tag].state_ = NEW<State>();
 		}
 
-		void kernel(base_microbatch *in_mb) {
-			auto wmb = reinterpret_cast<mb_wrapped<State> *>(in_mb);
+		void kernel(pico::base_microbatch *in_mb) {
+			auto wmb = reinterpret_cast<pico::mb_wrapped<State> *>(in_mb);
 			auto &s(tag_state[in_mb->tag()]);
 			auto in = reinterpret_cast<State*>(wmb->get());
 			reducef(*in, *s.state_);
@@ -110,7 +109,7 @@ private:
 			DELETE(wmb);
 		}
 
-		void cstream_end_callback(base_microbatch::tag_t tag) {
+		void cstream_end_callback(pico::base_microbatch::tag_t tag) {
 			auto &s(tag_state[tag]);
 			auto out_mb = NEW<mb_out>(tag, 1);
 			new (out_mb->allocate()) State(s.state_);
@@ -120,11 +119,11 @@ private:
 
 	private:
 		std::function<void(const State&, State&)> &reducef;
-		typedef Microbatch<TokenTypeState> mb_out;
+		typedef pico::Microbatch<TokenTypeState> mb_out;
 		struct state {
 			State* state_;
 		};
-		std::unordered_map<base_microbatch::tag_t, state> tag_state;
+		std::unordered_map<pico::base_microbatch::tag_t, state> tag_state;
 	};
 };
 

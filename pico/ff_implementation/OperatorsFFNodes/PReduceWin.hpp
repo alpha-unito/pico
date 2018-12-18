@@ -35,8 +35,6 @@
 
 #include "../ff_config.hpp"
 
-using namespace ff;
-using namespace pico;
 
 /*
  * Partitions input stream by key and reduces sub-streams on per-window basis.
@@ -50,7 +48,7 @@ class PReduceWin: public NonOrderingFarm {
 
 public:
 	PReduceWin(int parallelism, std::function<V(V&, V&)>& preducef,
-			WindowPolicy* win) {
+			pico::WindowPolicy* win) {
 		auto e = new ByKeyEmitter<TokenType>(parallelism);
 		this->setEmitterF(e);
 		this->setCollectorF(new ForwardingCollector(parallelism)); // collects and emits single items
@@ -69,7 +67,7 @@ private:
 				rkernel(reducef_), win_size(win_size_) {
 		}
 
-		void kernel(base_microbatch *in_mb_) {
+		void kernel(pico::base_microbatch *in_mb_) {
 			auto in_mb = reinterpret_cast<mb_t*>(in_mb_);
 			auto tag = in_mb_->tag();
 			auto &s(tag_state[tag]);
@@ -94,7 +92,7 @@ private:
 			DELETE(in_mb);
 		}
 
-		void cstream_end_callback(base_microbatch::tag_t tag) {
+		void cstream_end_callback(pico::base_microbatch::tag_t tag) {
 			auto &s(tag_state[tag]);
 			/* stream out incomplete windows */
 			for (auto kc : s.kvcountmap) {
@@ -111,13 +109,13 @@ private:
 		}
 
 	private:
-		typedef Microbatch<TokenType> mb_t;
+		typedef pico::Microbatch<TokenType> mb_t;
 		std::function<V(V&, V&)> rkernel;
 		struct key_state {
 			std::unordered_map<K, V> kvmap; //partial per-window/key reduced value
 			std::unordered_map<K, size_t> kvcountmap; //per-window/key counter
 		};
-		std::unordered_map<base_microbatch::tag_t, key_state> tag_state;
+		std::unordered_map<pico::base_microbatch::tag_t, key_state> tag_state;
 		size_t win_size;
 	};
 };

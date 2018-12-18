@@ -22,12 +22,11 @@
 #define EXAMPLES_STOCK_MARKET_COMMON_HPP_
 
 #include <pico/pico.hpp>
-using namespace pico;
 
 #include "defs.h"
 
-static ReduceByKey<StockAndPrice> SPReducer() {
-	return ReduceByKey<StockAndPrice>([] (StockPrice p1, StockPrice p2) {
+static pico::ReduceByKey<StockAndPrice> SPReducer() {
+	return pico::ReduceByKey<StockAndPrice>([] (StockPrice p1, StockPrice p2) {
 		return std::max(p1,p2);
 	});
 }
