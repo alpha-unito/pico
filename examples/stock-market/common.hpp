@@ -21,7 +21,7 @@
 #ifndef EXAMPLES_STOCK_MARKET_COMMON_HPP_
 #define EXAMPLES_STOCK_MARKET_COMMON_HPP_
 
-#include <pico/pico.hpp>
+#include "pico/pico.hpp"
 
 #include "defs.h"
 

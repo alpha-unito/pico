@@ -30,7 +30,7 @@
 #include <sstream>
 #include <string>
 
-#include <pico/pico.hpp>
+#include "pico/pico.hpp"
 
 #include "binomial_tree.hpp"
 #include "black_scholes.hpp"

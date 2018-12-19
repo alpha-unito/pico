@@ -46,6 +46,7 @@ if (PICO_RUNTIME_SYSTEM STREQUAL "FF")
   include_directories(${THREADS_PTHREADS_INCLUDE_DIR})
 
   #todo FindFF
+  include_directories(${PROJECT_SOURCE_DIR})
   
   set(HAVE_FF 1)
   set(PICO_RUNTIME_LIB ${CMAKE_THREAD_LIBS_INIT})

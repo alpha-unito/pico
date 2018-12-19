@@ -8,7 +8,8 @@
 #include <vector>
 
 #include <catch.hpp>
-#include <pico/pico.hpp>
+
+#include "pico/pico.hpp"
 
 #include "common/io.hpp"
 

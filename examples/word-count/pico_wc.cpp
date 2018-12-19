@@ -29,11 +29,11 @@
 #include <iostream>
 #include <string>
 
-#include <pico/pico.hpp>
-
-typedef pico::KeyValue<std::string, int> KV;
+#include "pico/pico.hpp"
 
 int main(int argc, char** argv) {
+  using KV = pico::KeyValue<std::string, int>;
+
   // parse command line
   if (argc < 3) {
     std::cerr << "Usage: ./pico_wc <input file> <output file> \n";

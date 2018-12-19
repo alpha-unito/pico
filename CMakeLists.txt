@@ -66,9 +66,9 @@ option(PICO_ENABLE_DOXYGEN "Use doxygen to generate the shad API documentation" 
 option(PICO_ENABLE_UNIT_TEST "Enable the compilation of Unit Tests" ON)
 
 set(PICO_MAIN_SRC_DIR     ${CMAKE_CURRENT_SOURCE_DIR})
-set(PICO_MAIN_INCLUDE_DIR ${PICO_MAIN_SRC_DIR})
+set(PICO_MAIN_INCLUDE_DIR ${PICO_MAIN_SRC_DIR}/include)
 set(PICO_BINARY_DIR       ${CMAKE_CURRENT_BINARY_DIR})
-set(PICO_INCLUDE_DIR      ${PICO_BINARY_DIR})
+#set(PICO_INCLUDE_DIR      ${PICO_BINARY_DIR})
 
 set(
   PICO_RUNTIME_SYSTEM "FF" CACHE STRING

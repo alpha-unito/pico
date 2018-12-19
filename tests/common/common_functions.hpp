@@ -8,7 +8,7 @@
 #ifndef TESTS__COMMON_FUNCTIONS_HPP_
 #define TESTS__COMMON_FUNCTIONS_HPP_
 
-#include <pico/pico.hpp>
+#include "pico/pico.hpp"
 
 #include "./io.hpp"
 

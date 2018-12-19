@@ -8,10 +8,11 @@
 #ifndef EXAMPLES_COMMON_UTILS_HPP_
 #define EXAMPLES_COMMON_UTILS_HPP_
 
+#include <iostream>
+
 /*
  * progress bar
  */
-#include <iostream>
 static void print_progress(float progress) {
   int barWidth = 70;
   int pos = barWidth * progress;
