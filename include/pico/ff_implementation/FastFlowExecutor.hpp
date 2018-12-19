@@ -33,10 +33,10 @@
 #include <ff/optimize.hpp>
 #include <ff/pipeline.hpp>
 
-#include "../Operators/BinaryOperator.hpp"
-#include "../Operators/UnaryOperator.hpp"
-#include "../PEGOptimizations.hpp"
-#include "../Pipe.hpp"
+#include "pico/Operators/BinaryOperator.hpp"
+#include "pico/Operators/UnaryOperator.hpp"
+#include "pico/PEGOptimizations.hpp"
+#include "pico/Pipe.hpp"
 
 #include "SupportFFNodes/ForwardingNode.hpp"
 #include "SupportFFNodes/PairFarm.hpp"

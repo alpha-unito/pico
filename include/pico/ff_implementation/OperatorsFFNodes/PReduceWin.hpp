@@ -25,15 +25,14 @@
 
 #include <ff/farm.hpp>
 
-#include "../../Internals/utils.hpp"
-#include "../../KeyValue.hpp"
-#include "../../WindowPolicy.hpp"
+#include "pico/Internals/utils.hpp"
+#include "pico/KeyValue.hpp"
+#include "pico/WindowPolicy.hpp"
 
-#include "../SupportFFNodes/ByKeyEmitter.hpp"
-#include "../SupportFFNodes/collectors.hpp"
-#include "../SupportFFNodes/farms.hpp"
-
-#include "../ff_config.hpp"
+#include "pico/ff_implementation/SupportFFNodes/ByKeyEmitter.hpp"
+#include "pico/ff_implementation/SupportFFNodes/collectors.hpp"
+#include "pico/ff_implementation/SupportFFNodes/farms.hpp"
+#include "pico/ff_implementation/ff_config.hpp"
 
 /*
  * Partitions input stream by key and reduces sub-streams on per-window basis.

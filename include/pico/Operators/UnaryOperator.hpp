@@ -21,7 +21,8 @@
 #ifndef OPERATORS_UNARYOPERATOR_HPP_
 #define OPERATORS_UNARYOPERATOR_HPP_
 
-#include "../Internals/PEGOptimization/defs.hpp"
+#include "pico/Internals/PEGOptimization/defs.hpp"
+
 #include "Operator.hpp"
 
 namespace pico {

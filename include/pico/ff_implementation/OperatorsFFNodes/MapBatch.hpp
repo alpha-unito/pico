@@ -23,11 +23,12 @@
 
 #include <ff/farm.hpp>
 
-#include "../../Internals/Microbatch.hpp"
-#include "../../Internals/TimedToken.hpp"
-#include "../../Internals/utils.hpp"
-#include "../SupportFFNodes/emitters.hpp"
-#include "../ff_config.hpp"
+#include "pico/Internals/Microbatch.hpp"
+#include "pico/Internals/TimedToken.hpp"
+#include "pico/Internals/utils.hpp"
+
+#include "pico/ff_implementation/SupportFFNodes/emitters.hpp"
+#include "pico/ff_implementation/ff_config.hpp"
 
 template <typename In, typename Out, typename Farm, typename TokenTypeIn,
           typename TokenTypeOut>

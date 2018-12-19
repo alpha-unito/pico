@@ -21,7 +21,7 @@
 #ifndef ACTORS_INPUTACTORNODE_HPP_
 #define ACTORS_INPUTACTORNODE_HPP_
 
-#include "../UnaryOperator.hpp"
+#include "pico/Operators/UnaryOperator.hpp"
 
 namespace pico {
 

@@ -26,12 +26,11 @@
 
 #include <ff/node.hpp>
 
-#include "../../Internals/Microbatch.hpp"
-#include "../../Internals/utils.hpp"
+#include "pico/Internals/Microbatch.hpp"
+#include "pico/Internals/utils.hpp"
 
-#include "../SupportFFNodes/base_nodes.hpp"
-
-#include "../defs.hpp"
+#include "pico/ff_implementation/SupportFFNodes/base_nodes.hpp"
+#include "pico/ff_implementation/defs.hpp"
 
 /*
  * An iteration is identified by its output collection-tag.

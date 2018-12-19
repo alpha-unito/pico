@@ -22,15 +22,15 @@
 #define MAPACTORNODE_HPP_
 
 #include <pico/Operators/ReduceByKey.hpp>
-#include "../PEGOptimizations.hpp"
-#include "../WindowPolicy.hpp"
+#include "pico/PEGOptimizations.hpp"
+#include "pico/WindowPolicy.hpp"
 #include "UnaryOperator.hpp"
 
-#include "../Internals/TimedToken.hpp"
-#include "../Internals/Token.hpp"
+#include "pico/Internals/TimedToken.hpp"
+#include "pico/Internals/Token.hpp"
 
-#include "../ff_implementation/OperatorsFFNodes/MapBatch.hpp"
-#include "../ff_implementation/OperatorsFFNodes/MapPReduceBatch.hpp"
+#include "pico/ff_implementation/OperatorsFFNodes/MapBatch.hpp"
+#include "pico/ff_implementation/OperatorsFFNodes/MapPReduceBatch.hpp"
 
 /**
  * This file defines an operator performing a Map function, taking in input one

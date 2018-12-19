@@ -24,7 +24,8 @@
 #include <fstream>
 #include <iostream>
 
-#include "../../ff_implementation/OperatorsFFNodes/InOut/WriteToStdOutFFNode.hpp"
+#include "pico/ff_implementation/OperatorsFFNodes/InOut/WriteToStdOutFFNode.hpp"
+
 #include "OutputOperator.hpp"
 
 namespace pico {

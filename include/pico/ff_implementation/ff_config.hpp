@@ -32,6 +32,7 @@ static inline void DELETE(_Tp *p) {
   FREE(p);
 }
 #else
+#include <cstdlib>
 static inline void *MALLOC(size_t size) { return ::malloc(size); }
 static inline void FREE(void *ptr) { ::free(ptr); }
 static inline int POSIX_MEMALIGN(void **dst, size_t align, size_t size) {

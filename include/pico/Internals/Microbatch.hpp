@@ -21,11 +21,14 @@
 #ifndef INTERNALS_TYPES_MICROBATCH_HPP_
 #define INTERNALS_TYPES_MICROBATCH_HPP_
 
+#include <atomic>
+#include <cassert>
 #include <cstring>
+#include <iterator>
 
 #include "Token.hpp"
 
-#include "../ff_implementation/ff_config.hpp"
+#include "pico/ff_implementation/ff_config.hpp"
 
 namespace pico {
 

@@ -23,7 +23,7 @@
 
 #include "BinaryOperator.hpp"
 
-#include "../ff_implementation/OperatorsFFNodes/JoinFlatMapByKeyFarm.hpp"
+#include "pico/ff_implementation/OperatorsFFNodes/JoinFlatMapByKeyFarm.hpp"
 
 namespace pico {
 

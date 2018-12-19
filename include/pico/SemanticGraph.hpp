@@ -31,7 +31,7 @@
 #include <string>
 #include <vector>
 
-#include "Pipe.hpp"
+#include "pico/Pipe.hpp"
 
 namespace pico {
 

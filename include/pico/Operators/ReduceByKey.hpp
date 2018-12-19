@@ -21,11 +21,11 @@
 #ifndef REDUCEBYKEY_HPP_
 #define REDUCEBYKEY_HPP_
 
-#include "../ff_implementation/OperatorsFFNodes/PReduceWin.hpp"
-#include "UnaryOperator.hpp"
+#include "pico/Internals/TimedToken.hpp"
+#include "pico/Internals/Token.hpp"
+#include "pico/ff_implementation/OperatorsFFNodes/PReduceWin.hpp"
 
-#include "../Internals/TimedToken.hpp"
-#include "../Internals/Token.hpp"
+#include "UnaryOperator.hpp"
 
 namespace pico {
 

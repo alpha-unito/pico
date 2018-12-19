@@ -23,8 +23,8 @@
 
 #include "UnaryOperator.hpp"
 
-#include "../Internals/Token.hpp"
-#include "../ff_implementation/OperatorsFFNodes/FoldReduceBatch.hpp"
+#include "pico/Internals/Token.hpp"
+#include "pico/ff_implementation/OperatorsFFNodes/FoldReduceBatch.hpp"
 
 namespace pico {
 

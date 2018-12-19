@@ -25,7 +25,7 @@
 #ifndef PICO_TERMINATIONCONDITION_HPP_
 #define PICO_TERMINATIONCONDITION_HPP_
 
-#include "ff_implementation/iteration/fixed_length.hpp"
+#include "pico/ff_implementation/iteration/fixed_length.hpp"
 
 namespace pico {
 

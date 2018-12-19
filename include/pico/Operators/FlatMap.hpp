@@ -24,12 +24,12 @@
 #include <pico/Operators/ReduceByKey.hpp>
 #include "UnaryOperator.hpp"
 
-#include "../Internals/TimedToken.hpp"
-#include "../Internals/Token.hpp"
-#include "../WindowPolicy.hpp"
+#include "pico/Internals/TimedToken.hpp"
+#include "pico/Internals/Token.hpp"
+#include "pico/WindowPolicy.hpp"
 
-#include "../ff_implementation/OperatorsFFNodes/FMapBatch.hpp"
-#include "../ff_implementation/OperatorsFFNodes/FMapPReduceBatch.hpp"
+#include "pico/ff_implementation/OperatorsFFNodes/FMapBatch.hpp"
+#include "pico/ff_implementation/OperatorsFFNodes/FMapPReduceBatch.hpp"
 
 /**
  * This file defines an operator performing a FlatMap, taking in input one

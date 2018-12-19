@@ -23,16 +23,15 @@
 
 #include <unordered_map>
 
-#include <ff/combine.hpp>
-#include <ff/farm.hpp>
+#include <ff/ff.hpp>
 
-#include "../../FlatMapCollector.hpp"
-#include "../../Internals/Microbatch.hpp"
-#include "../../Internals/TimedToken.hpp"
-#include "../../Internals/utils.hpp"
-#include "../ff_config.hpp"
+#include "pico/FlatMapCollector.hpp"
+#include "pico/Internals/Microbatch.hpp"
+#include "pico/Internals/TimedToken.hpp"
+#include "pico/Internals/utils.hpp"
 
-#include "../SupportFFNodes/RBKOptFarm.hpp"
+#include "pico/ff_implementation/SupportFFNodes/RBKOptFarm.hpp"
+#include "pico/ff_implementation/ff_config.hpp"
 
 template <typename TokenTypeIn, typename TokenTypeOut>
 class FMRBK_seq_red : public NonOrderingFarm {

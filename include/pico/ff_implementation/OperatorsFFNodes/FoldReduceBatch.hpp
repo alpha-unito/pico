@@ -23,11 +23,12 @@
 
 #include <ff/node.hpp>
 
-#include "../../Internals/Microbatch.hpp"
-#include "../../Internals/Token.hpp"
-#include "../../Internals/utils.hpp"
-#include "../../WindowPolicy.hpp"
-#include "../ff_config.hpp"
+#include "pico/Internals/Microbatch.hpp"
+#include "pico/Internals/Token.hpp"
+#include "pico/Internals/utils.hpp"
+#include "pico/WindowPolicy.hpp"
+
+#include "pico/ff_implementation/ff_config.hpp"
 
 template <typename In, typename State, typename Farm, typename TokenTypeIn,
           typename TokenTypeState>

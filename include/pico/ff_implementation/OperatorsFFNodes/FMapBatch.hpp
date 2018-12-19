@@ -23,11 +23,11 @@
 
 #include <ff/farm.hpp>
 
-#include "../../FlatMapCollector.hpp"
-#include "../../Internals/TimedToken.hpp"
-#include "../../Internals/utils.hpp"
+#include "pico/FlatMapCollector.hpp"
+#include "pico/Internals/TimedToken.hpp"
+#include "pico/Internals/utils.hpp"
 
-#include "../SupportFFNodes/emitters.hpp"
+#include "pico/ff_implementation/SupportFFNodes/emitters.hpp"
 
 template <typename In, typename Out, typename Farm, typename TokenTypeIn,
           typename TokenTypeOut>

@@ -40,12 +40,10 @@
 #include <type_traits>
 #include <vector>
 
-#include "Operators/Operator.hpp"
-#include "defines/Global.hpp"
-
-#include "TerminationCondition.hpp"
-
-#include "ff_implementation/defs.hpp"
+#include "pico/Operators/Operator.hpp"
+#include "pico/TerminationCondition.hpp"
+#include "pico/defines/Global.hpp"
+#include "pico/ff_implementation/defs.hpp"
 
 namespace pico {
 /*

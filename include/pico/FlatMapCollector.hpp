@@ -21,10 +21,10 @@
 #ifndef INTERNALS_TYPES_FLATMAPCOLLECTOR_HPP_
 #define INTERNALS_TYPES_FLATMAPCOLLECTOR_HPP_
 
-#include "Internals/Microbatch.hpp"
-#include "Internals/Token.hpp"
-#include "defines/Global.hpp"
-#include "ff_implementation/ff_config.hpp"
+#include "pico/Internals/Microbatch.hpp"
+#include "pico/Internals/Token.hpp"
+#include "pico/defines/Global.hpp"
+#include "pico/ff_implementation/ff_config.hpp"
 
 namespace pico {
 

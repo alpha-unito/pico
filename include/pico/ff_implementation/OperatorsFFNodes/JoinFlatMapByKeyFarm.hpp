@@ -23,11 +23,11 @@
 
 #include <unordered_map>
 
-#include "../../FlatMapCollector.hpp"
-#include "../../Internals/Microbatch.hpp"
+#include "pico/FlatMapCollector.hpp"
+#include "pico/Internals/Microbatch.hpp"
 
-#include "../SupportFFNodes/PairFarm.hpp"
-#include "../SupportFFNodes/RBKOptFarm.hpp"
+#include "pico/ff_implementation/SupportFFNodes/PairFarm.hpp"
+#include "pico/ff_implementation/SupportFFNodes/RBKOptFarm.hpp"
 
 /*
  * base_JFMBK_Farm serves as base for the following cases:

@@ -21,7 +21,7 @@
 #ifndef PICO_FF_IMPLEMENTATION_ITERATION_FIXED_LENGTH_HPP_
 #define PICO_FF_IMPLEMENTATION_ITERATION_FIXED_LENGTH_HPP_
 
-#include "../../Internals/Microbatch.hpp"
+#include "pico/Internals/Microbatch.hpp"
 
 #include "base_iteration.hpp"
 

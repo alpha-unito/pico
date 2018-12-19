@@ -8,27 +8,27 @@
 #ifndef PICO_PICO_HPP_
 #define PICO_PICO_HPP_
 
-#include <pico/Operators/ReduceByKey.hpp>
-#include "Pipe.hpp"
-#include "SemanticGraph.hpp"
-#include "ff_implementation/FastFlowExecutor.hpp"
-
 /* basic */
-#include "FlatMapCollector.hpp"
-#include "KeyValue.hpp"
-#include "WindowPolicy.hpp"
+#include "pico/FlatMapCollector.hpp"
+#include "pico/KeyValue.hpp"
+#include "pico/Pipe.hpp"
+#include "pico/SemanticGraph.hpp"
+#include "pico/WindowPolicy.hpp"
 
 /* operators */
-#include "Operators/FlatMap.hpp"
-#include "Operators/FoldReduce.hpp"
-#include "Operators/InOut/ReadFromFile.hpp"
-#include "Operators/InOut/ReadFromStdIn.hpp"
-#include "Operators/Map.hpp"
-#include "Operators/Reduce.hpp"
-//#include "Operators/InOut/ReadFromHDFS.hpp"
-#include "Operators/InOut/ReadFromSocket.hpp"
-#include "Operators/InOut/WriteToDisk.hpp"
-#include "Operators/InOut/WriteToStdOut.hpp"
-#include "Operators/JoinFlatMapByKey.hpp"
+#include "pico/Operators/FlatMap.hpp"
+#include "pico/Operators/FoldReduce.hpp"
+#include "pico/Operators/InOut/ReadFromFile.hpp"
+#include "pico/Operators/InOut/ReadFromSocket.hpp"
+#include "pico/Operators/InOut/ReadFromStdIn.hpp"
+#include "pico/Operators/InOut/WriteToDisk.hpp"
+#include "pico/Operators/InOut/WriteToStdOut.hpp"
+#include "pico/Operators/JoinFlatMapByKey.hpp"
+#include "pico/Operators/Map.hpp"
+#include "pico/Operators/Reduce.hpp"
+#include "pico/Operators/ReduceByKey.hpp"
+
+/* implementation */
+#include "pico/ff_implementation/FastFlowExecutor.hpp"
 
 #endif /* PICO_PICO_HPP_ */

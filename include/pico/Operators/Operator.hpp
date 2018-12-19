@@ -26,8 +26,8 @@
 
 #include <ff/node.hpp>
 
-#include "../Internals/utils.hpp"
-#include "../WindowPolicy.hpp"
+#include "pico/Internals/utils.hpp"
+#include "pico/WindowPolicy.hpp"
 
 namespace pico {
 

@@ -10,8 +10,8 @@
 
 #include <unordered_map>
 
-#include "../../Internals/Microbatch.hpp"
-#include "../../Internals/utils.hpp"
+#include "pico/Internals/Microbatch.hpp"
+#include "pico/Internals/utils.hpp"
 
 #include "base_nodes.hpp"
 

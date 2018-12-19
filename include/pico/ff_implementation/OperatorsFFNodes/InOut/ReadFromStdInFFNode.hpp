@@ -27,10 +27,10 @@
 
 #include <ff/node.hpp>
 
-#include "../../../Internals/Microbatch.hpp"
-#include "../../../Internals/utils.hpp"
+#include "pico/Internals/Microbatch.hpp"
+#include "pico/Internals/utils.hpp"
 
-#include "../../ff_config.hpp"
+#include "pico/ff_implementation/ff_config.hpp"
 
 #define CHUNK_SIZE 512
 

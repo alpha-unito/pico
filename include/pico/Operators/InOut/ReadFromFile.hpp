@@ -24,7 +24,8 @@
 #include <fstream>
 #include <iostream>
 
-#include "../../ff_implementation/OperatorsFFNodes/InOut/ReadFromFileFFNode.hpp"
+#include "pico/ff_implementation/OperatorsFFNodes/InOut/ReadFromFileFFNode.hpp"
+
 #include "InputOperator.hpp"
 
 namespace pico {

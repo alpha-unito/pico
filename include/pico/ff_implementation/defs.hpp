@@ -8,6 +8,8 @@
 #ifndef PICO_FF_IMPLEMENTATION_DEFS_HPP_
 #define PICO_FF_IMPLEMENTATION_DEFS_HPP_
 
+#include <ff/node.hpp>
+
 enum run_mode { DEFAULT, FORCE_NONBLOCKING };
 
 /* FF tokens for pico protocol */
