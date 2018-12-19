@@ -22,24 +22,26 @@
 #define MAPACTORNODE_HPP_
 
 #include <pico/Operators/ReduceByKey.hpp>
-#include "UnaryOperator.hpp"
-#include "../WindowPolicy.hpp"
 #include "../PEGOptimizations.hpp"
+#include "../WindowPolicy.hpp"
+#include "UnaryOperator.hpp"
 
-#include "../Internals/Token.hpp"
 #include "../Internals/TimedToken.hpp"
+#include "../Internals/Token.hpp"
 
 #include "../ff_implementation/OperatorsFFNodes/MapBatch.hpp"
 #include "../ff_implementation/OperatorsFFNodes/MapPReduceBatch.hpp"
 
 /**
- * This file defines an operator performing a Map function, taking in input one element from
- * the input source and producing one in output.
- * The Map kernel is defined by the user and can be a lambda function, a functor or a function.
+ * This file defines an operator performing a Map function, taking in input one
+ * element from the input source and producing one in output. The Map kernel is
+ * defined by the user and can be a lambda function, a functor or a function.
  *
- * It implements a data-parallel operator that ignores any kind of grouping or windowing.
+ * It implements a data-parallel operator that ignores any kind of grouping or
+ * windowing.
  *
- * The kernel is applied independently to all the elements of the collection (either bounded or unbounded).
+ * The kernel is applied independently to all the elements of the collection
+ * (either bounded or unbounded).
  */
 
 namespace pico {
@@ -48,147 +50,119 @@ namespace pico {
  * This is the base class for the Map operators
  */
 
-template<typename In, typename Out>
-class MapBase: public UnaryOperator<In, Out> {
-public:
+template <typename In, typename Out>
+class MapBase : public UnaryOperator<In, Out> {
+ public:
+  /**
+   * \ingroup op-api
+   * Map Constructor
+   *
+   * Creates a new Map operator by defining its kernel function.
+   */
+  MapBase(std::function<Out(In &)> mapf_, unsigned par = def_par()) {
+    mapf = mapf_;
+    this->set_input_degree(1);
+    this->set_output_degree(1);
+    this->stype(StructureType::BAG, true);
+    this->stype(StructureType::STREAM, true);
+    this->pardeg(par);
+  }
 
-	/**
-	 * \ingroup op-api
-	 * Map Constructor
-	 *
-	 * Creates a new Map operator by defining its kernel function.
-	 */
-	MapBase(std::function<Out(In&)> mapf_, unsigned par = def_par()) {
-		mapf = mapf_;
-		this->set_input_degree(1);
-		this->set_output_degree(1);
-		this->stype(StructureType::BAG, true);
-		this->stype(StructureType::STREAM, true);
-		this->pardeg(par);
-	}
+  MapBase(const MapBase &copy)
+      : UnaryOperator<In, Out>(copy), mapf(copy.mapf) {}
 
-	MapBase(const MapBase &copy) :
-			UnaryOperator<In, Out>(copy), mapf(copy.mapf) {
-	}
+  /**
+   * Returns the name of the operator, consisting in the name of the class.
+   */
+  std::string name_short() { return "Map"; }
 
-	/**
-	 * Returns the name of the operator, consisting in the name of the class.
-	 */
-	std::string name_short() {
-		return "Map";
-	}
+ protected:
+  const OpClass operator_class() { return OpClass::MAP; }
 
-protected:
+  ff::ff_node *node_operator(int parallelism, StructureType st) {
+    // todo assert unique stype
+    if (st == StructureType::STREAM) {
+      using impl_t = MapBatchStream<In, Out, Token<In>, Token<Out>>;
+      return new impl_t(parallelism, mapf);
+    }
+    assert(st == StructureType::BAG);
+    using impl_t = MapBatchBag<In, Out, Token<In>, Token<Out>>;
+    return new impl_t(parallelism, mapf);
+  }
 
-	const OpClass operator_class() {
-		return OpClass::MAP;
-	}
-
-	ff::ff_node* node_operator(int parallelism, StructureType st) {
-		//todo assert unique stype
-		if (st == StructureType::STREAM) {
-			using impl_t = MapBatchStream<In, Out, Token<In>, Token<Out>>;
-			return new impl_t(parallelism, mapf);
-		}
-		assert(st == StructureType::BAG);
-		using impl_t = MapBatchBag<In, Out, Token<In>, Token<Out>>;
-		return new impl_t(parallelism, mapf);
-	}
-
-
-	std::function<Out(In&)> mapf;
+  std::function<Out(In &)> mapf;
 };
-
 
 /*
  * This is the general Map operator. It can't create an optimized node.
  */
 
-template<typename In, typename Out>
-class Map: public MapBase<In, Out> {
-public:
+template <typename In, typename Out>
+class Map : public MapBase<In, Out> {
+ public:
+  /**
+   * \ingroup op-api
+   * Map Constructor
+   *
+   * Creates a new Map operator by defining its kernel function.
+   */
+  Map(std::function<Out(In &)> mapf_, unsigned par = def_par())
+      : MapBase<In, Out>(mapf_, par) {}
 
-	/**
-	 * \ingroup op-api
-	 * Map Constructor
-	 *
-	 * Creates a new Map operator by defining its kernel function.
-	 */
-	Map(std::function<Out(In&)> mapf_,
-			unsigned par = def_par()) : MapBase<In, Out>(mapf_, par){
+  Map(const Map &copy) : MapBase<In, Out>(copy) {}
 
-	}
+  /**
+   * Returns the name of the operator, consisting in the name of the class.
+   */
+  std::string name_short() { return "Map"; }
 
-	Map(const Map &copy) :
-			MapBase<In, Out>(copy) {
-	}
-
-	/**
-	 * Returns the name of the operator, consisting in the name of the class.
-	 */
-	std::string name_short() {
-		return "Map";
-	}
-
-protected:
-	/**
-	 * Duplicates a Map with a copy of the Map kernel function.
-	 * @return new Map pointer
-	 */
-	Map<In, Out>* clone() {
-		return new Map(*this);
-	}
-
+ protected:
+  /**
+   * Duplicates a Map with a copy of the Map kernel function.
+   * @return new Map pointer
+   */
+  Map<In, Out> *clone() { return new Map(*this); }
 };
 
 /*
- * This is a partial template specialization of Map class in which the output is a pair KeyValue.
- * This type of Map can create an optimized node.
+ * This is a partial template specialization of Map class in which the output is
+ * a pair KeyValue. This type of Map can create an optimized node.
  */
 
-template<typename In, typename K, typename V>
-class Map<In, KeyValue<K, V>>: public MapBase<In, KeyValue<K, V>> {
-public:
+template <typename In, typename K, typename V>
+class Map<In, KeyValue<K, V>> : public MapBase<In, KeyValue<K, V>> {
+ public:
+  /**
+   * \ingroup op-api
+   * Map Constructor
+   *
+   * Creates a new Map operator by defining its kernel function.
+   */
+  Map(std::function<KeyValue<K, V>(In &)> mapf_, unsigned par = def_par())
+      : MapBase<In, KeyValue<K, V>>(mapf_, par) {}
 
-	/**
-	 * \ingroup op-api
-	 * Map Constructor
-	 *
-	 * Creates a new Map operator by defining its kernel function.
-	 */
-	Map(std::function<KeyValue<K, V>(In&)> mapf_,
-			unsigned par = def_par()) : MapBase<In, KeyValue<K, V>>(mapf_, par){
+  Map(const Map &copy) : MapBase<In, KeyValue<K, V>>(copy) {}
 
-	}
+  /**
+   * Returns the name of the operator, consisting in the name of the class.
+   */
+  std::string name_short() { return "Map"; }
 
-	Map(const Map &copy) :
-			MapBase<In, KeyValue<K, V>>(copy) {
-	}
+ protected:
+  /**
+   * Duplicates a Map with a copy of the Map kernel function.
+   * @return new Map pointer
+   */
+  Map<In, KeyValue<K, V>> *clone() { return new Map(*this); }
 
-	/**
-	 * Returns the name of the operator, consisting in the name of the class.
-	 */
-	std::string name_short() {
-		return "Map";
-	}
-
-protected:
-	/**
-	 * Duplicates a Map with a copy of the Map kernel function.
-	 * @return new Map pointer
-	 */
-	Map<In, KeyValue<K, V>>* clone() {
-		return new Map(*this);
-	}
-
-	ff::ff_node *opt_node(int pardeg, PEGOptimization_t opt, StructureType st, //
-			opt_args_t a) {
-		assert(opt == MAP_PREDUCE);
-		assert(st == StructureType::BAG);
-		auto nextop = dynamic_cast<ReduceByKey<KeyValue<K, V>>*>(a.op);
-		return MapPReduceBatch<Token<In>, Token<KeyValue <K, V>>>(pardeg, this->mapf, nextop->pardeg(), nextop->kernel());
-	}
-
+  ff::ff_node *opt_node(int pardeg, PEGOptimization_t opt, StructureType st,  //
+                        opt_args_t a) {
+    assert(opt == MAP_PREDUCE);
+    assert(st == StructureType::BAG);
+    auto nextop = dynamic_cast<ReduceByKey<KeyValue<K, V>> *>(a.op);
+    return MapPReduceBatch<Token<In>, Token<KeyValue<K, V>>>(
+        pardeg, this->mapf, nextop->pardeg(), nextop->kernel());
+  }
 };
 
 } /* namespace pico */

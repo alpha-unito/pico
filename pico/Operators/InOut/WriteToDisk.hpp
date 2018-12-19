@@ -21,8 +21,8 @@
 #ifndef OPERATORS_INOUT_WRITETODISK_HPP_
 #define OPERATORS_INOUT_WRITETODISK_HPP_
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 #include "../../ff_implementation/OperatorsFFNodes/InOut/WriteToDiskFFNode.hpp"
 #include "OutputOperator.hpp"
@@ -32,86 +32,80 @@ namespace pico {
 /**
  * Defines an operator that writes data to a text file.
  *
- * The user specifies the kernel function that operates on each line written to the text file, passed as a std::string.
- * The kernel can be a lambda function, a functor or a function.
+ * The user specifies the kernel function that operates on each line written to
+ * the text file, passed as a std::string. The kernel can be a lambda function,
+ * a functor or a function.
  *
  *
  * The operator is global and unique for the Pipe it refers to.
  */
 
-template<typename In>
-class WriteToDisk: public OutputOperator<In> {
+template <typename In>
+class WriteToDisk : public OutputOperator<In> {
+ public:
+  /**
+   * \ingroup op-api
+   *
+   * WritetoDisk Constructor
+   *
+   * Creates a new WriteToDisk operator by defining its kernel function.
+   */
+  WriteToDisk(std::string fname_, std::function<std::string(In)> func_)
+      : OutputOperator<In>(StructureType::BAG),
+        fname(fname_),  //
+        usr_func(true),
+        func(func_) {}
 
-public:
+  /**
+   * \ingroup op-api
+   *
+   * WritetoDisk Constructor
+   *
+   * Creates a new WriteToDisk writing by ostream.
+   */
+  WriteToDisk(std::string fname_)
+      : OutputOperator<In>(StructureType::BAG), fname(fname_) {}
 
-	/**
-	 * \ingroup op-api
-	 *
-	 * WritetoDisk Constructor
-	 *
-	 * Creates a new WriteToDisk operator by defining its kernel function.
-	 */
-	WriteToDisk(std::string fname_, std::function<std::string(In)> func_) :
-			OutputOperator<In>(StructureType::BAG), fname(fname_), //
-			usr_func(true), func(func_) {
-	}
+  /**
+   * Copy constructor.
+   */
+  WriteToDisk(const WriteToDisk& copy)
+      : OutputOperator<In>(copy), fname(copy.fname), func(copy.func) {}
 
-	/**
-	 * \ingroup op-api
-	 *
-	 * WritetoDisk Constructor
-	 *
-	 * Creates a new WriteToDisk writing by ostream.
-	 */
-	WriteToDisk(std::string fname_) :
-			OutputOperator<In>(StructureType::BAG), fname(fname_) {
-	}
+  /**
+   * Returns a unique name for the operator.
+   */
+  std::string name() {
+    std::string name("WriteToDisk");
+    std::ostringstream address;
+    address << (void const*)this;
+    return name + address.str().erase(0, 2);
+  }
 
-	/**
-	 * Copy constructor.
-	 */
-	WriteToDisk(const WriteToDisk &copy) :
-			OutputOperator<In>(copy), fname(copy.fname), func(copy.func) {
-	}
+  /**
+   * Returns the name of the operator, consisting in the name of the class.
+   */
+  std::string name_short() { return "WriteToDisk\n[" + fname + "]"; }
 
-	/**
-	 * Returns a unique name for the operator.
-	 */
-	std::string name() {
-		std::string name("WriteToDisk");
-		std::ostringstream address;
-		address << (void const *) this;
-		return name + address.str().erase(0, 2);
-	}
+ protected:
+  /**
+   * Duplicates a WriteToDisk with a copy of the kernel function.
+   * @return new WriteToDisk pointer
+   */
+  WriteToDisk* clone() { return new WriteToDisk(*this); }
 
-	/**
-	 * Returns the name of the operator, consisting in the name of the class.
-	 */
-	std::string name_short() {
-		return "WriteToDisk\n[" + fname + "]";
-	}
+  ff::ff_node* node_operator(int parallelism, StructureType st) {
+    assert(st == StructureType::BAG);
+    if (usr_func)
+      return new WriteToDiskFFNode<In>(fname, func);
+    else
+      return new WriteToDiskFFNode_ostream<In>(fname);
+  }
 
-protected:
-	/**
-	 * Duplicates a WriteToDisk with a copy of the kernel function.
-	 * @return new WriteToDisk pointer
-	 */
-	WriteToDisk* clone() {
-		return new WriteToDisk(*this);
-	}
-
-	ff::ff_node* node_operator(int parallelism, StructureType st) {
-		assert(st == StructureType::BAG);
-		if (usr_func)
-			return new WriteToDiskFFNode<In>(fname, func);
-		else
-			return new WriteToDiskFFNode_ostream<In>(fname);
-	}
-
-private:
-	std::string fname;
-	bool usr_func = false;
-	std::function<std::string(In)> func;
+ private:
+  std::string fname;
+  bool usr_func = false;
+  std::function<std::string(In)> func;
 };
 
 } /* namespace pico */

@@ -27,64 +27,59 @@
  */
 
 #include <cassert>
-#include <iostream>
-#include <string>
-#include <sstream>
-#include <unordered_map>
 #include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <unordered_map>
 
 #include <chrono>
 typedef std::chrono::high_resolution_clock::time_point time_point_t;
 
 #include <pico/KeyValue.hpp>
 
-int main(int argc, char** argv)
-{
-    // parse command line
-    if (argc < 2)
-    {
-        std::cerr << "Usage: " << argv[0] << " <input file> <output file>\n";
-        return -1;
-    }
-    std::string filename = argv[1];
-    std::string outputfilename = argv[2];
+int main(int argc, char** argv) {
+  // parse command line
+  if (argc < 2) {
+    std::cerr << "Usage: " << argv[0] << " <input file> <output file>\n";
+    return -1;
+  }
+  std::string filename = argv[1];
+  std::string outputfilename = argv[2];
 
-    /* prepare the output word-count map */
-    std::unordered_map<std::string, unsigned> word_cnt;
+  /* prepare the output word-count map */
+  std::unordered_map<std::string, unsigned> word_cnt;
 
-    /* start measurement */
-    auto t0 = std::chrono::high_resolution_clock::now();
+  /* start measurement */
+  auto t0 = std::chrono::high_resolution_clock::now();
 
-    /* read the input file line by line */
-    std::ifstream infile(filename);
-    assert(infile.is_open());
-    std::string line;
-    while (getline(infile, line))
-    {
-        std::istringstream f(line);
-        std::string s;
+  /* read the input file line by line */
+  std::ifstream infile(filename);
+  assert(infile.is_open());
+  std::string line;
+  while (getline(infile, line)) {
+    std::istringstream f(line);
+    std::string s;
 
-        /* tokenize the line and increment each word counter */
-        while (std::getline(f, s, ' '))
-            word_cnt[s]++;
-    }
+    /* tokenize the line and increment each word counter */
+    while (std::getline(f, s, ' ')) word_cnt[s]++;
+  }
 
-    /* write output */
-    std::ofstream outfile(outputfilename);
-    assert(outfile.is_open());
-    for (auto it = word_cnt.begin(); it != word_cnt.end(); ++it)
-    {
-        assert(it->second != 0);
-        pico::KeyValue<std::string, unsigned> kv(it->first, it->second);
-        outfile << kv.to_string() << std::endl;
-    }
+  /* write output */
+  std::ofstream outfile(outputfilename);
+  assert(outfile.is_open());
+  for (auto it = word_cnt.begin(); it != word_cnt.end(); ++it) {
+    assert(it->second != 0);
+    pico::KeyValue<std::string, unsigned> kv(it->first, it->second);
+    outfile << kv.to_string() << std::endl;
+  }
 
-    /* stop measurement */
-    auto t1 = std::chrono::high_resolution_clock::now();
-    auto d = std::chrono::duration_cast<std::chrono::seconds>(t1 - t0);
+  /* stop measurement */
+  auto t1 = std::chrono::high_resolution_clock::now();
+  auto d = std::chrono::duration_cast<std::chrono::seconds>(t1 - t0);
 
-    /* print the execution time */
-    std::cout << "done in " << d.count() << " s\n";
+  /* print the execution time */
+  std::cout << "done in " << d.count() << " s\n";
 
-    return 0;
+  return 0;
 }

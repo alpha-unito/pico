@@ -23,108 +23,100 @@
 
 #include <ff/node.hpp>
 
-#include "../../Internals/utils.hpp"
 #include "../../Internals/Microbatch.hpp"
+#include "../../Internals/Token.hpp"
+#include "../../Internals/utils.hpp"
 #include "../../WindowPolicy.hpp"
 #include "../ff_config.hpp"
-#include "../../Internals/Token.hpp"
 
+template <typename In, typename State, typename Farm, typename TokenTypeIn,
+          typename TokenTypeState>
+class FoldReduceBatch : public Farm {
+ public:
+  FoldReduceBatch(int parallelism,
+                  std::function<void(const In &, State &)> &foldf_,
+                  std::function<void(const State &, State &)> &reducef_) {
+    this->setEmitterF(new ByKeyEmitter<TokenTypeIn>(
+        parallelism, this->getlb(), pico::global_params.MICROBATCH_SIZE));
+    this->setCollectorF(new Collector(parallelism, reducef_));
+    std::vector<ff::ff_node *> w;
+    for (int i = 0; i < parallelism; ++i) {
+      w.push_back(new Worker(foldf_));
+    }
+    this->add_workers(w);
+    this->cleanup_all();
+  }
 
-template<typename In, typename State, typename Farm, typename TokenTypeIn,
-		typename TokenTypeState>
-class FoldReduceBatch: public Farm {
-public:
-	FoldReduceBatch(int parallelism,
-			std::function<void(const In&, State&)> &foldf_,
-			std::function<void(const State&, State&)> &reducef_) {
+ private:
+  class Worker : public base_filter {
+   public:
+    Worker(std::function<void(const In &, State &)> &foldf_) : foldf(foldf_) {}
 
-		this->setEmitterF(
-				new ByKeyEmitter<TokenTypeIn>(parallelism, this->getlb(),
-						pico::global_params.MICROBATCH_SIZE));
-		this->setCollectorF(new Collector(parallelism, reducef_));
-		std::vector<ff::ff_node *> w;
-		for (int i = 0; i < parallelism; ++i) {
-			w.push_back(new Worker(foldf_));
-		}
-		this->add_workers(w);
-		this->cleanup_all();
+    void cstream_begin_callback(pico::base_microbatch::tag_t tag) {
+      tag_state[tag].state_ = NEW<State>();
+    }
 
-	}
-private:
+    void kernel(pico::base_microbatch *in_mb) {
+      mb_t *in_microbatch = reinterpret_cast<mb_t *>(in_mb);
+      auto &s(tag_state[in_mb->tag()]);
+      // iterate over microbatch
+      for (In &in : *in_microbatch) {
+        /* build item and enable copy elision */
+        foldf(in, *s.state_);
+      }
+      DELETE(in_microbatch);
+    }
 
-	class Worker: public base_filter {
-	public:
-		Worker(std::function<void(const In&, State&)> &foldf_) :
-				foldf(foldf_) {
+    void cstream_end_callback(pico::base_microbatch::tag_t tag) {
+      /* wrap state into a microbatch and send out */
+      auto &s(tag_state[tag]);
+      ff_send_out(NEW<pico::mb_wrapped<State>>(tag, s.state_));
+    }
 
-		}
+   private:
+    typedef pico::Microbatch<TokenTypeIn> mb_t;
+    std::function<void(const In &, State &)> &foldf;
+    struct state {
+      State *state_;
+    };
+    std::unordered_map<pico::base_microbatch::tag_t, state> tag_state;
+  };
 
-		void cstream_begin_callback(pico::base_microbatch::tag_t tag) {
-			tag_state[tag].state_ = NEW<State>();
-		}
+  class Collector : public base_sync_duplicate {
+   public:
+    Collector(int nworkers_,
+              std::function<void(const State &, State &)> &reducef_)
+        : reducef(reducef_) {}
 
-		void kernel(pico::base_microbatch *in_mb) {
-			mb_t *in_microbatch = reinterpret_cast<mb_t*>(in_mb);
-			auto &s(tag_state[in_mb->tag()]);
-			// iterate over microbatch
-			for (In &in : *in_microbatch) {
-				/* build item and enable copy elision */
-				foldf(in, *s.state_);
-			}
-			DELETE(in_microbatch);
-		}
+    void cstream_begin_callback(pico::base_microbatch::tag_t tag) {
+      tag_state[tag].state_ = NEW<State>();
+    }
 
-		void cstream_end_callback(pico::base_microbatch::tag_t tag) {
-			/* wrap state into a microbatch and send out */
-			auto &s(tag_state[tag]);
-			ff_send_out(NEW<pico::mb_wrapped<State>>(tag, s.state_));
-		}
+    void kernel(pico::base_microbatch *in_mb) {
+      auto wmb = reinterpret_cast<pico::mb_wrapped<State> *>(in_mb);
+      auto &s(tag_state[in_mb->tag()]);
+      auto in = reinterpret_cast<State *>(wmb->get());
+      reducef(*in, *s.state_);
+      DELETE(in);
+      DELETE(wmb);
+    }
 
-	private:
-		typedef pico::Microbatch<TokenTypeIn> mb_t;
-		std::function<void(const In&, State&)> &foldf;
-		struct state {
-			State* state_;
-		};
-		std::unordered_map<pico::base_microbatch::tag_t, state> tag_state;
-	};
+    void cstream_end_callback(pico::base_microbatch::tag_t tag) {
+      auto &s(tag_state[tag]);
+      auto out_mb = NEW<mb_out>(tag, 1);
+      new (out_mb->allocate()) State(s.state_);
+      out_mb->commit();
+      ff_send_out(out_mb);
+    }
 
-	class Collector: public base_sync_duplicate {
-	public:
-		Collector(int nworkers_,
-				std::function<void(const State&, State&)> &reducef_) :
-				reducef(reducef_) {
-		}
-
-		void cstream_begin_callback(pico::base_microbatch::tag_t tag) {
-			tag_state[tag].state_ = NEW<State>();
-		}
-
-		void kernel(pico::base_microbatch *in_mb) {
-			auto wmb = reinterpret_cast<pico::mb_wrapped<State> *>(in_mb);
-			auto &s(tag_state[in_mb->tag()]);
-			auto in = reinterpret_cast<State*>(wmb->get());
-			reducef(*in, *s.state_);
-			DELETE(in);
-			DELETE(wmb);
-		}
-
-		void cstream_end_callback(pico::base_microbatch::tag_t tag) {
-			auto &s(tag_state[tag]);
-			auto out_mb = NEW<mb_out>(tag, 1);
-			new (out_mb->allocate()) State(s.state_);
-			out_mb->commit();
-			ff_send_out(out_mb);
-		}
-
-	private:
-		std::function<void(const State&, State&)> &reducef;
-		typedef pico::Microbatch<TokenTypeState> mb_out;
-		struct state {
-			State* state_;
-		};
-		std::unordered_map<pico::base_microbatch::tag_t, state> tag_state;
-	};
+   private:
+    std::function<void(const State &, State &)> &reducef;
+    typedef pico::Microbatch<TokenTypeState> mb_out;
+    struct state {
+      State *state_;
+    };
+    std::unordered_map<pico::base_microbatch::tag_t, state> tag_state;
+  };
 };
 
 #endif /* INTERNALS_FOLDREDUCEBATCH_HPP_ */

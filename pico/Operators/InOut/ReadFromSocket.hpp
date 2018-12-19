@@ -21,8 +21,8 @@
 #ifndef OPERATORS_INOUT_READFROMSOCKET_HPP_
 #define OPERATORS_INOUT_READFROMSOCKET_HPP_
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 #include "../../ff_implementation/OperatorsFFNodes/InOut/ReadFromSocketFFNode.hpp"
 #include "InputOperator.hpp"
@@ -36,68 +36,61 @@ namespace pico {
  * The user specifies a delimiter to identify stream items.
  */
 
-class ReadFromSocket: public InputOperator<std::string> {
-public:
+class ReadFromSocket : public InputOperator<std::string> {
+ public:
+  /**
+   * \ingroup op-api
+   * ReadFromSocket Constructor
+   *
+   * Creates a new ReadFromSocket operator by defining its kernel function,
+   * operating on each token of the stream, delimited by the delimiter value.
+   */
+  ReadFromSocket(std::string server_, int port_, char delimiter_)
+      : InputOperator<std::string>(StructureType::STREAM) {
+    server_name = server_;
+    port = port_;
+    delimiter = delimiter_;
+  }
 
-	/**
-	 * \ingroup op-api
-	 * ReadFromSocket Constructor
-	 *
-	 * Creates a new ReadFromSocket operator by defining its kernel function,
-	 * operating on each token of the stream, delimited by the delimiter value.
-	 */
-	ReadFromSocket(std::string server_, int port_, char delimiter_) :
-			InputOperator<std::string>(StructureType::STREAM) {
-		server_name = server_;
-		port = port_;
-		delimiter = delimiter_;
-	}
+  /**
+   * Copy constructor.
+   */
+  ReadFromSocket(const ReadFromSocket &copy)
+      : InputOperator<std::string>(copy) {
+    server_name = copy.server_name;
+    port = copy.port;
+    delimiter = copy.delimiter;
+  }
 
-	/**
-	 * Copy constructor.
-	 */
-	ReadFromSocket(const ReadFromSocket &copy) :
-			InputOperator<std::string>(copy) {
-		server_name = copy.server_name;
-		port = copy.port;
-		delimiter = copy.delimiter;
-	}
+  /**
+   * Returns a unique name for the operator.
+   */
+  std::string name() {
+    std::string name("ReadFromSocket");
+    std::ostringstream address;
+    address << (void const *)this;
+    return name + address.str().erase(0, 2);
+  }
 
-	/**
-	 * Returns a unique name for the operator.
-	 */
-	std::string name() {
-		std::string name("ReadFromSocket");
-		std::ostringstream address;
-		address << (void const *) this;
-		return name + address.str().erase(0, 2);
-	}
+  /**
+   * Returns the name of the operator, consisting in the name of the class.
+   */
+  std::string name_short() { return "ReadFromSocket\n[" + server_name + "]"; }
 
-	/**
-	 * Returns the name of the operator, consisting in the name of the class.
-	 */
-	std::string name_short() {
-		return "ReadFromSocket\n[" + server_name + "]";
-	}
+ protected:
+  ReadFromSocket *clone() { return new ReadFromSocket(*this); }
 
-protected:
-	ReadFromSocket *clone() {
-		return new ReadFromSocket(*this);
-	}
+  const OpClass operator_class() { return OpClass::INPUT; }
 
-	const OpClass operator_class() {
-		return OpClass::INPUT;
-	}
+  ff::ff_node *node_operator(int parallelism, StructureType st) {
+    assert(st == StructureType::STREAM);
+    return new ReadFromSocketFFNode(server_name, port, delimiter);
+  }
 
-	ff::ff_node* node_operator(int parallelism, StructureType st) {
-		assert(st == StructureType::STREAM);
-		return new ReadFromSocketFFNode(server_name, port, delimiter);
-	}
-
-private:
-	std::string server_name;
-	int port;
-	char delimiter;
+ private:
+  std::string server_name;
+  int port;
+  char delimiter;
 };
 
 } /* namespace pico */

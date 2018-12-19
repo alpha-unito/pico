@@ -23,65 +23,60 @@
 
 #include <ff/farm.hpp>
 
+#include "../../Internals/Microbatch.hpp"
+#include "../../Internals/TimedToken.hpp"
 #include "../../Internals/utils.hpp"
 #include "../SupportFFNodes/emitters.hpp"
 #include "../ff_config.hpp"
-#include "../../Internals/TimedToken.hpp"
-#include "../../Internals/Microbatch.hpp"
 
+template <typename In, typename Out, typename Farm, typename TokenTypeIn,
+          typename TokenTypeOut>
+class MapBatch : public Farm {
+ public:
+  MapBatch(int par, std::function<Out(In &)> &mapf) {
+    ff::ff_node *e;
+    if (this->isOFarm())
+      e = new OrdForwardingEmitter(par);
+    else
+      e = new ForwardingEmitter(par);
+    this->setEmitterF(e);
+    this->setCollectorF(new ForwardingCollector(par));
+    std::vector<ff::ff_node *> w;
+    for (int i = 0; i < par; ++i) w.push_back(new Worker(mapf));
+    this->add_workers(w);
+    this->cleanup_all();
+  }
 
-template<typename In, typename Out, typename Farm, typename TokenTypeIn,
-		typename TokenTypeOut>
-class MapBatch: public Farm {
-public:
+ private:
+  class Worker : public base_filter {
+   public:
+    Worker(std::function<Out(In &)> kernel_) : mkernel(kernel_) {}
 
-	MapBatch(int par, std::function<Out(In&)>& mapf) {
-		ff::ff_node* e;
-		if (this->isOFarm())
-			e = new OrdForwardingEmitter(par);
-		else
-			e = new ForwardingEmitter(par);
-		this->setEmitterF(e);
-		this->setCollectorF(new ForwardingCollector(par));
-		std::vector<ff::ff_node *> w;
-		for (int i = 0; i < par; ++i)
-			w.push_back(new Worker(mapf));
-		this->add_workers(w);
-		this->cleanup_all();
-	}
+    void kernel(pico::base_microbatch *in_mb) {
+      auto in_microbatch = reinterpret_cast<mb_in *>(in_mb);
+      auto tag = in_mb->tag();
+      auto out_mb = NEW<mb_out>(tag, pico::global_params.MICROBATCH_SIZE);
+      // iterate over microbatch
+      for (In &in : *in_microbatch) {
+        /* build item and enable copy elision */
+        new (out_mb->allocate()) Out(mkernel(in));
+        out_mb->commit();
+      }
+      ff_send_out(reinterpret_cast<void *>(out_mb));
+      DELETE(in_microbatch);
+    }
 
-private:
-	class Worker: public base_filter {
-	public:
-		Worker(std::function<Out(In&)> kernel_) :
-				mkernel(kernel_) {
-		}
-
-		void kernel(pico::base_microbatch *in_mb) {
-			auto in_microbatch = reinterpret_cast<mb_in*>(in_mb);
-			auto tag = in_mb->tag();
-			auto out_mb = NEW<mb_out>(tag, pico::global_params.MICROBATCH_SIZE);
-			// iterate over microbatch
-			for (In &in : *in_microbatch) {
-				/* build item and enable copy elision */
-				new (out_mb->allocate()) Out(mkernel(in));
-				out_mb->commit();
-			}
-			ff_send_out(reinterpret_cast<void*>(out_mb));
-			DELETE(in_microbatch);
-		}
-
-	private:
-		typedef pico::Microbatch<TokenTypeIn> mb_in;
-		typedef pico::Microbatch<TokenTypeOut> mb_out;
-		std::function<Out(In&)> mkernel;
-	};
+   private:
+    typedef pico::Microbatch<TokenTypeIn> mb_in;
+    typedef pico::Microbatch<TokenTypeOut> mb_out;
+    std::function<Out(In &)> mkernel;
+  };
 };
 
-template<typename In, typename Out, typename TokenIn, typename TokenOut>
+template <typename In, typename Out, typename TokenIn, typename TokenOut>
 using MapBatchStream = MapBatch<In, Out, OrderingFarm, TokenIn, TokenOut>;
 
-template<typename In, typename Out, typename TokenIn, typename TokenOut>
+template <typename In, typename Out, typename TokenIn, typename TokenOut>
 using MapBatchBag = MapBatch<In, Out, NonOrderingFarm, TokenIn, TokenOut>;
 
 #endif /* INTERNALS_FFOPERATORS_MAPBATCH_HPP_ */

@@ -26,17 +26,15 @@ namespace pico {
 /**
  * Token descriptor for decorating collection data items with meta-data.
  */
-template<typename T>
+template <typename T>
 class Token {
-public:
-	typedef T datatype;
+ public:
+  typedef T datatype;
 
-	/*
-	 * create Token as decoration of a T value
-	 */
-	Token(const T&) {
-
-	}
+  /*
+   * create Token as decoration of a T value
+   */
+  Token(const T&) {}
 };
 
 } /* namespace pico */

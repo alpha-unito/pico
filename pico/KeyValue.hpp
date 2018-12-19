@@ -21,144 +21,125 @@
 #ifndef KEYVALUE_HPP_
 #define KEYVALUE_HPP_
 
+#include <cassert>
 #include <iostream>
 #include <sstream>
-#include <cassert>
 
 namespace pico {
 
 /**
  * \ingroup op-api
  */
-template<typename K, typename V>
+template <typename K, typename V>
 class KeyValue {
-public:
+ public:
+  typedef K keytype;
+  typedef V valuetype;
 
-	typedef K keytype;
-	typedef V valuetype;
+  KeyValue() {}
 
-	KeyValue() {
-	}
+  /**
+   * Explicit constructor
+   */
+  KeyValue(K key_, V val_) : key(key_), val(val_) {}
 
-	/**
-	 * Explicit constructor
-	 */
-	KeyValue(K key_, V val_) :
-			key(key_), val(val_) {
-	}
+  /**
+   * Copy constructor
+   */
+  KeyValue(const KeyValue& kv) : key(kv.key), val(kv.val) {}
 
-	/**
-	 * Copy constructor
-	 */
-	KeyValue(const KeyValue &kv) :
-			key(kv.key), val(kv.val) {
-	}
+  /**
+   * Move constructor
+   */
+  KeyValue(KeyValue&& kv) : key(std::move(kv.key)), val(std::move(kv.val)) {}
 
-	/**
-	 * Move constructor
-	 */
-	KeyValue(KeyValue &&kv) :
-			key(std::move(kv.key)), val(std::move(kv.val)) {
-	}
+  /**
+   * Copy assignment
+   */
+  KeyValue& operator=(const KeyValue& kv) {
+    key = kv.key;
+    val = kv.val;
+    return *this;
+  }
 
-	/**
-	 * Copy assignment
-	 */
-	KeyValue& operator=(const KeyValue& kv) {
-		key = kv.key;
-		val = kv.val;
-		return *this;
-	}
+  /**
+   * Move assignment
+   */
+  KeyValue& operator=(KeyValue&& kv) {
+    key = std::move(kv.key);
+    val = std::move(kv.val);
+    return *this;
+  }
 
-	/**
-	 * Move assignment
-	 */
-	KeyValue& operator=(KeyValue&& kv) {
-		key = std::move(kv.key);
-		val = std::move(kv.val);
-		return *this;
-	}
+  /**
+   * Getter methods.
+   */
+  const K& Key() const { return key; }
 
-	/**
-	 * Getter methods.
-	 */
-	const K& Key() const {
-		return key;
-	}
+  const V& Value() const { return val; }
 
-	const V& Value() const {
-		return val;
-	}
+  V& Value() { return val; }
 
-	V& Value() {
-		return val;
-	}
+  /**
+   * Setter methods.
+   */
+  void Key(K key_) { key = key_; }
+  void Value(V val_) { val = val_; }
 
-	/**
-	 * Setter methods.
-	 */
-	void Key(K key_) {
-		key = key_;
-	}
-	void Value(V val_) {
-		val = val_;
-	}
+  bool operator==(const KeyValue& kv) const {
+    return key == kv.Key() && val == kv.Value();
+  }
 
-	bool operator==(const KeyValue &kv) const {
-		return key == kv.Key() && val == kv.Value();
-	}
+  friend bool operator<(const KeyValue& l, const KeyValue& r) {
+    return l.Value() < r.Value();
+  }
 
-	friend bool operator<(const KeyValue& l, const KeyValue& r) {
-		return l.Value() < r.Value();
-	}
+  friend std::ostream& operator<<(std::ostream& os, const KeyValue& kv) {
+    os << "<" << kv.key << ", " << kv.val << ">";
+    return os;
+  }
 
-	friend std::ostream& operator<<(std::ostream& os, const KeyValue& kv) {
-		os << "<" << kv.key << ", " << kv.val << ">";
-		return os;
-	}
+  KeyValue& operator+=(const KeyValue& rhs) {
+    val += rhs.val;  // reuse compound assignment
+    return *this;    // return the result by value (uses move constructor)
+  }
 
-	KeyValue& operator+=(const KeyValue& rhs) {
-		val += rhs.val; // reuse compound assignment
-		return *this; // return the result by value (uses move constructor)
-	}
+  // friends defined inside class body are inline and are hidden from non-ADL
+  // lookup
+  friend KeyValue operator+(
+      KeyValue lhs,  // passing lhs by value helps optimize chained a+b+c
+      const KeyValue&
+          rhs)  // otherwise, both parameters may be const references
+  {
+    lhs.val += rhs.val;  // reuse compound assignment
+    return lhs;          // return the result by value (uses move constructor)
+  }
 
-	// friends defined inside class body are inline and are hidden from non-ADL lookup
-	friend KeyValue operator+(KeyValue lhs, // passing lhs by value helps optimize chained a+b+c
-			const KeyValue& rhs) // otherwise, both parameters may be const references
-			{
-		lhs.val += rhs.val; // reuse compound assignment
-		return lhs; // return the result by value (uses move constructor)
-	}
+  void sumValue(const KeyValue& kv) { val += kv.val; }
 
-	void sumValue(const KeyValue &kv) {
-		val += kv.val;
-	}
+  bool sameKey(const KeyValue& kv) const { return key == kv.key; }
 
-	bool sameKey(const KeyValue &kv) const {
-		return key == kv.key;
-	}
+  std::string to_string() const {
+    std::stringstream res;
+    res << *this;
+    return res.str();
+  }
 
-	std::string to_string() const {
-		std::stringstream res;
-		res << *this;
-		return res.str();
-	}
+  static KeyValue from_string(std::string s) {
+    KeyValue res;
+    std::stringstream in(s);
+    assert(in.get() == '<');
+    in >> res.key;
+    assert(in.get() == ',');
+    assert(in.get() == ' ');
+    in >> res.val;
+    assert(in.get() == '>');
+    return res;
+  }
 
-	static KeyValue from_string(std::string s) {
-		KeyValue res;
-		std::stringstream in(s);
-		assert(in.get() == '<');
-		in >> res.key;
-		assert(in.get() == ',');
-		assert(in.get() == ' ');
-		in >> res.val;
-		assert(in.get() == '>');
-		return res;
-	}
-
-private:
-	K key;
-	V val;
+ private:
+  K key;
+  V val;
 };
 
 } /* namespace pico */

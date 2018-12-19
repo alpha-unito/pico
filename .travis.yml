@@ -1,8 +1,20 @@
 language: cpp
+
 matrix:
   include:
+    - os: osx
+      env:
+        - MATRIX_EVAL="CC=clang && CXX=clang++"
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
 
-    # works on Precise and Trusty
+      env:
+        - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
     - os: linux
       addons:
         apt:
@@ -10,17 +22,38 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-6
+
       env:
         - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
 
+      env:
+        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - g++-7
+            - clang-5.0
+      env:
+        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
 
 before_install:
         - eval "${MATRIX_EVAL}"
 install:
-        - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install libpthread-stubs0-dev ; fi
         - git clone --single-branch -b fastflow3 https://github.com/fastflow/fastflow.git
         - ln -s fastflow/ff ff
 script:
-        - cd tests
+        - mkdir build && cd build
+        - cmake ..
         - make
-        - ./run_tests.sh
+        - cd tests && sh run_tests.sh

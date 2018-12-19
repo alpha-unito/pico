@@ -19,12 +19,12 @@
 #include "WindowPolicy.hpp"
 
 /* operators */
-#include "Operators/Map.hpp"
 #include "Operators/FlatMap.hpp"
-#include "Operators/Reduce.hpp"
 #include "Operators/FoldReduce.hpp"
 #include "Operators/InOut/ReadFromFile.hpp"
 #include "Operators/InOut/ReadFromStdIn.hpp"
+#include "Operators/Map.hpp"
+#include "Operators/Reduce.hpp"
 //#include "Operators/InOut/ReadFromHDFS.hpp"
 #include "Operators/InOut/ReadFromSocket.hpp"
 #include "Operators/InOut/WriteToDisk.hpp"

@@ -32,8 +32,8 @@
  */
 
 #include <iostream>
-#include <string>
 #include <sstream>
+#include <string>
 
 #include <pico/pico.hpp>
 
@@ -47,88 +47,82 @@ static std::set<std::string> stock_names;
  * - filters out all those tweets mentioning zero or multiple stock names
  * - count the number of words for each remaining tweet
  */
-auto filterTweets = pico::FlatMap<std::string, StockAndCount>( //
-		[] (std::string& tweet, pico::FlatMapCollector<StockAndCount>& collector)
-		{
-			StockName stock;
-			bool single_stock = false;
-			unsigned long long count = 0;
+auto filterTweets = pico::FlatMap<std::string, StockAndCount>(  //
+    [](std::string& tweet, pico::FlatMapCollector<StockAndCount>& collector) {
+      StockName stock;
+      bool single_stock = false;
+      unsigned long long count = 0;
 
-			/* tokenize the tweet */
-			std::istringstream f(tweet);
-			std::string s;
-			while (std::getline(f, s, ' '))
-			{
-				/* count token length + blank space */
-				count += s.size() + 1;
+      /* tokenize the tweet */
+      std::istringstream f(tweet);
+      std::string s;
+      while (std::getline(f, s, ' ')) {
+        /* count token length + blank space */
+        count += s.size() + 1;
 
-				/* stock name occurrence */
-				if(stock_names.find(s) != stock_names.end())
-				{
+        /* stock name occurrence */
+        if (stock_names.find(s) != stock_names.end()) {
+          if (!single_stock) {
+            /* first stock name occurrence */
+            stock = s;
+            single_stock = true;
+          } else if (s != stock) {
+            /* multiple stock names, invalid record */
+            single_stock = false;
+            break;
+          }
+        }
+      }
 
-					if(!single_stock)
-					{
-						/* first stock name occurrence */
-						stock = s;
-						single_stock = true;
-					}
-					else if(s != stock)
-					{
-						/* multiple stock names, invalid record */
-						single_stock = false;
-						break;
-					}
-				}
-			}
-
-			/* emit result if valid record  */
-			if(single_stock) {
-				collector.add(StockAndCount(stock, count));
-			}
-		});
+      /* emit result if valid record  */
+      if (single_stock) {
+        collector.add(StockAndCount(stock, count));
+      }
+    });
 
 int main(int argc, char** argv) {
-	/* parse command line */
-	if (argc < 4) {
-		std::cerr << "Usage: " << argv[0] << " ";
-		std::cerr << "<stock names file> <tweet server> <port> \n";
-		return -1;
-	}
-	std::string stock_fname(argv[1]);
-	std::string server(argv[2]);
-	int port = atoi(argv[3]);
+  /* parse command line */
+  if (argc < 4) {
+    std::cerr << "Usage: " << argv[0] << " ";
+    std::cerr << "<stock names file> <tweet server> <port> \n";
+    return -1;
+  }
+  std::string stock_fname(argv[1]);
+  std::string server(argv[2]);
+  int port = atoi(argv[3]);
 
-	/* bring tags to memory */
-	std::ifstream stocks_file(stock_fname);
-	std::string stock_name;
-	while (stocks_file.good()) {
-		stocks_file >> stock_name;
-		stock_names.insert(stock_name);
-	}
+  /* bring tags to memory */
+  std::ifstream stocks_file(stock_fname);
+  std::string stock_name;
+  while (stocks_file.good()) {
+    stocks_file >> stock_name;
+    stock_names.insert(stock_name);
+  }
 
-	/* define i/o operators from/to standard input/output */
-	pico::ReadFromSocket readTweets(server, port, '-');
+  /* define i/o operators from/to standard input/output */
+  pico::ReadFromSocket readTweets(server, port, '-');
 
-	pico::WriteToStdOut<StockAndCount> writeCounts(
-			[](StockAndCount c) {return c.to_string();});
+  pico::WriteToStdOut<StockAndCount> writeCounts(
+      [](StockAndCount c) { return c.to_string(); });
 
-	/* compose the main pipeline */
-	auto stockTweets = pico::Pipe(readTweets) //
-	.add(filterTweets) //
-	.add(pico::ReduceByKey<StockAndCount>([] (unsigned p1, unsigned p2)
-	{
-		return std::max(p1,p2);
-	}).window(8)).add(writeCounts);
+  /* compose the main pipeline */
+  auto stockTweets =
+      pico::Pipe(readTweets)  //
+          .add(filterTweets)  //
+          .add(pico::ReduceByKey<StockAndCount>([](unsigned p1, unsigned p2) {
+                 return std::max(p1, p2);
+               }).window(8))
+          .add(writeCounts);
 
-	/* print the semantic graph and generate dot file */
-	stockTweets.print_semantics();
-	stockTweets.to_dotfile("stock_tweets.dot");
+  /* print the semantic graph and generate dot file */
+  stockTweets.print_semantics();
+  stockTweets.to_dotfile("stock_tweets.dot");
 
-	/* execute the pipeline */
-	stockTweets.run();
+  /* execute the pipeline */
+  stockTweets.run();
 
-	/* print execution time */
-	std::cout << "done in " << stockTweets.pipe_time() << " ms\n";
+  /* print execution time */
+  std::cout << "done in " << stockTweets.pipe_time() << " ms\n";
 
-	return 0;
+  return 0;
 }

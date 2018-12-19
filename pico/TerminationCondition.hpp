@@ -30,34 +30,27 @@
 namespace pico {
 
 class TerminationCondition {
-public:
-	virtual ~TerminationCondition() {
-	}
+ public:
+  virtual ~TerminationCondition() {}
 
-	virtual base_switch *iteration_switch() = 0;
-	virtual TerminationCondition *clone() = 0;
+  virtual base_switch *iteration_switch() = 0;
+  virtual TerminationCondition *clone() = 0;
 };
 
-class FixedIterations: public TerminationCondition {
-public:
-	FixedIterations(unsigned iters_) :
-			iters(iters_) {
-	}
+class FixedIterations : public TerminationCondition {
+ public:
+  FixedIterations(unsigned iters_) : iters(iters_) {}
 
-	FixedIterations(const FixedIterations &copy) :
-			iters(copy.iters) {
-	}
+  FixedIterations(const FixedIterations &copy) : iters(copy.iters) {}
 
-	base_switch *iteration_switch() {
-		return new fixed_length_iteration_dispatcher(iters);
-	}
+  base_switch *iteration_switch() {
+    return new fixed_length_iteration_dispatcher(iters);
+  }
 
-	FixedIterations *clone() {
-		return new FixedIterations(*this);
-	}
+  FixedIterations *clone() { return new FixedIterations(*this); }
 
-private:
-	unsigned iters;
+ private:
+  unsigned iters;
 };
 
 } /* namespace pico */

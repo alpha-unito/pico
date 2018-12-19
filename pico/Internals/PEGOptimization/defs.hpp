@@ -23,14 +23,12 @@
 
 namespace pico {
 
-class Operator; //forward
+class Operator;  // forward
 
-enum PEGOptimization_t {
-	MAP_PREDUCE, FMAP_PREDUCE, PJFMAP_PREDUCE
-};
+enum PEGOptimization_t { MAP_PREDUCE, FMAP_PREDUCE, PJFMAP_PREDUCE };
 
 union opt_args_t {
-	Operator *op;
+  Operator *op;
 };
 
 } /* namespace pico */

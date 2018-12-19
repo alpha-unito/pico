@@ -24,56 +24,56 @@
  * then it extracts the maximum price for each stock name.
  */
 
-#include <iostream>
-#include <string>
-#include <sstream>
 #include <algorithm>
 #include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 #include <pico/pico.hpp>
 
-#include "defs.h"
-#include "common.hpp"
 #include "black_scholes.hpp"
+#include "common.hpp"
+#include "defs.h"
 
 int main(int argc, char** argv) {
-	// parse command line
-	if (argc < 3) {
-		std::cerr << "Usage: " << argv[0] << " <input file> <output file> \n";
-		return -1;
-	}
-	std::string in_fname(argv[1]), out_fname(argv[2]);
+  // parse command line
+  if (argc < 3) {
+    std::cerr << "Usage: " << argv[0] << " <input file> <output file> \n";
+    return -1;
+  }
+  std::string in_fname(argv[1]), out_fname(argv[2]);
 
-	/*
-	 * define a batch pipeline that:
-	 * 1. read options from file
-	 * 2. computes prices by means of the blackScholes pipeline
-	 * 3. extracts the maximum price for each stock name
-	 * 4. write prices to file
-	 */
-	pico::Map<std::string, StockAndPrice> blackScholes([] (const std::string& in) {
-		OptionData opt;
-		char otype, name[128];
-		parse_opt(opt, otype, name, in);
-		opt.OptionType = (otype == 'P');
-		return StockAndPrice(std::string(name), black_scholes(opt));
-	});
+  /*
+   * define a batch pipeline that:
+   * 1. read options from file
+   * 2. computes prices by means of the blackScholes pipeline
+   * 3. extracts the maximum price for each stock name
+   * 4. write prices to file
+   */
+  pico::Map<std::string, StockAndPrice> blackScholes([](const std::string& in) {
+    OptionData opt;
+    char otype, name[128];
+    parse_opt(opt, otype, name, in);
+    opt.OptionType = (otype == 'P');
+    return StockAndPrice(std::string(name), black_scholes(opt));
+  });
 
-	auto stockPricing = pico::Pipe() //
-	.add(pico::ReadFromFile(in_fname)) //
-	.add(blackScholes) //
-	.add(SPReducer()) //
-	.add(pico::WriteToDisk<StockAndPrice>(out_fname));
+  auto stockPricing = pico::Pipe()                            //
+                          .add(pico::ReadFromFile(in_fname))  //
+                          .add(blackScholes)                  //
+                          .add(SPReducer())                   //
+                          .add(pico::WriteToDisk<StockAndPrice>(out_fname));
 
-	/* print the semantic graph and generate dot file */
-	stockPricing.print_semantics();
-	stockPricing.to_dotfile("stock_pricing.dot");
+  /* print the semantic graph and generate dot file */
+  stockPricing.print_semantics();
+  stockPricing.to_dotfile("stock_pricing.dot");
 
-	/* execute the pipeline */
-	stockPricing.run();
+  /* execute the pipeline */
+  stockPricing.run();
 
-	/* print execution time */
-	std::cout << "done in " << stockPricing.pipe_time() << " ms\n";
+  /* print execution time */
+  std::cout << "done in " << stockPricing.pipe_time() << " ms\n";
 
-	return 0;
+  return 0;
 }

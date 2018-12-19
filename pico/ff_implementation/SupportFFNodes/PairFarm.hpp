@@ -12,8 +12,8 @@
 
 #include "../../Internals/utils.hpp"
 
-#include "farms.hpp"
 #include "base_nodes.hpp"
+#include "farms.hpp"
 
 /*
  *******************************************************************************
@@ -23,47 +23,39 @@
  *******************************************************************************
  */
 typedef base_emitter PairEmitter_base_t;
-class PairEmitterToNone: public PairEmitter_base_t {
-public:
-	PairEmitterToNone() :
-			PairEmitter_base_t(2) {
-	}
+class PairEmitterToNone : public PairEmitter_base_t {
+ public:
+  PairEmitterToNone() : PairEmitter_base_t(2) {}
 
-	/* ensure no c-streams are sent to input-less pipes */
-	void kernel(pico::base_microbatch *) {
-		assert(false);
-	}
+  /* ensure no c-streams are sent to input-less pipes */
+  void kernel(pico::base_microbatch *) { assert(false); }
 
-	virtual void handle_cstream_begin(pico::base_microbatch::tag_t tag) {
-		assert(false);
-	}
+  virtual void handle_cstream_begin(pico::base_microbatch::tag_t tag) {
+    assert(false);
+  }
 
-	virtual void handle_cstream_end(pico::base_microbatch::tag_t tag) {
-		assert(false);
-	}
+  virtual void handle_cstream_end(pico::base_microbatch::tag_t tag) {
+    assert(false);
+  }
 };
 
-template<int To>
-class PairEmitterTo: public PairEmitter_base_t {
-public:
-	PairEmitterTo() :
-			PairEmitter_base_t(2) {
-	}
+template <int To>
+class PairEmitterTo : public PairEmitter_base_t {
+ public:
+  PairEmitterTo() : PairEmitter_base_t(2) {}
 
-	void kernel(pico::base_microbatch *in_mb) {
-		send_mb_to(in_mb, To);
-	}
+  void kernel(pico::base_microbatch *in_mb) { send_mb_to(in_mb, To); }
 
-	/* do not notify input-less pipe about c-stream begin/end */
-	virtual void handle_cstream_begin(pico::base_microbatch::tag_t tag) {
-		send_mb_to(make_sync(tag, PICO_CSTREAM_BEGIN), To);
-		//cstream_begin_callback(tag);
-	}
+  /* do not notify input-less pipe about c-stream begin/end */
+  virtual void handle_cstream_begin(pico::base_microbatch::tag_t tag) {
+    send_mb_to(make_sync(tag, PICO_CSTREAM_BEGIN), To);
+    // cstream_begin_callback(tag);
+  }
 
-	virtual void handle_cstream_end(pico::base_microbatch::tag_t tag) {
-		//cstream_end_callback(tag);
-		send_mb_to(make_sync(tag, PICO_CSTREAM_END), To);
-	}
+  virtual void handle_cstream_end(pico::base_microbatch::tag_t tag) {
+    // cstream_end_callback(tag);
+    send_mb_to(make_sync(tag, PICO_CSTREAM_END), To);
+  }
 };
 
 using PairEmitterToFirst = PairEmitterTo<0>;
@@ -76,93 +68,84 @@ using PairEmitterToSecond = PairEmitterTo<1>;
  *
  *******************************************************************************
  */
-class PairGatherer: public ff::ff_gatherer {
-public:
-	PairGatherer(size_t n) :
-			ff::ff_gatherer(n), from_(-1) {
-	}
+class PairGatherer : public ff::ff_gatherer {
+ public:
+  PairGatherer(size_t n) : ff::ff_gatherer(n), from_(-1) {}
 
-	ssize_t from() const {
-		return from_;
-	}
+  ssize_t from() const { return from_; }
 
-private:
-	ssize_t selectworker() {
-		from_ = ff::ff_gatherer::selectworker();
-		return from_;
-	}
+ private:
+  ssize_t selectworker() {
+    from_ = ff::ff_gatherer::selectworker();
+    return from_;
+  }
 
-	ssize_t from_;
+  ssize_t from_;
 };
 
-class PairCollector: public base_sync_duplicate {
-public:
-	PairCollector(PairGatherer &gt_) :
-			base_sync_duplicate(2), gt(gt_) {
-	}
+class PairCollector : public base_sync_duplicate {
+ public:
+  PairCollector(PairGatherer &gt_) : base_sync_duplicate(2), gt(gt_) {}
 
-	/* on c-stream begin, forward and notify about origin */
-	virtual void handle_cstream_begin(pico::base_microbatch::tag_t tag) {
-		send_mb(make_sync(tag, PICO_CSTREAM_BEGIN));
-		if (!gt.from())
-			send_mb(make_sync(tag, PICO_CSTREAM_FROM_LEFT));
-		else
-			send_mb(make_sync(tag, PICO_CSTREAM_FROM_RIGHT));
-	}
+  /* on c-stream begin, forward and notify about origin */
+  virtual void handle_cstream_begin(pico::base_microbatch::tag_t tag) {
+    send_mb(make_sync(tag, PICO_CSTREAM_BEGIN));
+    if (!gt.from())
+      send_mb(make_sync(tag, PICO_CSTREAM_FROM_LEFT));
+    else
+      send_mb(make_sync(tag, PICO_CSTREAM_FROM_RIGHT));
+  }
 
-	/* on c-stream end, notify */
-	virtual void handle_cstream_end(pico::base_microbatch::tag_t tag) {
-		//cstream_end_callback(tag);
-		send_mb(make_sync(tag, PICO_CSTREAM_END));
-	}
+  /* on c-stream end, notify */
+  virtual void handle_cstream_end(pico::base_microbatch::tag_t tag) {
+    // cstream_end_callback(tag);
+    send_mb(make_sync(tag, PICO_CSTREAM_END));
+  }
 
-	/* forward data */
-	void kernel(pico::base_microbatch *in_mb) {
-		send_mb(in_mb);
-	}
+  /* forward data */
+  void kernel(pico::base_microbatch *in_mb) { send_mb(in_mb); }
 
-private:
-	PairGatherer &gt;
+ private:
+  PairGatherer &gt;
 };
 
-
-class PairFarm: public ff::ff_farm{
-public:
-	PairFarm(){
-		setlb(new NonOrderingFarm::lb_t(max_nworkers)); //memory leak?
-		setgt(new PairGatherer(max_nworkers));
-	}
-
+class PairFarm : public ff::ff_farm {
+ public:
+  PairFarm() {
+    setlb(new NonOrderingFarm::lb_t(max_nworkers));  // memory leak?
+    setgt(new PairGatherer(max_nworkers));
+  }
 };
 
-static ff::ff_pipeline *make_ff_pipe(const pico::Pipe &p1, pico::StructureType st, bool); //forward
+static ff::ff_pipeline *make_ff_pipe(const pico::Pipe &p1,
+                                     pico::StructureType st, bool);  // forward
 
-static PairFarm *make_pair_farm(const pico::Pipe &p1, const pico::Pipe &p2, //
-		pico::StructureType st) {
-	/* create and configure */
-	auto res = new PairFarm();
-	res->cleanup_all();
+static PairFarm *make_pair_farm(const pico::Pipe &p1, const pico::Pipe &p2,  //
+                                pico::StructureType st) {
+  /* create and configure */
+  auto res = new PairFarm();
+  res->cleanup_all();
 
-	/* add emitter */
-	ff::ff_node *e;
-	if (p1.in_deg())
-		e = new PairEmitterToFirst();
-	else if (p2.in_deg())
-		e = new PairEmitterToSecond();
-	else
-		e = new PairEmitterToNone();
-	res->add_emitter(e);
+  /* add emitter */
+  ff::ff_node *e;
+  if (p1.in_deg())
+    e = new PairEmitterToFirst();
+  else if (p2.in_deg())
+    e = new PairEmitterToSecond();
+  else
+    e = new PairEmitterToNone();
+  res->add_emitter(e);
 
-	/* add argument pipelines as workers */
-	std::vector<ff::ff_node *> w;
-	w.push_back(make_ff_pipe(p1, st, false));
-	w.push_back(make_ff_pipe(p2, st, false));
-	res->add_workers(w);
+  /* add argument pipelines as workers */
+  std::vector<ff::ff_node *> w;
+  w.push_back(make_ff_pipe(p1, st, false));
+  w.push_back(make_ff_pipe(p2, st, false));
+  res->add_workers(w);
 
-	/* add collector */
-	auto p_pair_gt = reinterpret_cast<PairGatherer*>(res->getgt());
-	res->add_collector(new PairCollector(* p_pair_gt));
+  /* add collector */
+  auto p_pair_gt = reinterpret_cast<PairGatherer *>(res->getgt());
+  res->add_collector(new PairCollector(*p_pair_gt));
 
-	return res;
+  return res;
 }
 #endif /* PICO_FF_IMPLEMENTATION_SUPPORTFFNODES_PAIRFARM_HPP_ */

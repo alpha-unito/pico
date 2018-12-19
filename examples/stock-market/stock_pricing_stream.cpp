@@ -24,75 +24,76 @@
  * then it extracts the maximum price for each stock name.
  */
 
-#include <iostream>
-#include <string>
-#include <sstream>
 #include <algorithm>
 #include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 #include <pico/pico.hpp>
 
-#include "defs.h"
-#include "common.hpp"
-#include "black_scholes.hpp"
 #include "binomial_tree.hpp"
+#include "black_scholes.hpp"
+#include "common.hpp"
+#include "defs.h"
 #include "explicit_finite_difference.hpp"
 
 int main(int argc, char** argv) {
-	// parse command line
-	if (argc < 3) {
-		std::cerr << "Usage: " << argv[0] << " <server> <port> \n";
-		return -1;
-	}
-	std::string server(argv[1]);
-	int port = atoi(argv[2]);
+  // parse command line
+  if (argc < 3) {
+    std::cerr << "Usage: " << argv[0] << " <server> <port> \n";
+    return -1;
+  }
+  std::string server(argv[1]);
+  int port = atoi(argv[2]);
 
-	/*
-	 * define a batch pipeline that:
-	 * 1. read options from file
-	 * 2. computes prices by means of the blackScholes pipeline
-	 * 3. extracts the maximum price for each stock name
-	 * 4. write prices to file
-	 */
-	pico::Map<std::string, StockAndPrice> blackScholes([] (const std::string& in) {
-		OptionData opt;
-		char otype, name[128];
-		parse_opt(opt, otype, name, in);
-		opt.OptionType = (otype == 'P');
-		int iMax=4, jMax=4, steps=10;
-		int const size = 3;
-		StockPrice res[size];
-		res[0] = black_scholes(opt);
-		res[1] = binomial_tree(opt, steps);
-		res[2] = explicit_finite_difference(opt, iMax, jMax);
-		StockPrice mean = 0;
-		for(int i = 0; i < size; ++i) {
-			mean+=res[i];
-		}
-		mean /= size;
-		StockPrice variance = 0;
-		for(int i = 0; i < size; ++i) {
-			variance+=(res[i]-mean)*(res[i]-mean);
-		}
-		variance/=size;
-		return StockAndPrice(std::string(name), variance);
-	});
+  /*
+   * define a batch pipeline that:
+   * 1. read options from file
+   * 2. computes prices by means of the blackScholes pipeline
+   * 3. extracts the maximum price for each stock name
+   * 4. write prices to file
+   */
+  pico::Map<std::string, StockAndPrice> blackScholes([](const std::string& in) {
+    OptionData opt;
+    char otype, name[128];
+    parse_opt(opt, otype, name, in);
+    opt.OptionType = (otype == 'P');
+    int iMax = 4, jMax = 4, steps = 10;
+    int const size = 3;
+    StockPrice res[size];
+    res[0] = black_scholes(opt);
+    res[1] = binomial_tree(opt, steps);
+    res[2] = explicit_finite_difference(opt, iMax, jMax);
+    StockPrice mean = 0;
+    for (int i = 0; i < size; ++i) {
+      mean += res[i];
+    }
+    mean /= size;
+    StockPrice variance = 0;
+    for (int i = 0; i < size; ++i) {
+      variance += (res[i] - mean) * (res[i] - mean);
+    }
+    variance /= size;
+    return StockAndPrice(std::string(name), variance);
+  });
 
-	auto stockPricing = pico::Pipe() //
-	.add(pico::ReadFromSocket(server, port, '\n')) //
-	.add(blackScholes). //
-	add(SPReducer().window(8)) //batch-windowing reduce
-	.add(pico::WriteToStdOut<StockAndPrice>());
+  auto stockPricing = pico::Pipe()                                        //
+                          .add(pico::ReadFromSocket(server, port, '\n'))  //
+                          .add(blackScholes)
+                          .                       //
+                      add(SPReducer().window(8))  // batch-windowing reduce
+                          .add(pico::WriteToStdOut<StockAndPrice>());
 
-	/* print the semantic graph and generate dot file */
-	stockPricing.print_semantics();
-	stockPricing.to_dotfile("stock_pricing_stream.dot");
+  /* print the semantic graph and generate dot file */
+  stockPricing.print_semantics();
+  stockPricing.to_dotfile("stock_pricing_stream.dot");
 
-	/* execute the pipeline */
-	stockPricing.run();
+  /* execute the pipeline */
+  stockPricing.run();
 
-	/* print execution time */
-	std::cout << "done in " << stockPricing.pipe_time() << " ms\n";
+  /* print execution time */
+  std::cout << "done in " << stockPricing.pipe_time() << " ms\n";
 
-	return 0;
+  return 0;
 }

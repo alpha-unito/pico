@@ -23,53 +23,45 @@
 
 #include <ff/node.hpp>
 
-#include "../../../Internals/utils.hpp"
-#include "../../../Internals/TimedToken.hpp"
 #include "../../../Internals/Microbatch.hpp"
+#include "../../../Internals/TimedToken.hpp"
 #include "../../../Internals/Token.hpp"
-
+#include "../../../Internals/utils.hpp"
 
 /*
  * TODO only works with non-decorating token
  */
 
-template<typename In, typename TokenType>
-class WriteToStdOutFFNode: public base_filter {
-public:
-	WriteToStdOutFFNode(std::function<std::string(In&)> kernel_) :
-			wkernel(kernel_) {
-	}
+template <typename In, typename TokenType>
+class WriteToStdOutFFNode : public base_filter {
+ public:
+  WriteToStdOutFFNode(std::function<std::string(In&)> kernel_)
+      : wkernel(kernel_) {}
 
-	/* sink node */
-	bool propagate_cstream_sync() {
-		return false;
-	}
+  /* sink node */
+  bool propagate_cstream_sync() { return false; }
 
-	void kernel(pico::base_microbatch *in_mb) {
-		auto in_microbatch = reinterpret_cast<pico::Microbatch<TokenType>*>(in_mb);
-		for (In& tt : *in_microbatch)
-			std::cout << wkernel(tt) << std::endl;
-		DELETE(in_microbatch);
-	}
+  void kernel(pico::base_microbatch* in_mb) {
+    auto in_microbatch = reinterpret_cast<pico::Microbatch<TokenType>*>(in_mb);
+    for (In& tt : *in_microbatch) std::cout << wkernel(tt) << std::endl;
+    DELETE(in_microbatch);
+  }
 
-private:
-	std::function<std::string(In&)> wkernel;
+ private:
+  std::function<std::string(In&)> wkernel;
 };
 
-template<typename In, typename TokenType>
-class WriteToStdOutFFNode_ostream: public base_filter {
-public:
-	/* sink node */
-	bool propagate_cstream_sync() {
-		return false;
-	}
+template <typename In, typename TokenType>
+class WriteToStdOutFFNode_ostream : public base_filter {
+ public:
+  /* sink node */
+  bool propagate_cstream_sync() { return false; }
 
-	void kernel(pico::base_microbatch *in_mb) {
-		auto in_microbatch = reinterpret_cast<pico::Microbatch<TokenType>*>(in_mb);
-		for (In& tt : *in_microbatch)
-			std::cout << tt << std::endl;
-		DELETE(in_microbatch);
-	}
+  void kernel(pico::base_microbatch* in_mb) {
+    auto in_microbatch = reinterpret_cast<pico::Microbatch<TokenType>*>(in_mb);
+    for (In& tt : *in_microbatch) std::cout << tt << std::endl;
+    DELETE(in_microbatch);
+  }
 };
 
 #endif /* INTERNALS_FFOPERATORS_INOUT_WRITETOSTDOUTFFNODE_HPP_ */
