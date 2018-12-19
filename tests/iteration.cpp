@@ -10,7 +10,7 @@
 
 #include <catch.hpp>
 
-#include <pico/pico.hpp>
+#include "pico/pico.hpp"
 
 #include "common/basic_pipes.hpp"
 #include "common/common_functions.hpp"

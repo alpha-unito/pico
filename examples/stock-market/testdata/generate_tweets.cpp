@@ -22,12 +22,6 @@
  *******************************************************************************
  */
 
-#include <cassert>
-#include <fstream>
-#include <iostream>
-#include <random>
-#include <vector>
-
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,6 +29,11 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <cassert>
+#include <fstream>
+#include <iostream>
+#include <random>
+#include <vector>
 
 void error(const char *msg) {
   perror(msg);

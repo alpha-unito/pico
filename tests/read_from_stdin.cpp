@@ -8,9 +8,9 @@
 #include <iostream>
 #include <string>
 
-#include <pico/pico.hpp>
-
 #include <catch.hpp>
+
+#include "pico/pico.hpp"
 
 #include "common/io.hpp"
 

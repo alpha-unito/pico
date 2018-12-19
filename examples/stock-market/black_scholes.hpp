@@ -14,6 +14,7 @@
 #define EXAMPLES_STOCK_MARKET_BLACK_SCHOLES_HPP_
 
 #include <cmath>
+
 typedef double fptype;
 
 // Cumulative Normal Distribution Function

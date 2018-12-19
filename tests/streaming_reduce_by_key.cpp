@@ -5,9 +5,11 @@
  *      Author: martinelli
  */
 
-#include <catch.hpp>
-#include <pico/pico.hpp>
 #include <unordered_set>
+
+#include <catch.hpp>
+
+#include "pico/pico.hpp"
 
 #include "common/io.hpp"
 

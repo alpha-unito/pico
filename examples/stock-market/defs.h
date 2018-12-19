@@ -8,7 +8,7 @@
 #ifndef EXAMPLES_STOCK_MARKET_DEFS_H_
 #define EXAMPLES_STOCK_MARKET_DEFS_H_
 
-#include <pico/KeyValue.hpp>
+#include "pico/KeyValue.hpp"
 
 #include "black_scholes.hpp"
 

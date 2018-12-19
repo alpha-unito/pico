@@ -26,6 +26,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+
 #include "defs.h"
 
 /* Template code for the binomial tree

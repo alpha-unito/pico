@@ -34,9 +34,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "defs.h"
-
 #include "black_scholes.hpp"
+#include "defs.h"
 
 int main(int argc, char** argv) {
   /* parse command line */

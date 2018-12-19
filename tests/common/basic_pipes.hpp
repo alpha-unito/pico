@@ -8,7 +8,7 @@
 #ifndef TESTS_COMMON_BASIC_PIPES_HPP_
 #define TESTS_COMMON_BASIC_PIPES_HPP_
 
-#include <pico/pico.hpp>
+#include "pico/pico.hpp"
 
 template <typename KV>
 static pico::Pipe pipe_pairs_creator(std::string input_file) {

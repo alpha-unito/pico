@@ -27,7 +27,7 @@
 #include <random>
 #include <vector>
 
-#include "../../pico/KeyValue.hpp"
+#include "pico/KeyValue.hpp"
 
 #include "../common/utils.hpp"
 
