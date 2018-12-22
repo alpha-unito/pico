@@ -1,4 +1,4 @@
-Here is a PiCo implementation of the well-known [PageRank](https://en.wikipedia.org/wiki/PageRank) algorithm.
+A PiCo implementation of the well-known [PageRank](https://en.wikipedia.org/wiki/PageRank) algorithm.
 
 The code in `pagerank.cpp` shows the usage of **iterative pipelines**.
 
