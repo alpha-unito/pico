@@ -129,5 +129,8 @@ int main(int argc, char **argv) {
 
   pageRank.run();
 
+  // generate the semantic dot
+  pageRank.to_dotfile("page-rank.dot");
+
   return 0;
 }
