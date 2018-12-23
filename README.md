@@ -71,3 +71,10 @@ Alberto Riccardo Martinelli <alberto.martinelli@edu.unito.it> (co-maintainer)
 Marco Aldinucci <aldinuc@di.unito.it> (boss)  
 Massimo Torquati <torquati@di.unipi.it> (FastFlow maintainer)  
 Guy Tremblay <tremblay.guy@uqam.ca> (DSL wizard)
+
+## How to cite PiCo  
+C. Misale, M. Drocco, G. Tremblay, A. R. Martinelli, and M. Aldinucci, "PiCo: High-Performance Data Analytics Pipelines in Modern C++," Future Generation Computer Systems, Volume 87, 2018.  
+[![SHAD_DOI_badge](https://img.shields.io/badge/DOI-https%3A%2F%2Fdoi.org%2F10.1016%2Fj.future.2018.05.030-blue.svg)](https://doi.org/10.1016/j.future.2018.05.030)
+[![PiCo_BibTexview](https://img.shields.io/badge/BibTex-view-blue.svg)](https://dblp.uni-trier.de/rec/bibtex/journals/fgcs/MisaleDTMA18)
+[![PiCo_BibTexdownload](https://img.shields.io/badge/BibTex-download-blue.svg)](https://dblp.uni-trier.de/rec/bib2/journals/fgcs/MisaleDTMA18.bib)
+[![PiCo_RISdownload](https://img.shields.io/badge/RIS-download-blue.svg)](https://dblp.uni-trier.de/rec/ris/journals/fgcs/MisaleDTMA18.ris)
