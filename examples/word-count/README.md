@@ -1,7 +1,7 @@
 Word-Count (a.k.a. the "Hello, World!" for data analytics) counts the occurrences of each distinct word from a text file.
 
-The "killer feature" in the PiCo API is that **there is no data**:
-a PiCo application is described only in terms of *processing* (i.e., pipeline stages) -
+This examples shows the *killer feature* in the PiCo API: **there is no data**!
+A PiCo application is described only in terms of *processing* (i.e., pipeline stages) -
 rather than processing *and* data.
 
 In `pico_wc.cpp`, the `wc` pipeline:
