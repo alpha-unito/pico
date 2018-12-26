@@ -51,7 +51,7 @@ and use good ol' compiler flags to include PiCo (and FastFlow) when compiling yo
 ```bash
 git clone https://github.com/alpha-unito/PiCo.git /path/to/pico
 git clone https://github.com/fastflow/fastflow.git /path/to/fastflow
-g++ -I/path/to/pico/include i/path/to/fastflow app.cc
+g++ -I/path/to/pico/include -I/path/to/fastflow app.cc
 ```
 :rescue_worker_helmet: A modern CMake-based solution for linking PiCo (with its dependencies) is under development!
 
