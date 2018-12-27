@@ -22,7 +22,7 @@ git clone https://github.com/alpha-unito/PiCo.git pico
 The current implementation is based on [FastFlow](https://github.com/fastflow/fastflow) as runtime system.
 Get it and a link it:
 ```bash
-git clone https://github.com/fastflow/fastflow.git /path/to/fastflow
+git clone --single-branch -b fastflow3 https://github.com/fastflow/fastflow.git /path/to/fastflow
 ln -s /path/to/fastflow/ff pico/
 ```
 :rescue_worker_helmet: A better solution for including FastFlow as dependency is under development!
