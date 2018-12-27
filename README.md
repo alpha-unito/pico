@@ -50,7 +50,7 @@ Just include PiCo headers at the beginning of your source file:
 and use good ol' compiler flags to include PiCo (and FastFlow) when compiling your `app`: 
 ```bash
 git clone https://github.com/alpha-unito/PiCo.git /path/to/pico
-git clone https://github.com/fastflow/fastflow.git /path/to/fastflow
+git clone --single-branch -b fastflow3 https://github.com/fastflow/fastflow.git /path/to/fastflow
 g++ -I/path/to/pico/include -I/path/to/fastflow app.cc
 ```
 :rescue_worker_helmet: A modern CMake-based solution for linking PiCo (with its dependencies) is under development!
