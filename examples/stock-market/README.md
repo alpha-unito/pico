@@ -39,3 +39,4 @@ Analyze them:
 cd ..
 cat testdata/tweets.txt | nc -l 4000 & ./stock_tweets testdata/nasdaq_europe.txt localhost 4000
 ```
+:warning: The `nc` synopsis may be different on your system.
