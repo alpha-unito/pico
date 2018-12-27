@@ -4,13 +4,15 @@ This examples shows the *killer feature* in the PiCo API: **there is no data**!
 A PiCo application is described only in terms of *processing* (i.e., pipeline stages) -
 rather than processing *and* data.
 
-In `pico_wc.cpp`, the `wc` pipeline:
+A simple PiCo pipeline for word-count:
 
 1. reads an input file line by line, by a `ReadFromFile` stage
 2. tokenizes each line into words, by a `FlatMap` stage - a `FlatMap` maps an item (line) to multiple items (words)
 3. maps each word `w` to a key-value pair <`w`,`1`>, by a `Map` stage
 4. groups the pairs by word and sums up them, by a `ReduceByKey` stage
 5. finally, the word-occurrences pairs <`w`,`n`> are written to an output file, by a `WriteToFile` stage
+
+In `pico_wc.cpp`, we show a common optimization known as stage fusion. The `wc` pipeline fuses step 3 into step 2, letting the `FlatMap` stage produce the <`w`,`1`> pairs from each word in the processed line.
 
 ## Run the application
 See the home [README](../../README.md) for build instructions.
