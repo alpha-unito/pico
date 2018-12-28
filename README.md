@@ -17,7 +17,7 @@ The following steps require `cmake >=3.1` as build system.
 
 Get PiCo:
 ```bash
-git clone https://github.com/alpha-unito/PiCo.git pico
+git clone https://github.com/alpha-unito/pico.git pico
 ```
 The current implementation is based on [FastFlow](https://github.com/fastflow/fastflow) as runtime system.
 Get it and a link it:
@@ -49,7 +49,7 @@ Just include PiCo headers at the beginning of your source file:
 ```
 and use good ol' compiler flags to include PiCo (and FastFlow) when compiling your `app`: 
 ```bash
-git clone https://github.com/alpha-unito/PiCo.git /path/to/pico
+git clone https://github.com/alpha-unito/pico.git /path/to/pico
 git clone --single-branch -b fastflow3 https://github.com/fastflow/fastflow.git /path/to/fastflow
 g++ -I/path/to/pico/include -I/path/to/fastflow app.cc
 ```
