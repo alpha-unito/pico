@@ -25,14 +25,15 @@
 #include <chrono>
 #endif
 
+#include <ff/multinode.hpp>
 #include <ff/node.hpp>
 
-#include "../../Internals/Microbatch.hpp"
-#include "../../Internals/utils.hpp"
+#include "pico/Internals/Microbatch.hpp"
+#include "pico/Internals/utils.hpp"
+
+#include "pico/ff_implementation/defs.hpp"
 
 #include "farms.hpp"
-
-#include "../defs.hpp"
 
 using base_node = ff::ff_node_t<pico::base_microbatch, pico::base_microbatch>;
 using base_monode =
