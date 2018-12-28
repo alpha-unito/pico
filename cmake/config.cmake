@@ -1,40 +1,17 @@
 # Configure checks
 
-include(CheckCCompilerFlag)
-include(CheckCXXCompilerFlag)
-include(CheckCompilerVersion)
-include(CheckIncludeFile)
-include(CheckIncludeFileCXX)
-include(CheckLibraryExists)
-
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 ## Workaround for the intel compiler
 if (Intel)
   if (${CMAKE_VERSION} VERSION_LESS "3.6")
-    if (CMAKE_CXX_STANDARD STREQUAL 14)
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+    if (CMAKE_CXX_STANDARD STREQUAL 17)
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
     else()
       message(FATAL_ERROR "Unsupported C++ Standard requested")
     endif()
   endif()
 endif()
-
-# CXX compiler flags:
-
-## CXX Release Build flags:
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
-check_cxx_compiler_flag("-march=native" CXX_SUPPORT_MARCH_NATIVE)
-if (CXX_SUPPORT_MARCH_NATIVE)
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
-endif()
-
-## CXX Debug Build flags:
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC")
-
-## CXX Release+Debug
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} ${CMAKE_CXX_FLAGS_DEBUG}")
 
 # include files checks
 
