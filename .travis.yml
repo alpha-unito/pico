@@ -56,4 +56,4 @@ script:
         - mkdir build && cd build
         - cmake ..
         - make
-        - cd tests && sh run_tests.sh
+        - ctest
