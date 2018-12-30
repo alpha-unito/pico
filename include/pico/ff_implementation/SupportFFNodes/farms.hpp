@@ -28,8 +28,8 @@
  */
 class NonOrderingFarm : public ff::ff_farm {
  public:
+  using lb_t = ff::ff_farm::lb_t;
   void setEmitterF(ff::ff_node* f) { this->add_emitter(f); }
-
   void setCollectorF(ff::ff_node* f) { this->add_collector(f); }
 };
 

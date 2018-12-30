@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.8)
 
 if(${CMAKE_VERSION} VERSION_LESS 3.13)
     cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
@@ -65,18 +65,13 @@ option(PICO_ENABLE_CPPLINT "Enable the linting of source code" ON)
 option(PICO_ENABLE_DOXYGEN "Use doxygen to generate the shad API documentation" OFF)
 option(PICO_ENABLE_UNIT_TEST "Enable the compilation of Unit Tests" ON)
 
-set(PICO_MAIN_SRC_DIR     ${CMAKE_CURRENT_SOURCE_DIR})
-set(PICO_MAIN_INCLUDE_DIR ${PICO_MAIN_SRC_DIR}/include)
-set(PICO_BINARY_DIR       ${CMAKE_CURRENT_BINARY_DIR})
-#set(PICO_INCLUDE_DIR      ${PICO_BINARY_DIR})
-
 set(
   PICO_RUNTIME_SYSTEM "FF" CACHE STRING
   "Runtime system to be used as backend (Default=FF, Supported=FF)")
 
 include(config)
 
-include_directories(${PICO_MAIN_INCLUDE_DIR} ${PICO_INCLUDE_DIR} ${FF_INCLUDE_DIR})
+include_directories(./include)
 
 if (PICO_ENABLE_UNIT_TEST)
 # TODO Catch/CTest integration

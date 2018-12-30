@@ -3,8 +3,10 @@ language: cpp
 matrix:
   include:
     - os: osx
+      osx_image: xcode10.1
       env:
         - MATRIX_EVAL="CC=clang && CXX=clang++"
+
     - os: linux
       addons:
         apt:
