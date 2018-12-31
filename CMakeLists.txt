@@ -16,6 +16,7 @@ if (NOT DEFINED PICO_VERSION_PATCH)
   set(PICO_VERSION_PATCH 1)
 endif()
 
+
 # Add path for custom CMake modules
 set(CMAKE_MODULE_PATH
   ${CMAKE_MODULE_PATH}
@@ -75,8 +76,12 @@ include_directories(./include)
 
 if (PICO_ENABLE_UNIT_TEST)
 # TODO Catch/CTest integration
-#  enable_testing()
-#  include(CTest)
+  # Prepare "Catch" library for other executables
+  include(CTest)
+  enable_testing()
+  set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests/include)
+  add_library(Catch INTERFACE)
+  target_include_directories(Catch INTERFACE ${YOUR_CATCH_INCLUDE_DIR})
   add_subdirectory(tests)
 endif()
 if (PICO_ENABLE_DOXYGEN)
