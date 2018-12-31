@@ -1,12 +1,5 @@
 # Configure checks
 
-include(CheckCCompilerFlag)
-include(CheckCXXCompilerFlag)
-include(CheckCompilerVersion)
-include(CheckIncludeFile)
-include(CheckIncludeFileCXX)
-include(CheckLibraryExists)
-
 set(CMAKE_CXX_STANDARD 17)
 
 ## Workaround for the intel compiler
@@ -19,22 +12,6 @@ if (Intel)
     endif()
   endif()
 endif()
-
-# CXX compiler flags:
-
-## CXX Release Build flags:
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
-check_cxx_compiler_flag("-march=native" CXX_SUPPORT_MARCH_NATIVE)
-if (CXX_SUPPORT_MARCH_NATIVE)
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
-endif()
-
-## CXX Debug Build flags:
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC")
-
-## CXX Release+Debug
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} ${CMAKE_CXX_FLAGS_DEBUG}")
 
 # include files checks
 

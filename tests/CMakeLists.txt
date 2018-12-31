@@ -25,6 +25,7 @@ add_custom_target(tests_inputs DEPENDS ${TESTS_INPUTS_FILES} generate_lines gene
 add_dependencies(batch_tests tests_inputs)
 add_dependencies(stream_tests tests_inputs)
 
+
 add_custom_command(OUTPUT ${TESTS_INPUTS_FILES}
         COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/create_inputs_tests.sh
-        )  
+        ) 

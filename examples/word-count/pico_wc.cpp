@@ -72,9 +72,9 @@ int main(int argc, char** argv) {
                 .to(countWords)  //
                 .add(writer);
 
-  /* print the semantic graph and generate dot file */
+  // generate the semantic dot
   wc.print_semantics();
-  wc.to_dotfile("pico_wc.dot");
+  wc.to_dotfile("word-count.dot");
 
   /* execute the pipeline */
   wc.run();
