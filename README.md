@@ -1,6 +1,6 @@
 PiCo: High-Performance Data-Analytics Pipelines in C++
 ===============
-[![Travis Build Status](https://travis-ci.org/alpha-unito/PiCo.svg?branch=master)](https://travis-ci.org/alpha-unito/PiCo)
+[![Travis Build Status](https://travis-ci.org/alpha-unito/pico.svg?branch=master)](https://travis-ci.org/alpha-unito/pico)
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 [![GitHub tag](https://img.shields.io/github/tag/alpha-unito/pico.svg)](http://github.com/alpha-unito/pico/releases)
 [![GitHub Issues](https://img.shields.io/github/issues/alpha-unito/pico.svg)](http://github.com/alpha-unito/pico/issues)
