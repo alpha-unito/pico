@@ -1,10 +1,6 @@
 #!/bin/bash
 
 
-#generate tests
-echo "> generating tests"
-make
-
 # generate input files
 echo "> generating input data"
 cd testdata
