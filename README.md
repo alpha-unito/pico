@@ -27,17 +27,13 @@ ln -s /path/to/fastflow/ff pico/
 ```
 :rescue_worker_helmet: A better solution for including FastFlow as dependency is under development!
 
-Build tests: (and examples)
+Build and run the tests: (and examples)
 ```bash
 cd pico
 mkdir build && cd build
 cmake .. -DPICO_ENABLE_UNIT_TEST=ON
-make
-```
-Run Tests:
-```bash
-cd tests
-sh run_tests.sh
+cmake --build .
+ctest
 ```
 :rescue_worker_helmet: CTest integration is under development!
 
