@@ -35,9 +35,8 @@ cmake .. -DPICO_ENABLE_UNIT_TEST=ON
 cmake --build .
 ctest
 ```
-:rescue_worker_helmet: CTest integration is under development!
 
-## Use PiCo in you code
+## Use PiCo in your code
 Good news! PiCo is header-only, you do not need to build/link any library to use it in your code.
 Just include PiCo headers at the beginning of your source file:
 ```c++
