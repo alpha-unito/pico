@@ -131,6 +131,7 @@ class TokenCollector : public FlatMapCollector<DataType> {
   inline cnode *allocate() {
     assert(this->tag());
     cnode *res = (cnode *)MALLOC(sizeof(cnode));
+    assert(res);
     res->next = nullptr;
     res->mb = NEW<mb_t>(this->tag(), global_params.MICROBATCH_SIZE);
     return res;
