@@ -36,10 +36,9 @@ static bool opt_match(base_UnaryOperator *op1, base_UnaryOperator *op2,  //
                       PEGOptimization_t opt) {
   bool res = true;
 
-  if (res) {
-    auto opc1 = op1->operator_class(), opc2 = op2->operator_class();
-    switch (opt) {
-      case MAP_PREDUCE:
+  auto opc1 = op1->operator_class(), opc2 = op2->operator_class();
+  switch (opt) {
+  	  case MAP_PREDUCE:
         res = res && (opc1 == OpClass::MAP && opc2 == OpClass::REDUCE);
         res = res && (!op2->windowing() && op2->partitioning());
         break;
@@ -50,7 +49,7 @@ static bool opt_match(base_UnaryOperator *op1, base_UnaryOperator *op2,  //
       default:
         assert(false);
     }
-  }
+
 
   return res;
 }
@@ -59,11 +58,10 @@ static bool opt_match_binary(const Pipe &p, base_UnaryOperator &op2,
                              PEGOptimization_t opt) {
   bool res = true;
 
-  if (res) {
-    auto opc1 = p.get_operator_ptr()->operator_class();
-    auto opc2 = op2.operator_class();
-    switch (opt) {
-      case PJFMAP_PREDUCE:
+  auto opc1 = p.get_operator_ptr()->operator_class();
+  auto opc2 = op2.operator_class();
+  switch (opt) {
+  	  case PJFMAP_PREDUCE:
         // TODO check batch
         res = res && (opc1 == OpClass::BFMAP && opc2 == OpClass::REDUCE);
         res = res && (!op2.windowing() && op2.partitioning());
@@ -71,11 +69,9 @@ static bool opt_match_binary(const Pipe &p, base_UnaryOperator &op2,
       default:
         assert(false);
     }
-  }
+
 
   return res;
-
-  return false;
 }
 
 template <typename ItType>
