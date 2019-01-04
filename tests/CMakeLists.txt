@@ -4,12 +4,15 @@ set(BATCH_TESTS_SRCS flatmap.cpp input_output_file.cpp reduce_by_key.cpp
 set(TESTS_INPUTS_FILES testdata/lines.txt testdata/pairs.txt testdata/pairs_64.txt )                    
 add_subdirectory(testdata)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/catch_cmake")
+
 #batch tests
 add_executable(batch_tests ${BATCH_TESTS_SRCS} test_driver.cpp)
 
 target_link_libraries(batch_tests ${PICO_RUNTIME_LIB})
 target_link_libraries(batch_tests Catch)
-add_test(NAME batch_unit_tests COMMAND batch_tests)
+include(Catch)
+catch_discover_tests(batch_tests)
 
 
 #streaming tests
