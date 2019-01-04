@@ -78,6 +78,7 @@ static ff::ff_pipeline *make_ff_pipe(const pico::Pipe &p,
     case pico::Pipe::OPERATOR:
       op = p.get_operator_ptr();
       uop = dynamic_cast<pico::base_UnaryOperator *>(op);
+      assert(uop);
       res->add_stage(uop->node_operator(uop->pardeg(), st));
       break;
     case pico::Pipe::TO:
@@ -109,6 +110,7 @@ static ff::ff_pipeline *make_ff_pipe(const pico::Pipe &p,
       res->add_stage(make_pair_farm(*p.children()[0], *p.children()[1], st));
       /* add the operator */
       bop = dynamic_cast<pico::base_BinaryOperator *>(op);
+      assert(bop);
       bool left_input = p.children()[0]->in_deg();
       res->add_stage(bop->node_operator(bop->pardeg(), left_input, st));
       break;
