@@ -61,6 +61,7 @@ class base_JFMBK_Farm : public NonOrderingFarm {
         : emitter_t(nworkers_),  //
           nworkers(nworkers_),
           mbsize(mbsize_),
+		  cstream_begin_tag(pico::base_microbatch::nil_tag()), //default value never used
           cstream_begin_rcv(false) {}
 
    private:
@@ -227,6 +228,7 @@ class base_JFMBK_worker : public base_filter {
   base_JFMBK_worker(kernel_t kernel_, bool left_input_)
       : fkernel(kernel_),
         cache_from_left(!left_input_),
+		cstream_begin_tag(pico::base_microbatch::nil_tag()), //default value never used
         cstream_begin_rcv(false) {}
 
   /* on c-stream begin, forward only if non-cached tag */
