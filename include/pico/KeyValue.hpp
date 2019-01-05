@@ -36,8 +36,6 @@ class KeyValue {
   typedef K keytype;
   typedef V valuetype;
 
-  KeyValue() {}
-
   /**
    * Explicit constructor
    */
@@ -126,15 +124,16 @@ class KeyValue {
   }
 
   static KeyValue from_string(std::string s) {
-    KeyValue res;
+    K key;
+    V value;
     std::stringstream in(s);
     assert(in.get() == '<');
-    in >> res.key;
+    in >> key;
     assert(in.get() == ',');
     assert(in.get() == ' ');
-    in >> res.val;
+    in >> value;
     assert(in.get() == '>');
-    return res;
+    return KeyValue<K, V>(key, value);
   }
 
  private:
