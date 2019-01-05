@@ -74,6 +74,7 @@ class JoinFlatMapByKey : public BinaryOperator<In1, In2, Out> {
     assert(opt == PJFMAP_PREDUCE);
     assert(st == StructureType::BAG);
     auto nextop = dynamic_cast<ReduceByKey<Out> *>(a.op);
+    assert(nextop);
     if (nextop->pardeg() == 1) {
       using t = JFMRBK_seq_red<Token<In1>, Token<In2>, Token<Out>>;
       return new t(pardeg, lin, kernel, nextop->kernel());

@@ -150,6 +150,7 @@ class FlatMap<In, KeyValue<K, V>> : public FlatMapBase<In, KeyValue<K, V>> {
     assert(opt == FMAP_PREDUCE);
     assert(st == StructureType::BAG);
     auto nextop = dynamic_cast<ReduceByKey<KeyValue<K, V>> *>(a.op);
+    assert(nextop);
     return FMapPReduceBatch<Token<In>, Token<KeyValue<K, V>>>(
         par, this->flatmapf, nextop->pardeg(), nextop->kernel());
   }

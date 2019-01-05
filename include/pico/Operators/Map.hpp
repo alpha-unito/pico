@@ -160,6 +160,7 @@ class Map<In, KeyValue<K, V>> : public MapBase<In, KeyValue<K, V>> {
     assert(opt == MAP_PREDUCE);
     assert(st == StructureType::BAG);
     auto nextop = dynamic_cast<ReduceByKey<KeyValue<K, V>> *>(a.op);
+    assert(nextop);
     return MapPReduceBatch<Token<In>, Token<KeyValue<K, V>>>(
         pardeg, this->mapf, nextop->pardeg(), nextop->kernel());
   }
