@@ -130,12 +130,16 @@ class KeyValue {
   static KeyValue from_string(std::string s) {
     KeyValue res;
     std::stringstream in(s);
-    assert(in.get() == '<');
+    char ch = in.get();
+    assert(ch == '<');
     in >> res.key;
-    assert(in.get() == ',');
-    assert(in.get() == ' ');
+    ch = in.get();
+    assert(ch == ',');
+    ch = in.get();
+    assert(ch == ' ');
     in >> res.val;
-    assert(in.get() == '>');
+    ch = in.get();
+    assert(ch == '>');
     return res;
 }
 
