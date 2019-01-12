@@ -81,7 +81,7 @@ static ff::ff_pipeline *make_ff_pipe(const pico::Pipe &p,
   /* create the ff pipeline with automatic node cleanup */
   auto *res = new ff::ff_pipeline(acc);
   ff::ff_pipeline *sub_pipe = nullptr;
-  PairFarm * pair_farm = nullptr;
+  PairFarm *pair_farm = nullptr;
 
   res->cleanup_nodes();
   pico::Operator *op;
@@ -144,10 +144,10 @@ static ff::ff_pipeline *make_ff_pipe(const pico::Pipe &p,
       assert(p.children().size() == 2);
       pair_farm = make_pair_farm(*p.children()[0], *p.children()[1], st);
       if (pair_farm)
-    	  res->add_stage(pair_farm);
+        res->add_stage(pair_farm);
       else {
-    	  delete res;
-    	  res = nullptr;
+        delete res;
+        res = nullptr;
       }
       /* add the operator */
       bop = dynamic_cast<pico::base_BinaryOperator *>(op);
