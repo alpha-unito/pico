@@ -96,11 +96,21 @@ static bool unary_unary_chain(ff::ff_pipeline *p, base_UnaryOperator *op1,
   return res;
 }
 
+/*
+ * Returns true in case of success, false otherwise
+ */
+
 static bool binary_unary_chain(ff::ff_pipeline *p, const Pipe &p1,
                                base_UnaryOperator *op2, StructureType st) {
   bool res = false;
   bool lin = p1.in_deg();  // has left-input
   auto bop = dynamic_cast<base_BinaryOperator *>(p1.get_operator_ptr());
+  if (!bop) {
+    std::cerr << "PEGOptimization.hpp error: error in binary_unary_chain, bop "
+                 "is a nullptr"
+              << std::endl;
+    return res;
+  }
   auto &children = p1.children();
   assert(children.size() == 2);
   auto args = opt_args_t{op2};
@@ -131,12 +141,27 @@ static bool add_optimized(ff::ff_pipeline *p, ItType it1, ItType it2,  //
   if (p1t == Pipe::OPERATOR && p2t == Pipe::OPERATOR) {
     /* unary-unary chain */
     auto op1 = dynamic_cast<base_UnaryOperator *>(p1.get_operator_ptr());
-    auto op2 = dynamic_cast<base_UnaryOperator *>(p2.get_operator_ptr());
-    if (op1 && op2) res = unary_unary_chain(p, op1, op2, st);
+    if (op1) {
+      auto op2 = dynamic_cast<base_UnaryOperator *>(p2.get_operator_ptr());
+      if (op2)
+        res = unary_unary_chain(p, op1, op2, st);
+      else
+        std::cerr << "PEGOptimization.hpp error: error in add_optimized, op2 "
+                     "is a nullptr (first branch)"
+                  << std::endl;
+    } else
+      std::cerr << "PEGOptimization.hpp error: error in add_optimized, op1 is "
+                   "a nullptr"
+                << std::endl;
   } else if (p1t == Pipe::PAIR && p2t == Pipe::OPERATOR) {
     /* binary-unary chain */
     auto op2 = dynamic_cast<base_UnaryOperator *>(p2.get_operator_ptr());
-    if (op2) res = binary_unary_chain(p, p1, op2, st);
+    if (op2)
+      res = binary_unary_chain(p, p1, op2, st);
+    else
+      std::cerr << "PEGOptimization.hpp error: error in add_optimized, op2 is "
+                   "a nullptr (second branch)"
+                << std::endl;
   }
 
   return res;

@@ -83,12 +83,13 @@ class JoinFlatMapByKey : public BinaryOperator<In1, In2, Out> {
       if (nextop->pardeg() == 1) {
         using t = JFMRBK_seq_red<Token<In1>, Token<In2>, Token<Out>>;
         res = new t(pardeg, lin, kernel, nextop->kernel());
+      } else {
+        using t = JFMRBK_par_red<Token<In1>, Token<In2>, Token<Out>>;
+        res = new t(pardeg, lin, kernel, nextop->pardeg(), nextop->kernel());
       }
-      using t = JFMRBK_par_red<Token<In1>, Token<In2>, Token<Out>>;
-      res = new t(pardeg, lin, kernel, nextop->pardeg(), nextop->kernel());
-    }
-    else
-    	std::cerr << "JoinFlatMapByKey.hpp error in function opt_node" << std::endl;
+    } else
+      std::cerr << "JoinFlatMapByKey.hpp error in function opt_node"
+                << std::endl;
     return res;
   }
 
