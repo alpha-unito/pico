@@ -70,6 +70,13 @@ class ReduceByKey : public UnaryOperator<In, In> {
     win = copy.win ? copy.win->clone() : nullptr;
   }
 
+  ReduceByKey &operator =(const ReduceByKey &copy) {
+	reducef = copy.reducef;
+	win = copy.win ? copy.win->clone() : nullptr;
+	return *this;
+  }
+
+
   ~ReduceByKey() {
     if (win) delete win;
   }

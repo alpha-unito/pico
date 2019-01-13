@@ -36,20 +36,18 @@ static bool opt_match(base_UnaryOperator *op1, base_UnaryOperator *op2,  //
                       PEGOptimization_t opt) {
   bool res = true;
 
-  if (res) {
-    auto opc1 = op1->operator_class(), opc2 = op2->operator_class();
-    switch (opt) {
-      case MAP_PREDUCE:
-        res = res && (opc1 == OpClass::MAP && opc2 == OpClass::REDUCE);
-        res = res && (!op2->windowing() && op2->partitioning());
-        break;
-      case FMAP_PREDUCE:
-        res = res && (opc1 == OpClass::FMAP && opc2 == OpClass::REDUCE);
-        res = res && (!op2->windowing() && op2->partitioning());
-        break;
-      default:
-        assert(false);
-    }
+  auto opc1 = op1->operator_class(), opc2 = op2->operator_class();
+  switch (opt) {
+    case MAP_PREDUCE:
+      res = res && (opc1 == OpClass::MAP && opc2 == OpClass::REDUCE);
+      res = res && (!op2->windowing() && op2->partitioning());
+      break;
+    case FMAP_PREDUCE:
+      res = res && (opc1 == OpClass::FMAP && opc2 == OpClass::REDUCE);
+      res = res && (!op2->windowing() && op2->partitioning());
+      break;
+    default:
+      assert(false);
   }
 
   return res;
@@ -59,23 +57,79 @@ static bool opt_match_binary(const Pipe &p, base_UnaryOperator &op2,
                              PEGOptimization_t opt) {
   bool res = true;
 
-  if (res) {
-    auto opc1 = p.get_operator_ptr()->operator_class();
-    auto opc2 = op2.operator_class();
-    switch (opt) {
-      case PJFMAP_PREDUCE:
-        // TODO check batch
-        res = res && (opc1 == OpClass::BFMAP && opc2 == OpClass::REDUCE);
-        res = res && (!op2.windowing() && op2.partitioning());
-        break;
-      default:
-        assert(false);
+  auto opc1 = p.get_operator_ptr()->operator_class();
+  auto opc2 = op2.operator_class();
+  switch (opt) {
+    case PJFMAP_PREDUCE:
+      // TODO check batch
+      res = res && (opc1 == OpClass::BFMAP && opc2 == OpClass::REDUCE);
+      res = res && (!op2.windowing() && op2.partitioning());
+      break;
+    default:
+      assert(false);
+  }
+
+  return res;
+}
+
+/*
+ * Returns true in case of success, false otherwise
+ */
+
+static bool unary_unary_chain(ff::ff_pipeline *p, base_UnaryOperator *op1,
+                              base_UnaryOperator *op2, StructureType st) {
+  bool res = false;
+  auto args = opt_args_t{op2};
+  if (opt_match(op1, op2, MAP_PREDUCE)) {
+    auto *opt_node = op1->opt_node(op1->pardeg(), MAP_PREDUCE, st, args);
+    if (opt_node) {
+      p->add_stage(opt_node);
+      res = true;
+    }
+  } else if (opt_match(op1, op2, FMAP_PREDUCE)) {
+    auto *opt_node = op1->opt_node(op1->pardeg(), FMAP_PREDUCE, st, args);
+    if (opt_node) {
+      p->add_stage(opt_node);
+      res = true;
+    }
+  }
+  return res;
+}
+
+/*
+ * Returns true in case of success, false otherwise
+ */
+
+static bool binary_unary_chain(ff::ff_pipeline *p, const Pipe &p1,
+                               base_UnaryOperator *op2, StructureType st) {
+  bool res = false;
+  bool lin = p1.in_deg();  // has left-input
+  auto bop = dynamic_cast<base_BinaryOperator *>(p1.get_operator_ptr());
+  if (!bop) {
+    std::cerr << "PEGOptimization.hpp error: error in binary_unary_chain, bop "
+                 "is a nullptr"
+              << std::endl;
+    return res;
+  }
+  auto &children = p1.children();
+  assert(children.size() == 2);
+  auto args = opt_args_t{op2};
+
+  if (opt_match_binary(p1, *op2, PJFMAP_PREDUCE)) {
+    auto *pair_farm = make_pair_farm(*children[0], *children[1], st);
+    if (pair_farm) {
+      auto bpar = bop->pardeg();
+      auto *opt_node = bop->opt_node(bpar, lin, PJFMAP_PREDUCE, st, args);
+      if (opt_node) {
+        p->add_stage(pair_farm);
+        p->add_stage(opt_node);
+        res = true;
+      } else
+        delete pair_farm;
     }
   }
 
   return res;
-
-  return false;
 }
 
 template <typename ItType>
@@ -83,38 +137,34 @@ static bool add_optimized(ff::ff_pipeline *p, ItType it1, ItType it2,  //
                           StructureType st) {
   auto &p1 = **it1, &p2 = **it2;
   auto p1t = p1.term_node_type(), p2t = p2.term_node_type();
-
+  bool res = false;
   if (p1t == Pipe::OPERATOR && p2t == Pipe::OPERATOR) {
     /* unary-unary chain */
     auto op1 = dynamic_cast<base_UnaryOperator *>(p1.get_operator_ptr());
-    auto op2 = dynamic_cast<base_UnaryOperator *>(p2.get_operator_ptr());
-    auto args = opt_args_t{op2};
-
-    if (opt_match(op1, op2, MAP_PREDUCE))
-      p->add_stage(op1->opt_node(op1->pardeg(), MAP_PREDUCE, st, args));
-    else if (opt_match(op1, op2, FMAP_PREDUCE))
-      p->add_stage(op1->opt_node(op1->pardeg(), FMAP_PREDUCE, st, args));
-    else
-      return false;
+    if (op1) {
+      auto op2 = dynamic_cast<base_UnaryOperator *>(p2.get_operator_ptr());
+      if (op2)
+        res = unary_unary_chain(p, op1, op2, st);
+      else
+        std::cerr << "PEGOptimization.hpp error: error in add_optimized, op2 "
+                     "is a nullptr (first branch)"
+                  << std::endl;
+    } else
+      std::cerr << "PEGOptimization.hpp error: error in add_optimized, op1 is "
+                   "a nullptr"
+                << std::endl;
   } else if (p1t == Pipe::PAIR && p2t == Pipe::OPERATOR) {
     /* binary-unary chain */
     auto op2 = dynamic_cast<base_UnaryOperator *>(p2.get_operator_ptr());
-    bool lin = p1.in_deg();  // has left-input
-    auto bop = dynamic_cast<base_BinaryOperator *>(p1.get_operator_ptr());
-    auto &children = p1.children();
-    assert(children.size() == 2);
-    auto args = opt_args_t{op2};
+    if (op2)
+      res = binary_unary_chain(p, p1, op2, st);
+    else
+      std::cerr << "PEGOptimization.hpp error: error in add_optimized, op2 is "
+                   "a nullptr (second branch)"
+                << std::endl;
+  }
 
-    if (opt_match_binary(p1, *op2, PJFMAP_PREDUCE)) {
-      p->add_stage(make_pair_farm(*children[0], *children[1], st));
-      auto bpar = bop->pardeg();
-      p->add_stage(bop->opt_node(bpar, lin, PJFMAP_PREDUCE, st, args));
-    } else
-      return false;
-  } else
-    return false;
-
-  return true;
+  return res;
 }
 
 } /* namespace pico */

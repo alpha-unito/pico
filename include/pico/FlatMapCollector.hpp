@@ -131,8 +131,13 @@ class TokenCollector : public FlatMapCollector<DataType> {
   inline cnode *allocate() {
     assert(this->tag());
     cnode *res = (cnode *)MALLOC(sizeof(cnode));
-    res->next = nullptr;
-    res->mb = NEW<mb_t>(this->tag(), global_params.MICROBATCH_SIZE);
+    if (res) {
+      res->next = nullptr;
+      res->mb = NEW<mb_t>(this->tag(), global_params.MICROBATCH_SIZE);
+    } else
+      std::cerr << "FlatMapCollector.hpp error: TokenCollector impossible "
+                   "malloc in allocate function"
+                << std::endl;
     return res;
   }
 };

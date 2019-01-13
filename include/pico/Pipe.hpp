@@ -133,23 +133,34 @@ class Pipe {
 #endif
   }
 
+  void make_copy(const Pipe& copy) {
+	  in_dtype = copy.in_dtype;
+	  out_dtype = copy.out_dtype;
+	  in_deg_ = copy.in_deg_;
+	  out_deg_ = copy.out_deg_;
+	  copy_struct_type(*this, copy.st_map);
+
+	  if (has_operator())
+		  term_value.op = copy.term_value.op->clone();
+	  else if (has_termination())
+	      term_value.cond = copy.term_value.cond->clone();
+	  for (Pipe *p : copy.children_) children_.push_back(new Pipe(*p));
+  }
+
   /**
    * \ingroup pipe-api
    * Copy Constructor
    */
   Pipe(const Pipe &copy)
       : term_node_type_(copy.term_node_type_), term_value(nullptr) {
-    in_dtype = copy.in_dtype;
-    out_dtype = copy.out_dtype;
-    in_deg_ = copy.in_deg_;
-    out_deg_ = copy.out_deg_;
-    copy_struct_type(*this, copy.st_map);
+	  make_copy(copy);
+  }
 
-    if (has_operator())
-      term_value.op = copy.term_value.op->clone();
-    else if (has_termination())
-      term_value.cond = copy.term_value.cond->clone();
-    for (Pipe *p : copy.children_) children_.push_back(new Pipe(*p));
+  Pipe &operator = (const Pipe & copy) {
+	  term_node_type_ = copy.term_node_type_;
+	  term_value.op = nullptr;
+	  make_copy(copy);
+	  return *this;
   }
 
   ~Pipe() {

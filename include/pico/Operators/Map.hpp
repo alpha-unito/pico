@@ -155,13 +155,22 @@ class Map<In, KeyValue<K, V>> : public MapBase<In, KeyValue<K, V>> {
    */
   Map<In, KeyValue<K, V>> *clone() { return new Map(*this); }
 
+  /*
+   * Returns nullptr in case of error
+   */
+
   ff::ff_node *opt_node(int pardeg, PEGOptimization_t opt, StructureType st,  //
                         opt_args_t a) {
     assert(opt == MAP_PREDUCE);
     assert(st == StructureType::BAG);
     auto nextop = dynamic_cast<ReduceByKey<KeyValue<K, V>> *>(a.op);
-    return MapPReduceBatch<Token<In>, Token<KeyValue<K, V>>>(
-        pardeg, this->mapf, nextop->pardeg(), nextop->kernel());
+    if (nextop)
+      return MapPReduceBatch<Token<In>, Token<KeyValue<K, V>>>(
+          pardeg, this->mapf, nextop->pardeg(), nextop->kernel());
+    else {
+      std::cerr << "Map.hpp error in function opt_node" << std::endl;
+      return nullptr;
+    }
   }
 };
 

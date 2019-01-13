@@ -150,8 +150,13 @@ class FlatMap<In, KeyValue<K, V>> : public FlatMapBase<In, KeyValue<K, V>> {
     assert(opt == FMAP_PREDUCE);
     assert(st == StructureType::BAG);
     auto nextop = dynamic_cast<ReduceByKey<KeyValue<K, V>> *>(a.op);
-    return FMapPReduceBatch<Token<In>, Token<KeyValue<K, V>>>(
-        par, this->flatmapf, nextop->pardeg(), nextop->kernel());
+    if (nextop)
+      return FMapPReduceBatch<Token<In>, Token<KeyValue<K, V>>>(
+          par, this->flatmapf, nextop->pardeg(), nextop->kernel());
+    else {
+      std::cerr << "FlatMap.hpp error in function opt_node" << std::endl;
+      return nullptr;
+    }
   }
 };
 

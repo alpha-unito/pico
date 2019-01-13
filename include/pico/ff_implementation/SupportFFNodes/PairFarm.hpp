@@ -133,6 +133,10 @@ class PairFarm : public ff::ff_farm {
 static ff::ff_pipeline *make_ff_pipe(const pico::Pipe &p1,
                                      pico::StructureType st, bool);  // forward
 
+/*
+ * return nullptr in case of error
+ */
+
 static PairFarm *make_pair_farm(const pico::Pipe &p1, const pico::Pipe &p2,  //
                                 pico::StructureType st) {
   /* create and configure */
@@ -151,13 +155,30 @@ static PairFarm *make_pair_farm(const pico::Pipe &p1, const pico::Pipe &p2,  //
 
   /* add argument pipelines as workers */
   std::vector<ff::ff_node *> w;
-  w.push_back(make_ff_pipe(p1, st, false));
-  w.push_back(make_ff_pipe(p2, st, false));
-  res->add_workers(w);
+  auto* sub_p1 = make_ff_pipe(p1, st, false);
+  if (sub_p1) {
+	  w.push_back(sub_p1);
+  	  auto* sub_p2 = make_ff_pipe(p2, st, false);
 
-  /* add collector */
-  auto p_pair_gt = reinterpret_cast<PairGatherer *>(res->getgt());
-  res->add_collector(new PairCollector(*p_pair_gt));
+  	  if (sub_p2) {
+  		  w.push_back(sub_p2);
+  		  res->add_workers(w);
+
+  		  /* add collector */
+  		  auto p_pair_gt = reinterpret_cast<PairGatherer *>(res->getgt());
+  		  res->add_collector(new PairCollector(*p_pair_gt));
+  	  }
+  	  else {
+  		  delete sub_p1;
+  		  delete res;
+  		  res = nullptr;
+  	  }
+
+  }
+  else {
+	  delete res;
+	  res = nullptr;
+  }
 
   return res;
 }
