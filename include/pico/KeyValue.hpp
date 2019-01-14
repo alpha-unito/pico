@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2019 alpha group, CS department, University of Torino.
- * 
- * This file is part of pico 
+ *
+ * This file is part of pico
  * (see https://github.com/alpha-unito/pico).
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -35,8 +35,10 @@ class KeyValue {
  public:
   typedef K keytype;
   typedef V valuetype;
-
-  KeyValue() {}
+ /**
+  *
+  */
+  KeyValue() : key(), val() {}
 
   /**
    * Explicit constructor
@@ -126,20 +128,19 @@ class KeyValue {
   }
 
   static KeyValue from_string(std::string s) {
-	K key;
-	V value;
-	std::stringstream in(s);
-	char ch = in.get();
-	assert(ch == '<');
-	in >> key;
-	ch = in.get();
-	assert(ch == ',');
-	ch = in.get();
-	assert(ch == ' ');
-	in >> value;
-	ch = in.get();
-	assert(ch == '>');
-	return KeyValue<K, V>(key, value);
+    KeyValue res;
+    std::stringstream in(s);
+    char ch = in.get();
+    assert(ch == '<');
+    in >> res.key;
+    ch = in.get();
+    assert(ch == ',');
+    ch = in.get();
+    assert(ch == ' ');
+    in >> res.val;
+    ch = in.get();
+    assert(ch == '>');
+    return res;
   }
 
  private:

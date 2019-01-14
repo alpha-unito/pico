@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2019 alpha group, CS department, University of Torino.
- * 
- * This file is part of pico 
+ *
+ * This file is part of pico
  * (see https://github.com/alpha-unito/pico).
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -61,6 +61,7 @@ class base_JFMBK_Farm : public NonOrderingFarm {
         : emitter_t(nworkers_),  //
           nworkers(nworkers_),
           mbsize(mbsize_),
+		  cstream_begin_tag(pico::base_microbatch::nil_tag()), //default value never used
           cstream_begin_rcv(false) {}
 
    private:
@@ -227,6 +228,7 @@ class base_JFMBK_worker : public base_filter {
   base_JFMBK_worker(kernel_t kernel_, bool left_input_)
       : fkernel(kernel_),
         cache_from_left(!left_input_),
+		cstream_begin_tag(pico::base_microbatch::nil_tag()), //default value never used
         cstream_begin_rcv(false) {}
 
   /* on c-stream begin, forward only if non-cached tag */

@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2019 alpha group, CS department, University of Torino.
- * 
- * This file is part of pico 
+ *
+ * This file is part of pico
  * (see https://github.com/alpha-unito/pico).
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -150,8 +150,13 @@ class FlatMap<In, KeyValue<K, V>> : public FlatMapBase<In, KeyValue<K, V>> {
     assert(opt == FMAP_PREDUCE);
     assert(st == StructureType::BAG);
     auto nextop = dynamic_cast<ReduceByKey<KeyValue<K, V>> *>(a.op);
-    return FMapPReduceBatch<Token<In>, Token<KeyValue<K, V>>>(
-        par, this->flatmapf, nextop->pardeg(), nextop->kernel());
+    if (nextop)
+      return FMapPReduceBatch<Token<In>, Token<KeyValue<K, V>>>(
+          par, this->flatmapf, nextop->pardeg(), nextop->kernel());
+    else {
+      std::cerr << "FlatMap.hpp error in function opt_node" << std::endl;
+      return nullptr;
+    }
   }
 };
 

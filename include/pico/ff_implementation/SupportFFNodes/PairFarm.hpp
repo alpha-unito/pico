@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2019 alpha group, CS department, University of Torino.
- * 
- * This file is part of pico 
+ *
+ * This file is part of pico
  * (see https://github.com/alpha-unito/pico).
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -133,6 +133,10 @@ class PairFarm : public ff::ff_farm {
 static ff::ff_pipeline *make_ff_pipe(const pico::Pipe &p1,
                                      pico::StructureType st, bool);  // forward
 
+/*
+ * return nullptr in case of error
+ */
+
 static PairFarm *make_pair_farm(const pico::Pipe &p1, const pico::Pipe &p2,  //
                                 pico::StructureType st) {
   /* create and configure */
@@ -151,13 +155,30 @@ static PairFarm *make_pair_farm(const pico::Pipe &p1, const pico::Pipe &p2,  //
 
   /* add argument pipelines as workers */
   std::vector<ff::ff_node *> w;
-  w.push_back(make_ff_pipe(p1, st, false));
-  w.push_back(make_ff_pipe(p2, st, false));
-  res->add_workers(w);
+  auto* sub_p1 = make_ff_pipe(p1, st, false);
+  if (sub_p1) {
+	  w.push_back(sub_p1);
+  	  auto* sub_p2 = make_ff_pipe(p2, st, false);
 
-  /* add collector */
-  auto p_pair_gt = reinterpret_cast<PairGatherer *>(res->getgt());
-  res->add_collector(new PairCollector(*p_pair_gt));
+  	  if (sub_p2) {
+  		  w.push_back(sub_p2);
+  		  res->add_workers(w);
+
+  		  /* add collector */
+  		  auto p_pair_gt = reinterpret_cast<PairGatherer *>(res->getgt());
+  		  res->add_collector(new PairCollector(*p_pair_gt));
+  	  }
+  	  else {
+  		  delete sub_p1;
+  		  delete res;
+  		  res = nullptr;
+  	  }
+
+  }
+  else {
+	  delete res;
+	  res = nullptr;
+  }
 
   return res;
 }

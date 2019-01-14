@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2019 alpha group, CS department, University of Torino.
- * 
- * This file is part of pico 
+ *
+ * This file is part of pico
  * (see https://github.com/alpha-unito/pico).
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
@@ -41,30 +41,48 @@
 
 static ff::ff_pipeline *make_ff_pipe(const pico::Pipe &, pico::StructureType,
                                      bool);
-static void add_chain(ff::ff_pipeline *, const std::vector<pico::Pipe *> &,
+static bool add_chain(ff::ff_pipeline *, const std::vector<pico::Pipe *> &,
                       pico::StructureType);
 #if 0
 static ff::ff_farm<> *make_merge_farm(const Pipe &);
 static ff::ff_farm<> *make_multito_farm(const Pipe &);
 #endif
 
+/*
+ * return true in case of success, false otherwise
+ */
+
 template <typename ItType>
-void add_plain(ff::ff_pipeline *p, ItType it, pico::StructureType st) {
+bool add_plain(ff::ff_pipeline *p, ItType it, pico::StructureType st) {
+  bool res = true;
   if ((*it)->term_node_type() == pico::Pipe::OPERATOR) {
     /* standalone operator */
     pico::base_UnaryOperator *op;
     op = dynamic_cast<pico::base_UnaryOperator *>((*it)->get_operator_ptr());
     p->add_stage(op->node_operator(op->pardeg(), st));
-  } else
+  } else {
     /* complex sub-term */
-    p->add_stage(make_ff_pipe(**it, st, false));
+    auto *sub_pipe = make_ff_pipe(**it, st, false);
+    if (sub_pipe)
+      p->add_stage(sub_pipe);
+    else
+      res = false;
+  }
+  return res;
 }
+
+/*
+ * return nullptr in case of error
+ */
 
 static ff::ff_pipeline *make_ff_pipe(const pico::Pipe &p,
                                      pico::StructureType st,  //
                                      bool acc) {
   /* create the ff pipeline with automatic node cleanup */
   auto *res = new ff::ff_pipeline(acc);
+  ff::ff_pipeline *sub_pipe = nullptr;
+  PairFarm *pair_farm = nullptr;
+
   res->cleanup_nodes();
   pico::Operator *op;
   pico::base_UnaryOperator *uop;
@@ -78,11 +96,22 @@ static ff::ff_pipeline *make_ff_pipe(const pico::Pipe &p,
     case pico::Pipe::OPERATOR:
       op = p.get_operator_ptr();
       uop = dynamic_cast<pico::base_UnaryOperator *>(op);
-      assert(uop);
-      res->add_stage(uop->node_operator(uop->pardeg(), st));
+      if (uop)
+        res->add_stage(uop->node_operator(uop->pardeg(), st));
+      else {
+        delete res;
+        res = nullptr;
+        std::cerr
+            << "FastFlowExecutor error in make_ff_pipe function. Case OPERATOR."
+            << std::endl;
+      }
+
       break;
     case pico::Pipe::TO:
-      add_chain(res, p.children(), st);
+      if (!add_chain(res, p.children(), st)) {
+        delete res;
+        res = nullptr;
+      }
       break;
     case pico::Pipe::MULTITO:
       std::cerr << "MULTI-TO not implemented yet\n";
@@ -94,9 +123,15 @@ static ff::ff_pipeline *make_ff_pipe(const pico::Pipe &p,
       cond = p.get_termination_ptr();
       assert(p.children().size() == 1);
       res->add_stage(new iteration_multiplexer());
-      res->add_stage(make_ff_pipe(*p.children().front(), st, false));
-      res->add_stage(cond->iteration_switch());
-      res->wrap_around();
+      sub_pipe = make_ff_pipe(*p.children().front(), st, false);
+      if (sub_pipe) {
+        res->add_stage(sub_pipe);
+        res->add_stage(cond->iteration_switch());
+        res->wrap_around();
+      } else {
+        delete res;
+        res = nullptr;
+      }
       break;
     case pico::Pipe::MERGE:
       std::cerr << "MERGE not implemented yet\n";
@@ -107,12 +142,25 @@ static ff::ff_pipeline *make_ff_pipe(const pico::Pipe &p,
       op = p.get_operator_ptr();
       assert(op);
       assert(p.children().size() == 2);
-      res->add_stage(make_pair_farm(*p.children()[0], *p.children()[1], st));
+      pair_farm = make_pair_farm(*p.children()[0], *p.children()[1], st);
+      if (pair_farm)
+        res->add_stage(pair_farm);
+      else {
+        delete res;
+        res = nullptr;
+      }
       /* add the operator */
       bop = dynamic_cast<pico::base_BinaryOperator *>(op);
-      assert(bop);
-      bool left_input = p.children()[0]->in_deg();
-      res->add_stage(bop->node_operator(bop->pardeg(), left_input, st));
+      if (bop) {
+        bool left_input = p.children()[0]->in_deg();
+        res->add_stage(bop->node_operator(bop->pardeg(), left_input, st));
+      } else {
+        delete res;
+        res = nullptr;
+        std::cerr
+            << "FastFlowExecutor error in make_ff_pipe function. Case PAIR."
+            << std::endl;
+      }
       break;
   }
   return res;
@@ -154,20 +202,25 @@ ff::ff_farm<> *make_multito_farm(const Pipe &p) {
 }
 #endif
 
-void add_chain(ff::ff_pipeline *p, const std::vector<pico::Pipe *> &s,  //
+/*
+ * return true in case of success, false otherwise
+ */
+bool add_chain(ff::ff_pipeline *p, const std::vector<pico::Pipe *> &s,  //
                pico::StructureType st) {
   /* apply PEG optimizations */
+  bool res = true;
   auto it = s.begin();
-  for (; it < s.end() - 1; ++it) {
+  for (; (it < s.end() - 1) && res; ++it) {
     /* try to add an optimized compound */
     if (add_optimized(p, it, it + 1, st))
       ++it;
     else
       /* add a regular sub-term */
-      add_plain(p, it, st);
+      res = add_plain(p, it, st);
   }
   /* add last sub-term if any */
-  if (it != s.end()) add_plain(p, it, st);
+  if (it != s.end() && res) res = add_plain(p, it, st);
+  return res;
 }
 
 class FastFlowExecutor {
@@ -179,6 +232,11 @@ class FastFlowExecutor {
   ~FastFlowExecutor() { delete_ff_term(); }
 
   void run(run_mode m) const {
+    if (!ff_pipe) {
+      std::cerr
+          << "error FastFlowExecutor, function \"run\". ff_pipe == nullptr"
+          << std::endl;
+    }
     auto tag = pico::base_microbatch::nil_tag();
     pico::base_microbatch *res;
 
