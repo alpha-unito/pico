@@ -1,3 +1,0 @@
-[submodule "extern/catch"]
-	path = extern/catch
-	url = https://github.com/catchorg/Catch2.git
