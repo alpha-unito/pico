@@ -141,7 +141,7 @@ class KeyValue {
     ch = in.get();
     assert(ch == '>');
     return res;
-}
+  }
 
  private:
   K key;
