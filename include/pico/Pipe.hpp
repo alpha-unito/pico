@@ -58,7 +58,7 @@ static void print_dot_semantic_graph(SemanticGraph &, std::string);
 class FastFlowExecutor;
 static FastFlowExecutor *make_executor(const pico::Pipe &);
 static void destroy_executor(FastFlowExecutor *);
-static void run_pipe(FastFlowExecutor &, run_mode);
+static void run_pipe(FastFlowExecutor &);
 static double run_time(FastFlowExecutor &);
 static void print_executor_stats_(FastFlowExecutor &, std::ostream &os);
 
@@ -543,14 +543,14 @@ class Pipe {
    * \ingroup pipe-api
    * Executes the Pipe
    */
-  void run(run_mode m = run_mode::DEFAULT) {
+  void run() {
 #ifdef DEBUG
     std::cerr << "[PIPE] Running Pipe...\n";
 #endif
     assert(in_deg_ == 0 && out_deg_ == 0);
 
     if (!executor) executor = make_executor(*this);
-    run_pipe(*executor, m);
+    run_pipe(*executor);
   }
 
   /**

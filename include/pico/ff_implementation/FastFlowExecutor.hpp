@@ -231,7 +231,7 @@ class FastFlowExecutor {
 
   ~FastFlowExecutor() { delete_ff_term(); }
 
-  void run(run_mode m) const {
+  void run() const {
     if (!ff_pipe) {
       std::cerr
           << "error FastFlowExecutor, function \"run\". ff_pipe == nullptr"
@@ -240,20 +240,14 @@ class FastFlowExecutor {
     auto tag = pico::base_microbatch::nil_tag();
     pico::base_microbatch *res;
 
-    bool blocking = (m != run_mode::FORCE_NONBLOCKING);
-
     ff::OptLevel opt;
     opt.remove_collector = true;
     opt.verbose_level = 2;
-    if (blocking) {
-      ff_pipe->blocking_mode();
-      ff_pipe->no_mapping();
-    } else {
-      opt.max_nb_threads = ff_realNumCores();
-      opt.max_mapped_threads = opt.max_nb_threads;
-      opt.no_default_mapping = true;
-      opt.blocking_mode = true;
-    }
+    opt.max_nb_threads = ff_realNumCores();
+    opt.max_mapped_threads = opt.max_nb_threads;
+    opt.no_default_mapping = true;
+    opt.blocking_mode = true;
+
     optimize_static(*ff_pipe, opt);
 
     ff_pipe->run();
@@ -296,7 +290,7 @@ FastFlowExecutor *make_executor(const pico::Pipe &p) {
 
 void destroy_executor(FastFlowExecutor *e) { delete e; }
 
-void run_pipe(FastFlowExecutor &e, run_mode m) { e.run(m); }
+void run_pipe(FastFlowExecutor &e) { e.run(); }
 
 double run_time(FastFlowExecutor &e) { return e.run_time(); }
 

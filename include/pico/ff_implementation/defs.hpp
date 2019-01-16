@@ -23,8 +23,6 @@
 
 #include <ff/node.hpp>
 
-enum run_mode { DEFAULT, FORCE_NONBLOCKING };
-
 /* FF tokens for pico protocol */
 static size_t PICO_EOS = (size_t)ff::FF_EOS;
 static char *PICO_BEGIN = (char *)(PICO_EOS - 0xb);
