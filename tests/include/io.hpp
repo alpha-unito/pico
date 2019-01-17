@@ -18,8 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TESTS_COMMON_IO_HPP_
-#define TESTS_COMMON_IO_HPP_
+#ifndef TESTS_INCLUDE_IO_HPP_
+#define TESTS_INCLUDE_IO_HPP_
 
 #include <cassert>
 #include <fstream>
@@ -40,4 +40,4 @@ static std::vector<std::string> read_lines(std::string fname) {
   return res;
 }
 
-#endif /* TESTS_COMMON_IO_HPP_ */
+#endif /* TESTS_INCLUDE_IO_HPP_ */

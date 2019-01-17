@@ -21,11 +21,12 @@
 #include <iostream>
 #include <string>
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "pico/pico.hpp"
 
-#include "common/io.hpp"
+#include "io.hpp"
+
 
 TEST_CASE("read from stdin and write", "read from stdin and write tag") {
   std::string input_file = "./testdata/lines.txt";

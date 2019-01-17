@@ -21,13 +21,14 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "pico/pico.hpp"
 
-#include "common/basic_pipes.hpp"
-#include "common/common_functions.hpp"
-#include "common/io.hpp"
+#include "basic_pipes.hpp"
+#include "common_functions.hpp"
+#include "io.hpp"
+
 
 typedef pico::KeyValue<char, int> KV;
 

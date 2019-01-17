@@ -20,11 +20,12 @@
 
 #include <unordered_set>
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "pico/pico.hpp"
 
-#include "common/io.hpp"
+#include "io.hpp"
+
 
 typedef pico::KeyValue<char, int> KV;
 

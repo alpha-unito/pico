@@ -21,11 +21,12 @@
 #include <iostream>
 #include <string>
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "pico/pico.hpp"
 
-#include "common/io.hpp"
+#include "io.hpp"
+
 
 static auto duplicate = [](std::string& in,
                            pico::FlatMapCollector<std::string>& collector) {
