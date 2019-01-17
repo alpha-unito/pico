@@ -74,16 +74,40 @@ include(config)
 
 include_directories(./include)
 
+# Unit testing
 if (PICO_ENABLE_UNIT_TEST)
-# TODO Catch/CTest integration
-  # Prepare "Catch" library for other executables
   include(CTest)
   enable_testing()
-  set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests/include)
-  add_library(Catch INTERFACE)
-  target_include_directories(Catch INTERFACE ${YOUR_CATCH_INCLUDE_DIR})
+  
+  # import Catch
+  find_package(Git QUIET)
+  if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+    # Update submodules as needed
+    option(GIT_SUBMODULE "Check submodules during build" ON)
+    if(GIT_SUBMODULE)
+      message(STATUS "Submodule update")
+      execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive -- extern/catch
+                      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                      RESULT_VARIABLE GIT_SUBMOD_RESULT)
+      if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+        message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+      endif()
+    endif()
+  endif()
+  if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/extern/catch/CMakeLists.txt")
+    message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+  endif()
+
+  add_subdirectory(extern/catch)
+
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/extern/catch/contrib")
+
+  include(Catch)
+  
   add_subdirectory(tests)
 endif()
+
+# Doxygen docs
 if (PICO_ENABLE_DOXYGEN)
   add_subdirectory(Doxygen)
 endif()

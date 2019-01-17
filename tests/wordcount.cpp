@@ -20,11 +20,12 @@
 
 #include <vector>
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "pico/pico.hpp"
 
-#include "common/io.hpp"
+#include "io.hpp"
+
 
 typedef pico::KeyValue<std::string, int> KV;
 

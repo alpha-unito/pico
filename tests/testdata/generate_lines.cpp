@@ -24,7 +24,8 @@
 #include <random>
 #include <vector>
 
-#include "../common/utils.hpp"
+#include "utils.hpp"
+
 
 #define MIN_WPL 1    // min words per line
 #define MAX_WPL 128  // max words per line
