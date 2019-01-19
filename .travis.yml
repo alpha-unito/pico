@@ -52,7 +52,7 @@ matrix:
 before_install:
         - eval "${MATRIX_EVAL}"
 install:
-        - git clone --single-branch -b fastflow3 https://github.com/fastflow/fastflow.git
+        - git clone --single-branch https://github.com/fastflow/fastflow.git
         - ln -s fastflow/ff ff
 script:
         - mkdir build && cd build
