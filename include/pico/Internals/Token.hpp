@@ -34,7 +34,7 @@ class Token {
   /*
    * create Token as decoration of a T value
    */
-  Token(const T&) {}
+  explicit Token(const T&) {}
 };
 
 } /* namespace pico */

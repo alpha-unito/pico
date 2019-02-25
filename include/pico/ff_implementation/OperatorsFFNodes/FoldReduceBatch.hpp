@@ -51,7 +51,7 @@ class FoldReduceBatch : public Farm {
  private:
   class Worker : public base_filter {
    public:
-    Worker(std::function<void(const In &, State &)> &foldf_) : foldf(foldf_) {}
+    explicit Worker(std::function<void(const In &, State &)> &foldf_) : foldf(foldf_) {}
 
     void cstream_begin_callback(pico::base_microbatch::tag_t tag) {
       tag_state[tag].state_ = NEW<State>();

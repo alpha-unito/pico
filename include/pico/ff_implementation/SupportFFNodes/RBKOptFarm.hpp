@@ -61,7 +61,7 @@ class RBK_farm : public NonOrderingFarm {
 
   class Emitter : public base_emitter {
    public:
-    Emitter(unsigned nworkers_)
+    explicit Emitter(unsigned nworkers_)
         : base_emitter(nworkers_), nworkers(nworkers_) {}
 
     void kernel(pico::base_microbatch *in_mb) {
