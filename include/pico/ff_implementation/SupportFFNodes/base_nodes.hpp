@@ -216,7 +216,7 @@ class base_filter : public base_node, public sync_handler_filter {
 
 class base_emitter : public base_monode, public sync_handler_filter {
  public:
-  base_emitter(unsigned nw_) : nw(nw_) {}
+  explicit base_emitter(unsigned nw_) : nw(nw_) {}
 
   virtual ~base_emitter() {}
 
@@ -250,7 +250,7 @@ class base_emitter : public base_monode, public sync_handler_filter {
 
 class base_ord_emitter : public base_filter {
  public:
-  base_ord_emitter(unsigned nw_) : nw(nw_) {}
+  explicit base_ord_emitter(unsigned nw_) : nw(nw_) {}
 
   virtual ~base_ord_emitter() {}
 

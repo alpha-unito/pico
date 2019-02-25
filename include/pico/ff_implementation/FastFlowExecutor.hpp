@@ -222,7 +222,7 @@ bool add_chain(ff::ff_pipeline *p, const std::vector<pico::Pipe *> &s,  //
 
 class FastFlowExecutor {
  public:
-  FastFlowExecutor(const pico::Pipe &p) {
+  explicit FastFlowExecutor(const pico::Pipe &p) {
     ff_pipe = make_ff_pipe(p, p.structure_type(), true);
   }
 

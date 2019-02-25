@@ -44,7 +44,7 @@ class ForwardingEmitter : public base_emitter {
 
 class OrdForwardingEmitter : public base_ord_emitter {
  public:
-  OrdForwardingEmitter(unsigned nw) : base_ord_emitter(nw) {}
+  explicit OrdForwardingEmitter(unsigned nw) : base_ord_emitter(nw) {}
 
   void kernel(pico::base_microbatch *mb) { this->ff_send_out(mb); }
 };

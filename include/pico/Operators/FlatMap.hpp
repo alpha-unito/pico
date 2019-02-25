@@ -138,7 +138,7 @@ class FlatMap<In, KeyValue<K, V>> : public FlatMapBase<In, KeyValue<K, V>> {
       unsigned par = def_par())
       : FlatMapBase<In, KeyValue<K, V>>(flatmapf_, par) {}
 
-  FlatMap(const FlatMapBase<In, KeyValue<K, V>> &copy)
+  explicit FlatMap(const FlatMapBase<In, KeyValue<K, V>> &copy)
       : FlatMapBase<In, KeyValue<K, V>>(copy) {}
 
  protected:

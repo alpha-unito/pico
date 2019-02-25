@@ -54,7 +54,7 @@ class FMapBatch : public Farm {
     typedef typename pico::TokenCollector<Out>::cnode cnode_t;
 
    public:
-    Worker(std::function<void(In &, pico::FlatMapCollector<Out> &)> kernel_)
+    explicit Worker(std::function<void(In &, pico::FlatMapCollector<Out> &)> kernel_)
         : mkernel(kernel_) {}
 
     void kernel(pico::base_microbatch *mb) {

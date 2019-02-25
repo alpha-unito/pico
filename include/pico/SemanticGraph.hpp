@@ -37,7 +37,7 @@ class SemanticGraph {
  public:
   SemanticGraph() {}
 
-  SemanticGraph(const Pipe &p) { *this = from_pipe(p); }
+  explicit SemanticGraph(const Pipe &p) { *this = from_pipe(p); }
 
   void destroy() {
     for (auto adj : graph) delete adj.first;

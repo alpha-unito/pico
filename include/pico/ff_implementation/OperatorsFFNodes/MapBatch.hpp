@@ -51,7 +51,7 @@ class MapBatch : public Farm {
  private:
   class Worker : public base_filter {
    public:
-    Worker(std::function<Out(In &)> kernel_) : mkernel(kernel_) {}
+    explicit Worker(std::function<Out(In &)> kernel_) : mkernel(kernel_) {}
 
     void kernel(pico::base_microbatch *in_mb) {
       auto in_microbatch = reinterpret_cast<mb_in *>(in_mb);

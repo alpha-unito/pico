@@ -35,7 +35,7 @@
 template <typename In, typename TokenType>
 class WriteToStdOutFFNode : public base_filter {
  public:
-  WriteToStdOutFFNode(std::function<std::string(In&)> kernel_)
+  explicit WriteToStdOutFFNode(std::function<std::string(In&)> kernel_)
       : wkernel(kernel_) {}
 
   /* sink node */
