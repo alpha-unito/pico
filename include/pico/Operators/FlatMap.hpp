@@ -61,8 +61,7 @@ class FlatMapBase : public UnaryOperator<In, Out> {
    * Creates a new FlatMap operator by defining its kernel function.
    */
   FlatMapBase(std::function<void(In &, FlatMapCollector<Out> &)> flatmapf_,
-              unsigned par = def_par()) {
-    flatmapf = flatmapf_;
+              unsigned par = def_par()) : flatmapf(flatmapf_) {
     this->set_input_degree(1);
     this->set_output_degree(1);
     this->stype(StructureType::BAG, true);

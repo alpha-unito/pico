@@ -53,7 +53,7 @@ class ReadFromHDFS : public InputOperator<std::string> {
    *
    * Creates a new ReadFromHDFS.
    */
-  ReadFromHDFS(std::string fname_)
+  ReadFromHDFS(const td::string fname_)
       : InputOperator<std::string>(StructureType::BAG), fname(fname_) {}
 
   /**

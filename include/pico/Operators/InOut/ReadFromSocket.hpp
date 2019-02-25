@@ -53,8 +53,7 @@ class ReadFromSocket : public InputOperator<std::string> {
    * operating on each token of the stream, delimited by the delimiter value.
    */
   ReadFromSocket(std::string server_, int port_, char delimiter_)
-      : InputOperator<std::string>(StructureType::STREAM) {
-    server_name = server_;
+      : InputOperator<std::string>(StructureType::STREAM), server_name(server_) {
     port = port_;
     delimiter = delimiter_;
   }
