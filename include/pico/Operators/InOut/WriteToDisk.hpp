@@ -57,7 +57,7 @@ class WriteToDisk : public OutputOperator<In> {
    *
    * Creates a new WriteToDisk operator by defining its kernel function.
    */
-  WriteToDisk(const std::string fname_, std::function<std::string(In)> func_)
+  WriteToDisk(const std::string& fname_, std::function<std::string(In)> func_)
       : OutputOperator<In>(StructureType::BAG),
         fname(fname_),  //
         usr_func(true),
@@ -70,7 +70,7 @@ class WriteToDisk : public OutputOperator<In> {
    *
    * Creates a new WriteToDisk writing by ostream.
    */
-  WriteToDisk(const std::string fname_)
+  WriteToDisk(const std::string& fname_)
       : OutputOperator<In>(StructureType::BAG), fname(fname_) {}
 
   /**
