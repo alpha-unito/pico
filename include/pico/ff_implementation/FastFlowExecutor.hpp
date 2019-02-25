@@ -24,10 +24,7 @@
 #include <fstream>
 #include <string>
 
-#include <ff/farm.hpp>
-#include <ff/node.hpp>
-#include <ff/optimize.hpp>
-#include <ff/pipeline.hpp>
+#include <ff/ff.hpp>
 
 #include "pico/Operators/BinaryOperator.hpp"
 #include "pico/Operators/UnaryOperator.hpp"
