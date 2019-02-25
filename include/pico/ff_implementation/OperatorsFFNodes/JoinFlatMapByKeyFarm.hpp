@@ -182,7 +182,7 @@ class base_JFMBK_Farm : public NonOrderingFarm {
     }
   };
 
-  base_JFMBK_Farm(unsigned nw) : nworkers(nw) {}
+  explicit base_JFMBK_Farm(unsigned nw) : nworkers(nw) {}
 
  private:
   unsigned nworkers;

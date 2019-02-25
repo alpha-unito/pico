@@ -59,9 +59,9 @@ class SemanticGraph {
     Operator *op;
     SemNodeRole role;
 
-    SemGraphNode(SemNodeRole role_) : op(nullptr), role(role_) {}
+    explicit SemGraphNode(SemNodeRole role_) : op(nullptr), role(role_) {}
 
-    SemGraphNode(Operator *op_) : op(op_), role(SemNodeRole::Processing) {}
+    explicit SemGraphNode(Operator *op_) : op(op_), role(SemNodeRole::Processing) {}
 
     /*
      * Returns an unique name for the node.

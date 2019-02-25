@@ -186,7 +186,7 @@ class Pipe {
    * Create a Pipe from an initial operator.
    */
   template <typename OpType>
-  Pipe(const OpType &op_)
+  explicit Pipe(const OpType &op_)
       : term_node_type_(OPERATOR), term_value(new OpType(op_)) {
 #ifdef DEBUG
     std::cerr << "[PIPE] Creating Pipe from operator " << op_.name()

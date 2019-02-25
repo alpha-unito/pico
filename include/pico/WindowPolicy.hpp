@@ -58,7 +58,7 @@ class BatchWindow : public WindowPolicy {
 
   BatchWindow(const BatchWindow &copy) : WindowPolicy(copy) {}
 
-  BatchWindow(size_t w_size_) : WindowPolicy(w_size_, w_size_) {}
+  explicit BatchWindow(size_t w_size_) : WindowPolicy(w_size_, w_size_) {}
 
   BatchWindow *clone() { return new BatchWindow(*this); }
 };
