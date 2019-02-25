@@ -36,7 +36,7 @@
 template <typename In>
 class WriteToDiskFFNode : public base_filter {
  public:
-  WriteToDiskFFNode(const std::string fname, std::function<std::string(In)> kernel_)
+  WriteToDiskFFNode(const std::string& fname, std::function<std::string(In)> kernel_)
       : wkernel(kernel_), outfile(fname) {
     if (!outfile.is_open()) {
       std::cerr << "Unable to open output file\n";
@@ -61,7 +61,7 @@ class WriteToDiskFFNode : public base_filter {
 template <typename In>
 class WriteToDiskFFNode_ostream : public base_filter {
  public:
-  WriteToDiskFFNode_ostream(const std::string fname) : outfile(fname) {
+  WriteToDiskFFNode_ostream(const std::string& fname) : outfile(fname) {
     if (!outfile.is_open()) {
       std::cerr << "Unable to open output file\n";
       assert(false);

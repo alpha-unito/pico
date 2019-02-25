@@ -69,7 +69,7 @@ class getline_textfile : public base_filter {
   typedef pico::Microbatch<pico::Token<std::string>> mb_t;
 
  public:
-  getline_textfile(const std::string fname_) : file(fname_) {
+  getline_textfile(const std::string& fname_) : file(fname_) {
     assert(file.is_open());
   }
 
@@ -213,7 +213,7 @@ class ReadFromFileFFNode_par : public NonOrderingFarm {
   // using Worker = read_textfile;
 
  public:
-  ReadFromFileFFNode_par(int parallelism, const std::string fname_) : fname(fname_) {
+  ReadFromFileFFNode_par(int parallelism, const std::string& fname_) : fname(fname_) {
     std::vector<ff_node *> workers;
     for (int i = 0; i < parallelism; ++i) workers.push_back(new Worker(fname));
     auto e = new Partitioner(*this, fname, parallelism);
