@@ -159,7 +159,7 @@ void seq_flatmap_join(const KvMultiMap& partitions_1,
   }
 }
 
-KvMultiMap seq_Iter_flatmap_join(const KvMultiMap original_partitions, int num_iter) {
+KvMultiMap seq_Iter_flatmap_join(const KvMultiMap& original_partitions, int num_iter) {
   KvMultiMap res;
   KvMultiMap& ptr_res = res;
   KvMultiMap helper = original_partitions;

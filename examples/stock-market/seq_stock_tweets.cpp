@@ -48,7 +48,7 @@ class TweetProcessor {
     }
   }
 
-  void operator()(const std::string tweet) {
+  void operator()(const std::string& tweet) {
     std::string stock;
     unsigned len;
     if (filter(tweet, stock, len)) {
