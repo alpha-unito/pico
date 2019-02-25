@@ -46,8 +46,7 @@ class JoinFlatMapByKey : public BinaryOperator<In1, In2, Out> {
    */
   JoinFlatMapByKey(
       std::function<void(In1 &, In2 &, FlatMapCollector<Out> &)> kernel_,
-      unsigned par = def_par()) {
-    kernel = kernel_;
+      unsigned par = def_par()) : kernel(kernel_) {
     this->set_input_degree(2);
     this->set_output_degree(1);
     this->stype(StructureType::BAG, true);

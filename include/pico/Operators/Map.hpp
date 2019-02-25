@@ -59,8 +59,7 @@ class MapBase : public UnaryOperator<In, Out> {
    *
    * Creates a new Map operator by defining its kernel function.
    */
-  MapBase(std::function<Out(In &)> mapf_, unsigned par = def_par()) {
-    mapf = mapf_;
+  MapBase(std::function<Out(In &)> mapf_, unsigned par = def_par()) : mapf(mapf_) {
     this->set_input_degree(1);
     this->set_output_degree(1);
     this->stype(StructureType::BAG, true);

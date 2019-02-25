@@ -55,7 +55,7 @@ class ReadFromFile : public InputOperator<std::string> {
    * Creates a new ReadFromFile operator,
    * yielding an unordered bounded collection.
    */
-  ReadFromFile(std::string fname_, unsigned par = def_par())
+  ReadFromFile(const std::string fname_, unsigned par = def_par())
       : InputOperator<std::string>(StructureType::BAG), fname(fname_) {
     this->pardeg(par);
   }
