@@ -278,7 +278,7 @@ class base_ord_emitter : public base_filter {
 
 class base_sync_duplicate : public base_filter {
  public:
-  base_sync_duplicate(unsigned nw_) : nw(nw_) {
+  explicit base_sync_duplicate(unsigned nw_) : nw(nw_) {
     pending_begin = pending_end = nw;
   }
 

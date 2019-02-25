@@ -35,7 +35,7 @@ class TerminationCondition {
 
 class FixedIterations : public TerminationCondition {
  public:
-  FixedIterations(unsigned iters_) : iters(iters_) {}
+  explicit FixedIterations(unsigned iters_) : iters(iters_) {}
 
   FixedIterations(const FixedIterations &copy) : iters(copy.iters) {}
 

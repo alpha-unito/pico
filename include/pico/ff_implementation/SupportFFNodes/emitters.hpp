@@ -32,7 +32,7 @@
 
 class ForwardingEmitter : public base_emitter {
  public:
-  ForwardingEmitter(unsigned nw) : base_emitter(nw) {}
+  explicit ForwardingEmitter(unsigned nw) : base_emitter(nw) {}
 
   void kernel(pico::base_microbatch *mb) { this->ff_send_out(mb); }
 };

@@ -22,7 +22,6 @@
 #include <string>
 
 #include <catch2/catch.hpp>
-
 #include "pico/pico.hpp"
 
 #include "io.hpp"
