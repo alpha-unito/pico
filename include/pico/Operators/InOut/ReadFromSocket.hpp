@@ -62,8 +62,7 @@ class ReadFromSocket : public InputOperator<std::string> {
    * Copy constructor.
    */
   ReadFromSocket(const ReadFromSocket &copy)
-      : InputOperator<std::string>(copy) {
-    server_name = copy.server_name;
+      : InputOperator<std::string>(copy), server_name(copy.server_name) {
     port = copy.port;
     delimiter = copy.delimiter;
   }
