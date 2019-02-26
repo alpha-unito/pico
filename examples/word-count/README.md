@@ -32,9 +32,9 @@ cd ..
 ```
 
 :bulb: Parallelism degree can be set:
--    externally, by the application-wise `PARDEG` environment variable
+-   externally, by the application-wise `PARDEG` environment variable
 
--    within the code, for each operator, by passing an (optional) argument to operators' constructors;
+-   within the code, for each operator, by passing an (optional) argument to operators' constructors;
 per-operator parallelism overrides `PARDEG`
 
 ## See the application graph

@@ -70,7 +70,7 @@ class WriteToDisk : public OutputOperator<In> {
    *
    * Creates a new WriteToDisk writing by ostream.
    */
-  WriteToDisk(const std::string& fname_)
+  explicit WriteToDisk(const std::string& fname_)
       : OutputOperator<In>(StructureType::BAG), fname(fname_) {}
 
   /**
