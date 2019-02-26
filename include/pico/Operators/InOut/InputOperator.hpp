@@ -56,7 +56,7 @@ class InputOperator : public UnaryOperator<void, Out> {
    * genf: void -> Out
    * operating on a specified datatype.
    */
-  InputOperator(StructureType st_) {
+  explicit InputOperator(StructureType st_) {
     this->set_input_degree(0);
     this->set_output_degree(1);
     this->stype(st_, true);

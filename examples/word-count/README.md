@@ -6,11 +6,11 @@ rather than processing *and* data.
 
 A simple PiCo pipeline for word-count:
 
-1. reads an input file line by line, by a `ReadFromFile` stage
-2. tokenizes each line into words, by a `FlatMap` stage - a `FlatMap` maps an item (line) to multiple items (words)
-3. maps each word `w` to a key-value pair <`w`,`1`>, by a `Map` stage
-4. groups the pairs by word and sums up them, by a `ReduceByKey` stage
-5. finally, the word-occurrences pairs <`w`,`n`> are written to an output file, by a `WriteToFile` stage
+1.  reads an input file line by line, by a `ReadFromFile` stage
+2.  tokenizes each line into words, by a `FlatMap` stage - a `FlatMap` maps an item (line) to multiple items (words)
+3.  maps each word `w` to a key-value pair <`w`,`1`>, by a `Map` stage
+4.  groups the pairs by word and sums up them, by a `ReduceByKey` stage
+5.  finally, the word-occurrences pairs <`w`,`n`> are written to an output file, by a `WriteToFile` stage
 
 In `pico_wc.cpp`, we show a common optimization known as stage fusion. The `wc` pipeline fuses step 3 into step 2, letting the `FlatMap` stage produce the <`w`,`1`> pairs from each word in the processed line.
 
@@ -32,8 +32,9 @@ cd ..
 ```
 
 :bulb: Parallelism degree can be set:
-- externally, by the application-wise `PARDEG` environment variable
-- within the code, for each operator, by passing an (optional) argument to operators' constructors;
+-   externally, by the application-wise `PARDEG` environment variable
+
+-   within the code, for each operator, by passing an (optional) argument to operators' constructors;
 per-operator parallelism overrides `PARDEG`
 
 ## See the application graph

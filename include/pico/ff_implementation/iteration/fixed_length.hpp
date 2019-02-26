@@ -29,7 +29,7 @@ class fixed_length_iteration_dispatcher : public base_iteration_dispatcher {
   typedef pico::base_microbatch::tag_t tag_t;
 
  public:
-  fixed_length_iteration_dispatcher(unsigned niters_) : niters(niters_) {}
+  explicit fixed_length_iteration_dispatcher(unsigned niters_) : niters(niters_) {}
 
  private:
   void go_ahead() {

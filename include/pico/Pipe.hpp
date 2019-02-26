@@ -186,7 +186,7 @@ class Pipe {
    * Create a Pipe from an initial operator.
    */
   template <typename OpType>
-  Pipe(const OpType &op_)
+  explicit Pipe(const OpType &op_)
       : term_node_type_(OPERATOR), term_value(new OpType(op_)) {
 #ifdef DEBUG
     std::cerr << "[PIPE] Creating Pipe from operator " << op_.name()
@@ -531,7 +531,7 @@ class Pipe {
    * Encodes the semantic graph into a dot file.
    * @param filename dot file
    */
-  void to_dotfile(std::string filename) {
+  void to_dotfile(const std::string& filename) {
 #ifdef DEBUG
     std::cerr << "[PIPE] Writing semantic graph as dot\n";
 #endif

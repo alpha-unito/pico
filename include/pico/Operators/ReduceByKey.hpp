@@ -65,8 +65,7 @@ class ReduceByKey : public UnaryOperator<In, In> {
    * \ingroup op-api
    * ReduceByKey copy Constructor
    */
-  ReduceByKey(const ReduceByKey& copy) : UnaryOperator<In, In>(copy) {
-    reducef = copy.reducef;
+  ReduceByKey(const ReduceByKey& copy) : UnaryOperator<In, In>(copy), reducef(copy.reducef) {
     win = copy.win ? copy.win->clone() : nullptr;
   }
 

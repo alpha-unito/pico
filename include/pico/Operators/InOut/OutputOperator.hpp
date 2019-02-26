@@ -52,7 +52,7 @@ class OutputOperator : public UnaryOperator<In, void> {
    * Creates a new Collector by defining its kernel function
    * outf: In -> void
    */
-  OutputOperator(StructureType st_) {
+  explicit OutputOperator(StructureType st_) {
     this->set_input_degree(1);
     this->set_output_degree(0);
     this->stype(st_, true);

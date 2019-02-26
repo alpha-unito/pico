@@ -69,14 +69,14 @@ class getline_textfile : public base_filter {
   typedef pico::Microbatch<pico::Token<std::string>> mb_t;
 
  public:
-  getline_textfile(std::string fname_) : file(fname_) {
+  explicit getline_textfile(const std::string& fname_) : file(fname_) {
     assert(file.is_open());
   }
 
   void kernel(pico::base_microbatch *in_mb) {
     auto wmb = reinterpret_cast<pico::mb_wrapped<prange> *>(in_mb);
     auto tag = in_mb->tag();
-    prange *r = (prange *)wmb->get();
+    prange *r = static_cast<prange*>(wmb->get());
     file.seekg(r->begin);
     mb_t *mb = NEW<mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
     while (true) {
@@ -129,7 +129,7 @@ class read_textfile : public base_filter {
   typedef pico::Microbatch<pico::Token<std::string>> mb_t;
 
  public:
-  read_textfile(std::string fname) {
+  explicit read_textfile(std::string fname) {
     fd = fopen(fname.c_str(), "rb");
     assert(fd);
     bufsize = BUFFERING_PAGES * getpagesize();
@@ -144,7 +144,7 @@ class read_textfile : public base_filter {
   void kernel(pico::base_microbatch *wmb) {
     auto r_ = reinterpret_cast<pico::mb_wrapped<prange> *>(wmb);
     auto tag = wmb->tag();
-    prange *r = (prange *)r_->get();
+    prange *r = static_cast<prange *>(r_->get());
     fseek(fd, r->begin, SEEK_SET);
     ssize_t remainder = r->end - r->begin;
     auto mb = NEW<mb_t>(tag, pico::global_params.MICROBATCH_SIZE);
@@ -213,7 +213,7 @@ class ReadFromFileFFNode_par : public NonOrderingFarm {
   // using Worker = read_textfile;
 
  public:
-  ReadFromFileFFNode_par(int parallelism, std::string fname_) : fname(fname_) {
+  ReadFromFileFFNode_par(int parallelism, const std::string& fname_) : fname(fname_) {
     std::vector<ff_node *> workers;
     for (int i = 0; i < parallelism; ++i) workers.push_back(new Worker(fname));
     auto e = new Partitioner(*this, fname, parallelism);
@@ -297,7 +297,7 @@ class ReadFromFileFFNode_seq : public base_filter {
   typedef pico::Microbatch<pico::Token<std::string>> mb_t;
 
  public:
-  ReadFromFileFFNode_seq(std::string fname_) : infile(fname_) {
+  explicit ReadFromFileFFNode_seq(std::string fname_) : infile(fname_) {
     if (!infile.is_open()) {
       fprintf(stderr, "Unable to open input file %s\n", fname_.c_str());
       exit(1);

@@ -32,7 +32,7 @@
 template <typename TokenType>
 class ByKeyEmitter : public base_emitter {
  public:
-  ByKeyEmitter(unsigned nworkers_)
+  explicit ByKeyEmitter(unsigned nworkers_)
       : base_emitter(nworkers_), nworkers(nworkers_) {}
 
   void cstream_begin_callback(pico::base_microbatch::tag_t tag) {

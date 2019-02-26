@@ -53,7 +53,7 @@ class base_microbatch {
   /*
    * the empty constructor generates a tagged nil micro-batch
    */
-  base_microbatch(tag_t tag__) : tag_(tag__), chunk(nullptr) {}
+  explicit base_microbatch(tag_t tag__) : tag_(tag__), chunk(nullptr) {}
 
   /*
    * this constructor generates a tagged micro-batch storing a data chunk
@@ -181,7 +181,7 @@ class Microbatch : public base_microbatch {
     char *p;
 
    public:
-    iterator(char *x) : p(x) {}
+    explicit iterator(char *x) : p(x) {}
     iterator &operator++() {
       p += slot_size;
       return *this;

@@ -30,12 +30,12 @@ class TimedToken {
 
   TimedToken() : data(nullptr), timestamp(0) {}
 
-  TimedToken(const T& item_) : data(item_), timestamp(0) {}
+  explicit TimedToken(const T& item_) : data(item_), timestamp(0) {}
 
   TimedToken(T&& item_, size_t timestamp_)
       : data(std::move(item_)), timestamp(timestamp_) {}
 
-  TimedToken(T&& item) : data(std::move(item)), timestamp(0) {}
+  explicit TimedToken(T&& item) : data(std::move(item)), timestamp(0) {}
 
   TimedToken(T&& item_, const TimedToken<T>& tt)
       : data(std::move(item_)), timestamp(tt.get_timestamp()) {}

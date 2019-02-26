@@ -41,7 +41,7 @@
 template <typename TokenType>
 class ReadFromStdInFFNode : public base_filter {
  public:
-  ReadFromStdInFFNode(char delimiter_) : delimiter(delimiter_) {}
+  explicit ReadFromStdInFFNode(char delimiter_) : delimiter(delimiter_) {}
 
   void kernel(pico::base_microbatch *) { assert(false); }
 

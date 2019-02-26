@@ -83,7 +83,7 @@ using PairEmitterToSecond = PairEmitterTo<1>;
  */
 class PairGatherer : public ff::ff_gatherer {
  public:
-  PairGatherer(size_t n) : ff::ff_gatherer(n), from_(-1) {}
+  explicit PairGatherer(size_t n) : ff::ff_gatherer(n), from_(-1) {}
 
   ssize_t from() const { return from_; }
 
@@ -98,7 +98,7 @@ class PairGatherer : public ff::ff_gatherer {
 
 class PairCollector : public base_sync_duplicate {
  public:
-  PairCollector(PairGatherer &gt_) : base_sync_duplicate(2), gt(gt_) {}
+  explicit PairCollector(PairGatherer &gt_) : base_sync_duplicate(2), gt(gt_) {}
 
   /* on c-stream begin, forward and notify about origin */
   virtual void handle_cstream_begin(pico::base_microbatch::tag_t tag) {

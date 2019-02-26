@@ -38,7 +38,7 @@
 
 class TweetProcessor {
  public:
-  TweetProcessor(std::string &stock_fname) {
+  explicit TweetProcessor(std::string &stock_fname) {
     /* bring tags to memory */
     std::ifstream stocks_file(stock_fname);
     std::string stock_name;
@@ -48,7 +48,7 @@ class TweetProcessor {
     }
   }
 
-  void operator()(std::string tweet) {
+  void operator()(const std::string& tweet) {
     std::string stock;
     unsigned len;
     if (filter(tweet, stock, len)) {

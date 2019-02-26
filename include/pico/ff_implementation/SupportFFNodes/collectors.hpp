@@ -40,13 +40,13 @@ class UnpackingCollector : public base_sync_duplicate {
 
   void kernel(pico::base_microbatch *mb) {
     auto wmb = reinterpret_cast<pico::mb_wrapped<cnode_t> *>(mb);
-    cnode_t *it_, *it = wmb->get();
+    cnode_t *it = wmb->get();
     /* send out all the micro-batches in the list */
     while (it) {
       ff_send_out(reinterpret_cast<void *>(it->mb));
 
       /* clean up and skip to the next micro-batch */
-      it_ = it;
+      cnode_t *it_ = it;
       it = it->next;
       FREE(it_);
     };
