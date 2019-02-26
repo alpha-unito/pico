@@ -69,7 +69,7 @@ class getline_textfile : public base_filter {
   typedef pico::Microbatch<pico::Token<std::string>> mb_t;
 
  public:
-  getline_textfile(const std::string& fname_) : file(fname_) {
+  explicit getline_textfile(const std::string& fname_) : file(fname_) {
     assert(file.is_open());
   }
 

@@ -56,7 +56,7 @@ class WriteToStdOut : public OutputOperator<In> {
    *
    * Creates a new WriteToStdOut operator by defining its kernel function.
    */
-  WriteToStdOut(std::function<std::string(In)> func_)
+  explicit WriteToStdOut(std::function<std::string(In)> func_)
       : OutputOperator<In>(StructureType::STREAM), func(func_) {
     usr_func = true;
   }
