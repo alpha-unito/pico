@@ -7,8 +7,8 @@ See the home [README](../../README.md) for build instructions.
 
 This simplified implementation takes in input two text files:
 
-- a list of pages, one per line
-- a list of edges, one per line, where each edge is a pair of space-separated pages
+-   a list of pages, one per line
+-   a list of edges, one per line, where each edge is a pair of space-separated pages
 
 and produces a list of page-rank pairs.
 
