@@ -239,7 +239,10 @@ class base_iteration_dispatcher : public base_switch {
   void send_mb(pico::base_microbatch *mb, bool fw) { this->send_mb_to(mb, fw); }
 
   void flush_buffer_(tag_t tag, bool fw) {
-    assert(has_output(tag));
+    if (!has_output(tag)) {
+    	std::cerr << "error flush buffer in base_iteration.cpp" << std::endl;
+    	return;
+    }
     if (out_buf.find(tag) != out_buf.end()) {
       auto &buf(out_buf[tag]);
       for (auto mb : buf) {
