@@ -21,6 +21,10 @@
 #ifndef PICO_PICO_HPP_
 #define PICO_PICO_HPP_
 
+
+/* implementation */
+#include "pico/ff_implementation/FastFlowExecutor.hpp"
+
 /* basic */
 #include "pico/FlatMapCollector.hpp"
 #include "pico/KeyValue.hpp"
@@ -41,7 +45,6 @@
 #include "pico/Operators/Reduce.hpp"
 #include "pico/Operators/ReduceByKey.hpp"
 
-/* implementation */
-#include "pico/ff_implementation/FastFlowExecutor.hpp"
+
 
 #endif /* PICO_PICO_HPP_ */
