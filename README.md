@@ -11,7 +11,7 @@ PiCo (**Pi**peline **Co**mposition) is an open-source C++11 header-only DSL for 
 Take a look to the [word-count](examples/word-count/pico_wc.cpp) code to see how easy is writing a PiCo pipeline!
 
 ## Report bugs + get help
-https://github.com/alpha-unito/pico/issues/new
+<https://github.com/alpha-unito/pico/issues/new>
 
 ## Build and run tests
 The following steps require `cmake >=3.1` as build system.
@@ -53,20 +53,19 @@ g++ -I/path/to/pico/include -I/path/to/fastflow app.cc
 
 ## Examples
 The [examples](examples) folder contains some proof-of-concept applications, showing the PiCo user experience:
-- [word-count](examples/word-count): PiCo pipelines 101 + visualizing application graphs
-- [stock-market](examples/stock-market): batch vs stream pipelines
-- [page-rank](examples/page-rank): iterative pipelines
-
+-  [word-count](examples/word-count): PiCo pipelines 101 + visualizing application graphs
+-  [stock-market](examples/stock-market): batch vs stream pipelines
+-  [page-rank](examples/page-rank): iterative pipelines
 
 ## PiCo Team
-Maurizio Drocco <maurizio.drocco@pnnl.gov> (maintainer)  
-Claudia Misale <c.misale@ibm.com> (creator + co-maintainer)  
-Alberto Riccardo Martinelli <alberto.martinelli@edu.unito.it> (co-maintainer)
+Maurizio Drocco [maurizio.drocco@pnnl.gov](mailto:maurizio.drocco@pnnl.gov) (maintainer)  
+Claudia Misale [c.misale@ibm.com](mailto:c.misale@ibm.com) (creator + co-maintainer)  
+Alberto Riccardo Martinelli [alberto.martinelli@edu.unito.it](mailto:alberto.martinelli@edu.unito.it) (co-maintainer)
 
-#### Contributors
-Marco Aldinucci <aldinuc@di.unito.it> (boss)  
-Massimo Torquati <torquati@di.unipi.it> (FastFlow maintainer)  
-Guy Tremblay <tremblay.guy@uqam.ca> (DSL wizard)
+### Contributors
+Marco Aldinucci [aldinuc@di.unito.it](mailto:aldinuc@di.unito.it) (boss)  
+Massimo Torquati [torquati@di.unipi.it](mailto:torquati@di.unipi.it) (FastFlow maintainer)  
+Guy Tremblay [tremblay.guy@uqam.ca](mailto:tremblay.guy@uqam.ca) (DSL wizard)
 
 ## How to cite PiCo  
 C. Misale, M. Drocco, G. Tremblay, A. R. Martinelli, and M. Aldinucci, "PiCo: High-Performance Data Analytics Pipelines in Modern C++," Future Generation Computer Systems, Volume 87, 2018.  
