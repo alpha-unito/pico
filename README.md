@@ -1,5 +1,5 @@
-PiCo: High-Performance Data-Analytics Pipelines in C++
-===============
+#PiCo: High-Performance Data-Analytics Pipelines in C++
+
 [![Travis Build Status](https://travis-ci.org/alpha-unito/pico.svg?branch=master)](https://travis-ci.org/alpha-unito/pico)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/8cabc7bdde9b4d9daba94243b6468f04)](https://www.codacy.com/app/droccom/pico?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=alpha-unito/pico&amp;utm_campaign=Badge_Grade)
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
@@ -53,9 +53,9 @@ g++ -I/path/to/pico/include -I/path/to/fastflow app.cc
 
 ## Examples
 The [examples](examples) folder contains some proof-of-concept applications, showing the PiCo user experience:
--  [word-count](examples/word-count): PiCo pipelines 101 + visualizing application graphs
--  [stock-market](examples/stock-market): batch vs stream pipelines
--  [page-rank](examples/page-rank): iterative pipelines
+-    [word-count](examples/word-count): PiCo pipelines 101 + visualizing application graphs
+-    [stock-market](examples/stock-market): batch vs stream pipelines
+-    [page-rank](examples/page-rank): iterative pipelines
 
 ## PiCo Team
 Maurizio Drocco [maurizio.drocco@pnnl.gov](mailto:maurizio.drocco@pnnl.gov) (maintainer)  
