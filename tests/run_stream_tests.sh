@@ -20,5 +20,5 @@
 ##
 
 echo "streaming tests"
-nc -l 4000+ < testdata/pairs.txt & 
+nc -l 4000 < testdata/pairs.txt & 
 ./stream_tests
