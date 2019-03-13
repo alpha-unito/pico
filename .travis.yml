@@ -1,12 +1,20 @@
 language: cpp
 
+dist: trusty
+sudo: required
+
+
+
+cache:
+  directories:
+  - '$HOME/.sonar/cache'
+
 matrix:
   include:
     - os: osx
       osx_image: xcode10.1
       env:
         - MATRIX_EVAL="CC=clang && CXX=clang++"
-
     - os: linux
       addons:
         apt:
@@ -14,7 +22,6 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
-
       env:
         - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
     - os: linux
@@ -24,7 +31,6 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-6
-
       env:
         - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
     - os: linux
@@ -34,7 +40,8 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-7
-
+        sonarcloud:
+          organization: "droccom-github"
       env:
         - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
     - os: linux
@@ -59,3 +66,4 @@ script:
         - cmake ..
         - make
         - ctest
+        - if [[ "$MATRIX_EVAL" == "CC=gcc-7 && CXX=g++-7" ]]; then cp ../sonar-project.properties . && build-wrapper-linux-x86-64 --out-dir bw-output make clean all && sonar-scanner ; fi
