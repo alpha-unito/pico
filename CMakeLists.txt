@@ -71,9 +71,7 @@ set(
   "Runtime system to be used as backend (Default=FF, Supported=FF)")
 
 include(config)
-
 include_directories(./include)
-
 # Unit testing
 if (PICO_ENABLE_UNIT_TEST)
   include(CTest)
@@ -129,3 +127,34 @@ if(CLANG_FORMAT_EXE)
     ${ALL_CXX_SOURCE_FILES}
     )
 endif()
+
+
+# add PiCo as a linkable target
+add_library(PiCo INTERFACE)
+
+target_include_directories(PiCo
+  INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+# provide a namespaced alias for clients to link against if PiCo is included as a sub-project
+add_library(PiCo::PiCo ALIAS PiCo)
+
+# add PiCo as a linkable target
+add_library(Fastflow INTERFACE)
+
+target_include_directories(Fastflow
+  INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+# provide a namespaced alias for clients to link against if PiCo is included as a sub-project
+add_library(Fastflow::Fastflow ALIAS Fastflow)
+
+
+target_link_libraries(PiCo INTERFACE Catch2::Catch2)
+target_link_libraries(PiCo INTERFACE Fastflow::Fastflow)
+target_link_libraries(PiCo INTERFACE ${PICO_RUNTIME_LIB})
+
