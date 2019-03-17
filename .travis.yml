@@ -66,4 +66,4 @@ script:
         - cmake ..
         - make
         - ctest
-        - if [[ "$MATRIX_EVAL" == "CC=gcc-7 && CXX=g++-7" ]]; then cp ../sonar-project.properties . && build-wrapper-linux-x86-64 --out-dir bw-output make clean all && sonar-scanner ; fi
+        - if [ "$TRAVIS_PULL_REQUEST" = "false" ] && [ "$MATRIX_EVAL" == "CC=gcc-7 && CXX=g++-7" ]; then cp ../sonar-project.properties . && build-wrapper-linux-x86-64 --out-dir bw-output make clean all && sonar-scanner ; fi
