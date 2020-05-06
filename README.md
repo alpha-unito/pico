@@ -23,7 +23,7 @@ The current implementation is based on [FastFlow](https://github.com/fastflow/fa
 Get it and a link it:
 ```bash
 cd pico
-git clone https://github.com/fastflow/fastflow.git /path/to/fastflow
+git clone https://github.com/fastflow/fastflow.git
 ln -s fastflow/ff .
 ```
 :rescue_worker_helmet: A better solution for including FastFlow as dependency is under development!
