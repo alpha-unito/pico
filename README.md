@@ -17,19 +17,19 @@ The following steps require `cmake >=3.1` as build system.
 
 Get PiCo:
 ```bash
-git clone https://github.com/alpha-unito/pico.git pico
+git clone https://github.com/alpha-unito/pico.git
 ```
 The current implementation is based on [FastFlow](https://github.com/fastflow/fastflow) as runtime system.
 Get it and a link it:
 ```bash
-git clone --single-branch -b fastflow3 https://github.com/fastflow/fastflow.git /path/to/fastflow
-ln -s /path/to/fastflow/ff pico/
+cd pico
+git clone https://github.com/fastflow/fastflow.git /path/to/fastflow
+ln -s fastflow/ff .
 ```
 :rescue_worker_helmet: A better solution for including FastFlow as dependency is under development!
 
-Build and run the tests: (and examples)
+Build and run tests and examples: (from `pico` root directory)
 ```bash
-cd pico
 mkdir build && cd build
 cmake .. -DPICO_ENABLE_UNIT_TEST=ON
 cmake --build .
